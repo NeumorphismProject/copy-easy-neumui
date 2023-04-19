@@ -1,17 +1,13 @@
-import Head from 'next/head'
+import DefaultLayout from '@/components/layouts/default'
+import type { ReactElement } from 'react'
+import type { NextPageWithLayout } from './_app'
 
-export default function Home() {
-  return (
-    <>
-      <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Microler's Games information" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main>
-        <h1>{"Microler's Games information"}</h1>
-      </main>
-    </>
-  )
+const Home: NextPageWithLayout = () => {
+  return (<p>Home page</p>)
 }
+
+Home.getLayout = function getLayout(page: ReactElement) {
+  return <DefaultLayout>{page}</DefaultLayout>
+}
+
+export default Home
