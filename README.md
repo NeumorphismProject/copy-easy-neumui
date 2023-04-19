@@ -18,3 +18,11 @@ pnpm dev
 * git commit formatter: commitlint
 * Unit test: Vitest 3 + VitestUI + @vitest/coverage-c8 + @testing-library/react + @testing-library/jest-dom
 * CI&CD: https://vercel.com/
+
+## Issues
+* 1 - 在运行命令的时候，使用pnpm或者npm出现此错误
+* * doc link: https://blog.csdn.net/weixin_46212682/article/details/121784020
+```
+pnpm : 无法加载文件 C:\Users\HP\AppData\Roaming\npm\pnpm.ps1，因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/go.microsoft.com/fwlink/?LinkID=135170 中的 about_Execution_Policies。
+```
+* * 【Solution】: Windows PowerShell => input command 'set-ExecutionPolicy RemoteSigned' => input selection [A]
