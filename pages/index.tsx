@@ -10,7 +10,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <div>{"Microler's Games information"}</div>
+        <h1>{"Microler's Games information"}</h1>
       </main>
     </>
   )

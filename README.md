@@ -19,6 +19,11 @@ pnpm dev
 * Unit test: Vitest 3 + VitestUI + @vitest/coverage-c8 + @testing-library/react + @testing-library/jest-dom
 * CI&CD: https://vercel.com/
 
+## Preview
+* Deploy on Vercel (CI/CD): 
+* * https://copy-easy-neumui.vercel.app/
+
+
 ## Issues
 * 1 - 在运行命令的时候，使用pnpm或者npm出现此错误
 * * doc link: https://blog.csdn.net/weixin_46212682/article/details/121784020
