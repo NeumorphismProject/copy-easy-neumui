@@ -10,9 +10,9 @@ const Wrapper = styled.div({
 const EyeWrapper = styled.div({
 })
 
-export default function Navbar(){
+export default function Navbar() {
   return <Wrapper>
-    <EyeWrapper><EyeTriple /></EyeWrapper>
-    <EyeWrapper><EyeKakashi /></EyeWrapper>
+      <EyeWrapper><EyeTriple /></EyeWrapper>
+      <EyeWrapper><EyeKakashi /></EyeWrapper>
   </Wrapper>
 }
