@@ -3,6 +3,12 @@
 
 *  Doc link: https://www.jianshu.com/p/f20f4c892168
 
+* We neet to use 'StyleSheetManager' of styled-components to do it.
+* * [Google some information about how to use 'StyleSheetManager']
+```js
+import styled, { StyleSheetManager } from "styled-components"
+```
+
 ## [1] -- 
 
 ```js
