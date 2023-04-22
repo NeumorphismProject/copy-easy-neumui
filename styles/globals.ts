@@ -8,6 +8,6 @@ export const GlobalStyle = createGlobalStyle({
   },
   'html,body': {
     maxWidth: '100vw',
-    overflowX: 'hidden'
+    overflow: 'hidden'
   }
 })
