@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .list-wrapper {
+      background-color: black;
+      color: #fff;
+      width: 500px;
+    }
+
+    .item-wrapper {}
+
+    .item-title {}
+
+    .item-content {
+      max-height: 0px;
+      overflow-y: auto;
+      transition-duration: 500ms;
+      transition-property: max-height, color;
+      transition-timing-function: cubic-bezier(.29, 1.01, 1, -0.68);
+    }
+
+    .content__text {
+      display: none;
+      margin-bottom: 16px;
+    }
+
+    .item-cover-row {
+      height: 20px;
+      background-color: black;
+      opacity: 0.5;
+      position: relative;
+      /* top: -10px; */
+    }
+  </style>
+</head>
+
+<body>
+  <fieldset>
+    <div class="list-wrapper">
+      <div class="item-wrapper">
+        <div class="item-title">
+          <input type="radio" id="huey" name="drone" value="huey" checked>
+          <label for="huey">aaaaaa title 1</label>
+        </div>
+        <div class="item-content huey">
+          <div class="content__text">
+            消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息
+          </div>
+        </div>
+        <div class="item-cover-row cover__huey"></div>
+      </div>
+      <div class="item-wrapper">
+        <div class="item-title">
+          <input type="radio" id="dewey" name="drone" value="dewey">
+          <label for="dewey">bbbbbbbb title 2</label>
+        </div>
+        <div class="item-content dewey">
+          <div class="content__text">
+            消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息
+          </div>
+        </div>
+        <div class="item-cover-row cover__dewey"></div>
+      </div>
+      <div class="item-wrapper">
+        <div class="item-title">
+          <input type="radio" id="louie" name="drone" value="louie">
+          <label for="louie">ccccccc title 3</label>
+        </div>
+        <div class="item-content louie">
+          <div class="content__text">
+            消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息消息
+          </div>
+        </div>
+        <div class="item-cover-row cover__louie"></div>
+      </div>
+    </div>
+  </fieldset>
+</body>
+<script>
+
+  const hueyDom = document.querySelector('#huey')
+  const hueyContentDom = document.querySelector('.huey')
+  const hueyCoverDom = document.querySelector('.cover__huey')
+  const deweyDom = document.querySelector('#dewey')
+  const deweyContentDom = document.querySelector('.dewey')
+  const deweyCoverDom = document.querySelector('.cover__dewey')
+  const louieDom = document.querySelector('#louie')
+  const louieContentDom = document.querySelector('.louie')
+  const louieCoverDom = document.querySelector('.cover__louie')
+
+
+  function selected(id) {
+    if (id === 'huey') {
+      // -------
+      deweyContentDom.setAttribute('style', 'max-height:0px;')
+      deweyContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
+      deweyCoverDom.setAttribute('style', 'top:0px;')
+      louieContentDom.setAttribute('style', 'max-height:0px;')
+      louieContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
+      louieCoverDom.setAttribute('style', 'top:0px;')
+
+      // -------
+      hueyContentDom.setAttribute('style', 'max-height:70px;')
+      hueyContentDom.querySelector('.content__text').setAttribute('style', 'display:block;')
+      hueyCoverDom.setAttribute('style', 'top:-10px;')
+    } else if (id === 'dewey') {
+      // -------
+      hueyContentDom.setAttribute('style', 'max-height:0px;')
+      hueyContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
+      hueyCoverDom.setAttribute('style', 'top:0px;')
+      louieContentDom.setAttribute('style', 'max-height:0px;')
+      louieContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
+      louieCoverDom.setAttribute('style', 'top:0px;')
+
+      // -------
+      deweyContentDom.setAttribute('style', 'max-height:70px;')
+      deweyContentDom.querySelector('.content__text').setAttribute('style', 'display:block;')
+      deweyCoverDom.setAttribute('style', 'top:-10px;')
+    } else if (id === 'louie') {
+      // -------
+      deweyContentDom.setAttribute('style', 'max-height:0px;')
+      deweyContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
+      deweyCoverDom.setAttribute('style', 'top:0px;')
+      hueyContentDom.setAttribute('style', 'max-height:0px;')
+      hueyContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
+      hueyCoverDom.setAttribute('style', 'top:0px;')
+
+      // -------
+      louieContentDom.setAttribute('style', 'max-height:70px;')
+      louieContentDom.querySelector('.content__text').setAttribute('style', 'display:block;')
+      louieCoverDom.setAttribute('style', 'top:-10px;')
+    }
+  }
+
+  hueyDom.addEventListener('change', (event) => {
+    console.log('hueyDom change = ', event)
+    console.log('hueyDom change = ', event.target.checked)
+    selected('huey')
+  })
+  deweyDom.addEventListener('change', (event) => {
+    console.log('hueyDom change = ', event)
+    console.log('hueyDom change = ', event.target.checked)
+    selected('dewey')
+  })
+  louieDom.addEventListener('change', (event) => {
+    console.log('hueyDom change = ', event)
+    console.log('hueyDom change = ', event.target.checked)
+    selected('louie')
+  })
+</script>
+
+</html>
