@@ -83,6 +83,8 @@
   </fieldset>
 </body>
 <script>
+  let lastSelectItem = 'huey'
+  let selectedItem = 'huey'
 
   const hueyDom = document.querySelector('#huey')
   const hueyContentDom = document.querySelector('.huey')
@@ -94,43 +96,56 @@
   const louieContentDom = document.querySelector('.louie')
   const louieCoverDom = document.querySelector('.cover__louie')
 
+  function init() {
+    selected(selectedItem)
+  }
+  window.addEventListener('load', () => { init() })
+
+  function hiddenLastContentDom() {
+    if(lastSelectItem === selectedItem) {
+      return
+    }
+
+    // -------
+    const _hiidenContentDom = document.querySelector(`.${lastSelectItem}`)
+    const _hiidenDeweyCoverDom = document.querySelector(`.cover__${lastSelectItem}`)
+    _hiidenContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
+    _hiidenDeweyCoverDom.setAttribute('style', 'top:0px;')
+  }
 
   function selected(id) {
-    if (id === 'huey') {
-      // -------
-      deweyContentDom.setAttribute('style', 'max-height:0px;')
-      deweyContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
-      deweyCoverDom.setAttribute('style', 'top:0px;')
-      louieContentDom.setAttribute('style', 'max-height:0px;')
-      louieContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
-      louieCoverDom.setAttribute('style', 'top:0px;')
+    lastSelectItem = selectedItem
+    selectedItem = id
+    hueyContentDom.addEventListener("transitionend", function (e) {
+      if(lastSelectItem === 'huey') {
+        hiddenLastContentDom()
+      }
+    })
+    deweyContentDom.addEventListener("transitionend", function (e) {
+      if(lastSelectItem === 'dewey') {
+        hiddenLastContentDom()
+      }
+    })
+    louieContentDom.addEventListener("transitionend", function (e) {
+      if(lastSelectItem === 'louie') {
+        hiddenLastContentDom()
+      }
+    })
 
+    // ------- set last item height 0 transition
+    const _hiidenContentDom = document.querySelector(`.${lastSelectItem}`)
+    _hiidenContentDom.setAttribute('style', 'max-height:0px;')
+    if (id === 'huey') {
       // -------
       hueyContentDom.setAttribute('style', 'max-height:70px;')
       hueyContentDom.querySelector('.content__text').setAttribute('style', 'display:block;')
       hueyCoverDom.setAttribute('style', 'top:-10px;')
     } else if (id === 'dewey') {
       // -------
-      hueyContentDom.setAttribute('style', 'max-height:0px;')
-      hueyContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
-      hueyCoverDom.setAttribute('style', 'top:0px;')
-      louieContentDom.setAttribute('style', 'max-height:0px;')
-      louieContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
-      louieCoverDom.setAttribute('style', 'top:0px;')
-
-      // -------
       deweyContentDom.setAttribute('style', 'max-height:70px;')
       deweyContentDom.querySelector('.content__text').setAttribute('style', 'display:block;')
       deweyCoverDom.setAttribute('style', 'top:-10px;')
     } else if (id === 'louie') {
-      // -------
-      deweyContentDom.setAttribute('style', 'max-height:0px;')
-      deweyContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
-      deweyCoverDom.setAttribute('style', 'top:0px;')
-      hueyContentDom.setAttribute('style', 'max-height:0px;')
-      hueyContentDom.querySelector('.content__text').setAttribute('style', 'display:none;')
-      hueyCoverDom.setAttribute('style', 'top:0px;')
-
       // -------
       louieContentDom.setAttribute('style', 'max-height:70px;')
       louieContentDom.querySelector('.content__text').setAttribute('style', 'display:block;')
