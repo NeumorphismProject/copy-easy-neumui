@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .wrapper {
+      width: 500px;
+      height: 400px;
+    }
+
+    .loop-area-wrapper {
+      width: 500px;
+      height: 300px;
+      border: 5px solid red;
+      overflow: hidden;
+    }
+
+    .loop-area-move {
+      height: 100%;
+      width: 500px;
+      transition: all 500ms linear;
+      display: flex;
+      position: relative;
+      left: 0;
+    }
+
+    .loop-item {
+      height: 100%;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    .loop-item img {
+      height: 100%;
+      width: 100%;
+    }
+
+    .indicator-wrapper {
+      background-color: aqua;
+      display: flex;
+      justify-content: center;
+    }
+
+    .indicator {
+      cursor: pointer;
+      height: 16px;
+      width: 16px;
+      border-radius: 100%;
+      background-color: orange;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="loop-area-wrapper">
+      <div class="loop-area-move"></div>
+      <!-- <div class="loop-item">
+        <img src="https://cdn.pixabay.com/photo/2023/04/05/09/44/landscape-7901065__340.jpg" alt="img" srcset="">
+      </div>
+      <div class="loop-item">
+        <img src="https://cdn.pixabay.com/photo/2023/04/17/18/46/modlin-fortress-7933060__340.jpg" alt="img" srcset="">
+      </div>
+      <div class="loop-item">
+        <img src="https://cdn.pixabay.com/photo/2023/04/18/18/38/atv-7935771__340.jpg" alt="img" srcset="">
+      </div> -->
+    </div>
+    <div class="indicator-wrapper">
+      <!-- <div class="indicator"></div>
+      <div class="indicator" style="margin-left:16px;"></div>
+      <div class="indicator" style="margin-left:16px;"></div> -->
+    </div>
+  </div>
+</body>
+
+
+<script>
+  const ITEM_DISTANCE = 180
+
+  const getSelectedIndicatorColorStyle = (_selectedIndex, _index) => `${_selectedIndex === _index ? 'background-color:blue;' : 'background-color: orange;'}`
+
+  const getSelectedLoopItemMarginStyle = (_index) => {
+    const loopItemWidth = 500
+    const moveDistance = (loopItemWidth + ITEM_DISTANCE) * _index
+    return `left:-${moveDistance}px`
+  }
+
+  let lastSelectedIndex = 0
+  let selectedIndex = 0
+  const loopData = [{
+    imgUrl: 'https://cdn.pixabay.com/photo/2023/04/05/09/44/landscape-7901065__340.jpg'
+  }, {
+    imgUrl: 'https://cdn.pixabay.com/photo/2023/04/17/18/46/modlin-fortress-7933060__340.jpg'
+  }, {
+    imgUrl: 'https://cdn.pixabay.com/photo/2023/04/18/18/38/atv-7935771__340.jpg'
+  }]
+
+  const loopAreaWrapperDom = document.querySelector('.loop-area-move')
+  const indicatorWrapperDom = document.querySelector('.indicator-wrapper')
+  let indicatorDomList = null
+
+  function selectedLoopItem(_index) {
+    const selectedLoopItemMoveDistanceStyle = getSelectedLoopItemMarginStyle(_index)
+    loopAreaWrapperDom.style.cssText += selectedLoopItemMoveDistanceStyle
+  }
+
+  function updateIndicatorDoms(_lastSelectedIndex, _selectedIndex) {
+    const lastIndicatorDom = indicatorDomList[_lastSelectedIndex]
+    const lastIndicatorDomStyle = getSelectedIndicatorColorStyle(0, -1)
+    lastIndicatorDom.style.cssText += lastIndicatorDomStyle
+
+    const indicatorDom = indicatorDomList[_selectedIndex]
+    const indicatorDomStyle = getSelectedIndicatorColorStyle(0, 0)
+    indicatorDom.style.cssText += indicatorDomStyle
+  }
+
+  function updateSelectedDom(_index) {
+    lastSelectedIndex = selectedIndex
+    selectedIndex = _index
+    updateIndicatorDoms(lastSelectedIndex, selectedIndex)
+    selectedLoopItem(selectedIndex)
+  }
+
+  // 切换到下一个
+  function nextSelectedDom() {
+    if (selectedIndex < loopData.length - 1) {
+      lastSelectedIndex = selectedIndex
+      selectedIndex += 1
+    }
+    updateIndicatorDoms(lastSelectedIndex, selectedIndex)
+    selectedLoopItem(selectedIndex)
+  }
+
+  // 切换到上一个
+  function lastSelectedDom() {
+    if (selectedIndex > 0) {
+      lastSelectedIndex = selectedIndex
+      selectedIndex -= 1
+    }
+    updateIndicatorDoms(lastSelectedIndex, selectedIndex)
+    selectedLoopItem(selectedIndex)
+  }
+
+  function init() {
+    let loopAreaWrapperInnerHtml = ''
+    let indicatorWrapperInnerHtml = ''
+    loopData.forEach((item, index) => {
+      loopAreaWrapperInnerHtml = `${loopAreaWrapperInnerHtml}
+      <div class="loop-item" ${index === 0 ? '' : `style="margin-left:${ITEM_DISTANCE}px;"`}>
+        <img src="${item.imgUrl}" alt="img" srcset="">
+      </div>`
+      const selectedIndicatorColorStyle = getSelectedIndicatorColorStyle(selectedIndex, index)
+      indicatorWrapperInnerHtml = `${indicatorWrapperInnerHtml}
+      <div class="indicator" style=${index === 0 ? selectedIndicatorColorStyle : `margin-left:16px;${selectedIndicatorColorStyle}`}></div>`
+    })
+    // update dom
+    loopAreaWrapperDom.innerHTML = loopAreaWrapperInnerHtml
+    indicatorWrapperDom.innerHTML = indicatorWrapperInnerHtml
+    selectedLoopItem(selectedIndex)
+
+    indicatorDomList = document.querySelectorAll('.indicator')
+
+    indicatorDomList.forEach((itemDom, index) => {
+      itemDom.addEventListener('click', () => {
+        updateSelectedDom(index)
+      })
+    })
+  }
+  init()
+
+</script>
+
+
+<!-- ----------------------------------------------------------- -->
+
+
+<script>
+
+  const MIN_MOVE_DISTANCE = 200
+  const touchMoveType = 'horizontal' // 'vertical'
+  let moveStartPosition = 0
+  let moveDistance = 0
+  let moveDomCurStyleLeft = 0
+  let loopMoveDomStyleRecord = ''
+
+  const loopAreaDom = document.querySelector('.loop-area-wrapper')
+  const loopMoveDom = document.querySelector('.loop-area-move')
+
+  window.addEventListener('touchstart', (event) => {
+    // console.log('------- touchstart = ', event)
+    const clientX = event.touches[0].clientX;
+    const clientY = event.touches[0].clientY;
+    moveStartPosition = touchMoveType === 'horizontal' ? clientX : clientY
+    moveDistance = 0
+    moveDomCurStyleLeft = parseInt(loopMoveDom.style.left.replace('px',''))
+    loopMoveDomStyleRecord = loopMoveDom.style.cssText
+    loopMoveDom.style.cssText += 'transition:all 0ms linear;'
+  })
+  window.addEventListener('touchmove', (event) => {
+    // Cache the client X/Y coordinates
+    const clientX = event.touches[0].clientX;
+    const clientY = event.touches[0].clientY;
+
+    // 判断当前滑动事件的dom是否属于指定区域dom的子元素
+    if (loopAreaDom.contains(event.target)) {
+      // console.log('当前滑动区域之内')
+      moveDistance = touchMoveType === 'horizontal' ? (clientX - moveStartPosition) : (clientY - moveStartPosition)
+      // update dom
+      const moveLeft = `${moveDomCurStyleLeft + parseInt(moveDistance / 2)}px`
+      // console.log(moveLeft)
+      loopMoveDom.style.left = moveLeft
+    } else {
+      console.log('在外面滑动')
+    }
+
+    // console.log('touchmove = ', event)
+
+  })
+  window.addEventListener('touchend', (event) => {
+    // console.log('******* touchend = ', event)
+    // console.log('******* touchend distance = ', moveDistance)
+    // 手指滑动距离不满足预设的最小值，则还原滑动图片位置
+    loopMoveDom.style.cssText = loopMoveDomStyleRecord
+    if (Math.abs(moveDistance) >= MIN_MOVE_DISTANCE) {
+      // 若滑动距离满足条件，则图片切换
+      if(moveDistance < 0) {
+        // 向左划，切换下一张
+        nextSelectedDom()
+      } else {
+        // 向右划，切换上一张
+        lastSelectedDom()
+      }
+    }
+    moveDomCurStyleLeft = 0
+    moveDistance = 0
+  })
+</script>
+
+</html>
