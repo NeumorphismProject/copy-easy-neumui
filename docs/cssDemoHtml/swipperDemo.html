@@ -151,7 +151,7 @@
     loopData.forEach((item, index) => {
       loopAreaWrapperInnerHtml = `${loopAreaWrapperInnerHtml}
       <div class="loop-item" ${index === 0 ? '' : `style="margin-left:${ITEM_DISTANCE}px;"`}>
-        <img src="${item.imgUrl}" alt="img" srcset="">
+        <img src="${item.imgUrl}" alt="img" srcset="" draggable="false">
       </div>`
       const selectedIndicatorColorStyle = getSelectedIndicatorColorStyle(selectedIndex, index)
       indicatorWrapperInnerHtml = `${indicatorWrapperInnerHtml}
@@ -190,23 +190,17 @@
   const loopAreaDom = document.querySelector('.loop-area-wrapper')
   const loopMoveDom = document.querySelector('.loop-area-move')
 
-  window.addEventListener('touchstart', (event) => {
-    // console.log('------- touchstart = ', event)
-    const clientX = event.touches[0].clientX;
-    const clientY = event.touches[0].clientY;
+  const handleMoveStart = (clientX, clientY) => {
     moveStartPosition = touchMoveType === 'horizontal' ? clientX : clientY
     moveDistance = 0
     moveDomCurStyleLeft = parseInt(loopMoveDom.style.left.replace('px',''))
     loopMoveDomStyleRecord = loopMoveDom.style.cssText
     loopMoveDom.style.cssText += 'transition:all 0ms linear;'
-  })
-  window.addEventListener('touchmove', (event) => {
-    // Cache the client X/Y coordinates
-    const clientX = event.touches[0].clientX;
-    const clientY = event.touches[0].clientY;
+  }
 
+  const handleMove = (targetDom, clientX, clientY) => {
     // 判断当前滑动事件的dom是否属于指定区域dom的子元素
-    if (loopAreaDom.contains(event.target)) {
+    if (loopAreaDom.contains(targetDom)) {
       // console.log('当前滑动区域之内')
       moveDistance = touchMoveType === 'horizontal' ? (clientX - moveStartPosition) : (clientY - moveStartPosition)
       // update dom
@@ -214,15 +208,11 @@
       // console.log(moveLeft)
       loopMoveDom.style.left = moveLeft
     } else {
-      console.log('在外面滑动')
+      console.log('在外面滑动');
     }
+  }
 
-    // console.log('touchmove = ', event)
-
-  })
-  window.addEventListener('touchend', (event) => {
-    // console.log('******* touchend = ', event)
-    // console.log('******* touchend distance = ', moveDistance)
+  const handleMoveEnd = () => {
     // 手指滑动距离不满足预设的最小值，则还原滑动图片位置
     loopMoveDom.style.cssText = loopMoveDomStyleRecord
     if (Math.abs(moveDistance) >= MIN_MOVE_DISTANCE) {
@@ -237,6 +227,47 @@
     }
     moveDomCurStyleLeft = 0
     moveDistance = 0
+  }
+
+  // desktop mouse
+  let mouseMoveListenerEnabled = false
+  window.addEventListener('mousedown', (event) => {
+    // console.log('------- touchstart = ', event)
+    const clientX = event.clientX;
+    const clientY = event.clientY;
+    handleMoveStart(clientX, clientY)
+    mouseMoveListenerEnabled = true
+  })
+  window.addEventListener('mousemove', (event) => {
+    // Cache the client X/Y coordinates
+    const clientX = event.clientX;
+    const clientY = event.clientY;
+
+    mouseMoveListenerEnabled && handleMove(event.target, clientX, clientY)
+
+  })
+  window.addEventListener('mouseup', () => {
+    mouseMoveListenerEnabled = false
+    handleMoveEnd()
+  })
+
+  // mobile touch
+  window.addEventListener('touchstart', (event) => {
+    // console.log('------- touchstart = ', event)
+    const clientX = event.touches[0].clientX;
+    const clientY = event.touches[0].clientY;
+    handleMoveStart(clientX, clientY)
+  })
+  window.addEventListener('touchmove', (event) => {
+    // Cache the client X/Y coordinates
+    const clientX = event.touches[0].clientX;
+    const clientY = event.touches[0].clientY;
+
+    handleMove(event.target, clientX, clientY)
+
+  })
+  window.addEventListener('touchend', () => {
+    handleMoveEnd()
   })
 </script>
 
