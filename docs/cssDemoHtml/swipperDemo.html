@@ -192,6 +192,7 @@
 <script>
 
   const MIN_MOVE_DISTANCE = 200
+  const TRANSITION_NONE_STYLE = 'transition: none 0s ease 0s;'
   const touchMoveType = 'horizontal' // 'vertical'
   let moveStartPosition = 0
   let moveDistance = 0
@@ -204,7 +205,7 @@
     moveStartPosition = touchMoveType === 'horizontal' ? clientX : clientY
     moveDistance = 0
     moveDomCurStyleLeft = parseInt(loopMoveDom.style.left.replace('px',''))
-    loopMoveDom.style.cssText = 'transition: all 0ms linear;'+loopMoveDom.style.cssText.replace(LOOP_AREA_MOVE_STYLE,'')
+    loopMoveDom.style.cssText = TRANSITION_NONE_STYLE + loopMoveDom.style.cssText.replace(LOOP_AREA_MOVE_STYLE,'')
   }
 
   const handleMove = (targetDom, clientX, clientY) => {
@@ -225,7 +226,7 @@
 
   const handleMoveEnd = () => {
     // 手指滑动距离不满足预设的最小值，则还原滑动图片位置
-    loopMoveDom.style.cssText = LOOP_AREA_MOVE_STYLE + loopMoveDom.style.cssText.replace('transition: all 0ms linear;','')
+    loopMoveDom.style.cssText = LOOP_AREA_MOVE_STYLE + loopMoveDom.style.cssText.replace(TRANSITION_NONE_STYLE,'')
     if (Math.abs(moveDistance) >= MIN_MOVE_DISTANCE) {
       // 若滑动距离满足条件，则图片切换
       if(moveDistance < 0) {

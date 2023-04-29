@@ -56,10 +56,34 @@
       background-color: gray;
     }
   </style>
+  <style>
+    #auto-loop-switch:checked~.auto-loop-direction-wrapper {
+      display: block;
+    }
+
+    .auto-loop-direction-wrapper {
+      display: none;
+    }
+
+    #hide-flag-text:checked ~ .wrapper > .loop-area-wrapper > .loop-area-move > .loop-item > .loop-flag-text {
+      display: none !important;
+    }
+  </style>
 </head>
 
 <body>
   <div>无缝循环轮播</div>
+  <input type="checkbox" id="hide-flag-text">
+  <label for="hide-flag-text" class="hide-flag-text-label">隐藏标记文字</label>
+  <div>
+    <input type="checkbox" id="auto-loop-switch">
+    <label for="auto-loop-switch" class="auto-loop-switch-label">自动轮播（鼠标悬浮自动暂停）</label>
+    <div class="auto-loop-direction-wrapper">
+      <input type="checkbox" id="auto-loop-direction" checked>
+      <label for="auto-loop-direction" class="auto-loop-direction-label">自动向右轮播（反之向左轮播）</label>
+    </div>
+  </div>
+
   <div class="wrapper">
     <div class="loop-area-wrapper">
       <div class="loop-area-move"></div>
@@ -84,25 +108,39 @@
 
 <script>
   const ITEM_DISTANCE = 0
-  const LOOP_AREA_MOVE_STYLE = 'transition: all 500ms linear 0s;'
+  const TRANSITION_MS = 500
+  const LOOP_AREA_MOVE_STYLE = `transition: all ${TRANSITION_MS}ms linear 0s;`
+  const TRANSITION_NONE_STYLE = 'transition: none 0s ease 0s;'
+  let transitionTimer = null
 
   const getSelectedIndicatorColorStyle = (_selectedIndex, _index) => `${_selectedIndex === _index ? 'background-color:orange;' : 'background-color: gray;'}`
 
   const getSelectedLoopItemMarginStyle = (_index) => {
     const loopItemWidth = 500
-    const moveDistance = (loopItemWidth + ITEM_DISTANCE) * _index
+    const moveDistance = (loopItemWidth + ITEM_DISTANCE) * (_index + 1)
     return `left:-${moveDistance}px;`
   }
 
   let lastSelectedIndex = 0
   let selectedIndex = 0
-  const loopData = [{
+  // 原始的轮播图数组
+  const loopDataSouce = [{
     imgUrl: 'https://cdn.pixabay.com/photo/2023/04/05/09/44/landscape-7901065__340.jpg'
   }, {
     imgUrl: 'https://cdn.pixabay.com/photo/2023/04/17/18/46/modlin-fortress-7933060__340.jpg'
   }, {
     imgUrl: 'https://cdn.pixabay.com/photo/2023/04/18/18/38/atv-7935771__340.jpg'
+  }, {
+    imgUrl: 'https://n.sinaimg.cn/sinacn10106/685/w2048h1037/20190828/18ca-icuacsa3959812.jpg'
+  }, {
+    imgUrl: 'https://img-baofun.zhhainiao.com/fs/046dca7118b88a46a2ff486e6b12afe5.jpg'
   }]
+  // 为了实现无缝轮播，这里会对原始轮播数组进行特殊加工
+  const loopMagicData = [
+    loopDataSouce[loopDataSouce.length - 1],
+    ...loopDataSouce,
+    loopDataSouce[0]
+  ]
 
   const loopAreaWrapperDom = document.querySelector('.loop-area-move')
   const indicatorWrapperDom = document.querySelector('.indicator-wrapper')
@@ -138,12 +176,30 @@
 
   // 切换到下一个
   function nextSelectedDom() {
-    if (selectedIndex < loopData.length - 1) {
+    if (selectedIndex < loopDataSouce.length - 1) {
       lastSelectedIndex = selectedIndex
       selectedIndex += 1
+      updateIndicatorDoms(lastSelectedIndex, selectedIndex)
+    } else if (selectedIndex === loopDataSouce.length - 1) {
+      // 如果已经到了最后一张图，那就先继续滑动到魔术数组的最后一张图（放的是原始数组的第一张图，为了让用户以为又滚动到了第一张图）
+      lastSelectedIndex = selectedIndex
+      selectedIndex += 1
+      updateIndicatorDoms(loopDataSouce.length - 1, 0)
     }
-    updateIndicatorDoms(lastSelectedIndex, selectedIndex)
     selectedLoopItem(selectedIndex)
+    if (selectedIndex === loopDataSouce.length) {
+      if (transitionTimer) {
+        clearTimeout(transitionTimer)
+        transitionTimer = null
+      }
+      // 若是滚动到了魔术数组的最后一张图，在滚动动画结束后，要在去除transition的情况下瞬间把图片回到第一张图的位置，这样用户的眼睛是无法发现的，就会有种感觉无缝滚到了第一张图了
+      transitionTimer = setTimeout(() => {
+        lastSelectedIndex = 0
+        selectedIndex = 0
+        const selectedLoopItemMoveDistanceStyle = getSelectedLoopItemMarginStyle(0)
+        loopAreaWrapperDom.style.cssText = TRANSITION_NONE_STYLE + selectedLoopItemMoveDistanceStyle
+      }, TRANSITION_MS)
+    }
   }
 
   // 切换到上一个
@@ -151,19 +207,43 @@
     if (selectedIndex > 0) {
       lastSelectedIndex = selectedIndex
       selectedIndex -= 1
+      updateIndicatorDoms(lastSelectedIndex, selectedIndex)
+    } else if (selectedIndex === 0) {
+      // 如果已经到了第一张，那就先继续滑动到魔术数组的第一张图（放的是原始数组的最后一张图，为了让用户以为又滚动到了最后一张图）
+      lastSelectedIndex = selectedIndex
+      selectedIndex -= 1
+      updateIndicatorDoms(0, loopDataSouce.length - 1)
     }
-    updateIndicatorDoms(lastSelectedIndex, selectedIndex)
     selectedLoopItem(selectedIndex)
+
+    if (selectedIndex === -1) {
+      if (transitionTimer) {
+        clearTimeout(transitionTimer)
+        transitionTimer = null
+      }
+      // 若是滚动到了魔术数组的第一张图，在滚动动画结束后，要在去除transition的情况下瞬间把图片转到最后一张图的位置，这样用户的眼睛是无法发现的，就会有种感觉无缝滚到了最后一张图了
+      transitionTimer = setTimeout(() => {
+        lastSelectedIndex = loopDataSouce.length - 2
+        selectedIndex = loopDataSouce.length - 1
+        const selectedLoopItemMoveDistanceStyle = getSelectedLoopItemMarginStyle(loopDataSouce.length - 1)
+        loopAreaWrapperDom.style.cssText = TRANSITION_NONE_STYLE + selectedLoopItemMoveDistanceStyle
+      }, TRANSITION_MS)
+    }
   }
 
   function init() {
     let loopAreaWrapperInnerHtml = ''
     let indicatorWrapperInnerHtml = ''
-    loopData.forEach((item, index) => {
+    // 轮播图滑动区域
+    loopMagicData.forEach((item, index) => {
       loopAreaWrapperInnerHtml = `${loopAreaWrapperInnerHtml}
       <div class="loop-item" ${index === 0 ? '' : `style="margin-left:${ITEM_DISTANCE}px;"`}>
+        <div class="loop-flag-text" style="width:180px;height:50px;font-size:32px;position:absolute;top:0px;color:red;background-color:#fff;">${index === 0 ? '虚假-尾' : (index === loopMagicData.length - 1 ? '虚假-首' : index)}</div>
         <img src="${item.imgUrl}" alt="img" srcset="" draggable="false">
       </div>`
+    })
+    // 轮播图索引点
+    loopDataSouce.forEach((item, index) => {
       const selectedIndicatorColorStyle = getSelectedIndicatorColorStyle(selectedIndex, index)
       indicatorWrapperInnerHtml = `${indicatorWrapperInnerHtml}
       <div class="indicator" style=${index === 0 ? selectedIndicatorColorStyle : `margin-left:16px;${selectedIndicatorColorStyle}`}></div>`
@@ -190,7 +270,6 @@
 
 
 <script>
-
   const MIN_MOVE_DISTANCE = 200
   const touchMoveType = 'horizontal' // 'vertical'
   let moveStartPosition = 0
@@ -203,8 +282,8 @@
   const handleMoveStart = (clientX, clientY) => {
     moveStartPosition = touchMoveType === 'horizontal' ? clientX : clientY
     moveDistance = 0
-    moveDomCurStyleLeft = parseInt(loopMoveDom.style.left.replace('px',''))
-    loopMoveDom.style.cssText = 'transition: all 0ms linear;'+loopMoveDom.style.cssText.replace(LOOP_AREA_MOVE_STYLE,'')
+    moveDomCurStyleLeft = parseInt(loopMoveDom.style.left.replace('px', ''))
+    loopMoveDom.style.cssText = TRANSITION_NONE_STYLE + loopMoveDom.style.cssText.replace(LOOP_AREA_MOVE_STYLE, '')
   }
 
   const handleMove = (targetDom, clientX, clientY) => {
@@ -225,10 +304,10 @@
 
   const handleMoveEnd = () => {
     // 手指滑动距离不满足预设的最小值，则还原滑动图片位置
-    loopMoveDom.style.cssText = LOOP_AREA_MOVE_STYLE + loopMoveDom.style.cssText.replace('transition: all 0ms linear;','')
+    loopMoveDom.style.cssText = LOOP_AREA_MOVE_STYLE + loopMoveDom.style.cssText.replace(TRANSITION_NONE_STYLE, '')
     if (Math.abs(moveDistance) >= MIN_MOVE_DISTANCE) {
       // 若滑动距离满足条件，则图片切换
-      if(moveDistance < 0) {
+      if (moveDistance < 0) {
         // 向左划，切换下一张
         nextSelectedDom()
       } else {
@@ -281,6 +360,76 @@
   })
   window.addEventListener('touchend', () => {
     handleMoveEnd()
+  })
+</script>
+
+<!-- ----------------------------------------------------------- -->
+
+<script>
+  const AUTO_LOOP_MS = 3000
+
+  let autoLoopSwitchChecked = true
+  let autoLoopTimer = null
+  let autoLoopDirectionRightChecked = true
+
+  // 自动轮播开关
+  const autoLoopSwitchDom = document.querySelector('#auto-loop-switch')
+  const autoLoopDirectionDom = document.querySelector('#auto-loop-direction')
+
+  function updateAutoLoopSwitchChecked(checked) {
+    if (checked) {
+      autoLoopSwitchDom.setAttribute('checked', 'true')
+    } else {
+      autoLoopSwitchDom.removeAttribute('checked')
+    }
+  }
+
+  function openAutoLoop() {
+    closeAutoLoop()
+    autoLoopTimer = setInterval(() => {
+      if(autoLoopDirectionRightChecked) {
+        nextSelectedDom()
+      } else {
+        lastSelectedDom()
+      }
+    }, AUTO_LOOP_MS)
+  }
+
+  function closeAutoLoop() {
+    if (autoLoopTimer) {
+      clearInterval(autoLoopTimer)
+      autoLoopTimer = null
+    }
+  }
+
+  function initAutoLoopSwitch() {
+    if (autoLoopSwitchChecked) {
+      openAutoLoop()
+    } else {
+      closeAutoLoop()
+    }
+    updateAutoLoopSwitchChecked(autoLoopSwitchChecked)
+  }
+  initAutoLoopSwitch()
+
+  autoLoopSwitchDom.addEventListener('change', (event) => {
+    autoLoopSwitchChecked = event.currentTarget.checked
+    if (event.currentTarget.checked) {
+      openAutoLoop()
+    } else {
+      closeAutoLoop()
+    }
+  })
+  autoLoopDirectionDom.addEventListener('change', (event) => {
+    autoLoopDirectionRightChecked = event.currentTarget.checked
+  })
+
+  // 鼠标悬浮在图片滑动区域，则关闭自动轮播；反之鼠标移出该区域，则继续自动轮播
+  loopAreaWrapperDom.addEventListener('mouseover',()=>{
+    closeAutoLoop()
+  })
+  loopAreaWrapperDom.addEventListener('mouseout',()=>{
+    autoLoopSwitchChecked && openAutoLoop()
   })
 </script>
 
