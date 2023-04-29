@@ -61,11 +61,19 @@
       display: block;
     }
 
+    #auto-loop-switch:checked~.move-direction-remember-wrapper {
+      display: block;
+    }
+
     .auto-loop-direction-wrapper {
       display: none;
     }
 
-    #hide-flag-text:checked ~ .wrapper > .loop-area-wrapper > .loop-area-move > .loop-item > .loop-flag-text {
+    .move-direction-remember-wrapper {
+      display: none;
+    }
+
+    #hide-flag-text:checked~.wrapper>.loop-area-wrapper>.loop-area-move>.loop-item>.loop-flag-text {
       display: none !important;
     }
   </style>
@@ -78,9 +86,14 @@
   <div>
     <input type="checkbox" id="auto-loop-switch">
     <label for="auto-loop-switch" class="auto-loop-switch-label">自动轮播（鼠标悬浮自动暂停）</label>
-    <div class="auto-loop-direction-wrapper">
+    <div class="auto-loop-direction-wrapper" style="margin-left: 16px;">
       <input type="checkbox" id="auto-loop-direction" checked>
       <label for="auto-loop-direction" class="auto-loop-direction-label">自动向右轮播（反之向左轮播）</label>
+    </div>
+    <div class="move-direction-remember-wrapper" style="margin-left: 16px;">
+      <input type="checkbox" id="move-direction-remember" checked>
+      <label for="move-direction-remember"
+        class="move-direction-remember-label">开启滑动方向记忆功能（开启自动轮播时，在同一方向连续滑动下一张图3次及以上，则自动记忆该方向，即之后的自动轮播方向会变为与此一致）</label>
     </div>
   </div>
 
@@ -265,8 +278,152 @@
 
 </script>
 
+<!-- -----------------------自动轮播------------------------------------ -->
 
-<!-- ----------------------------------------------------------- -->
+<script>
+  const AUTO_LOOP_MS = 1000
+  const MOVE_DIRECTION_REMEMBER_MS = 3000
+  const MOVE_REMEMBER_MAX_TIMES = 3
+
+  let autoLoopSwitchChecked = true
+  let autoLoopTimer = null
+  let autoLoopDirectionRightChecked = true // 注意：轮播[向右] = 手指或鼠标[向左]滑动活拖动
+  let moveChangedTimesWhenAutoLoop = 0 // 开启自动轮播时，滑动变化图片会记录下同一方向的次数，如果下一次滑动的方向改变了，则该变量会重新归1
+  let lastMoveDirectionRemember = null
+  let moveDirectionRememberChecked = true
+  let moveDirectionRememberTimer = null
+
+  // 自动轮播开关
+  const autoLoopSwitchDom = document.querySelector('#auto-loop-switch')
+  const autoLoopDirectionDom = document.querySelector('#auto-loop-direction')
+  const moveDirectionRememberDom = document.querySelector('#move-direction-remember')
+
+  function updateAutoLoopSwitchChecked(checked) {
+    if (checked) {
+      autoLoopSwitchDom.setAttribute('checked', 'true')
+    } else {
+      autoLoopSwitchDom.removeAttribute('checked')
+    }
+  }
+
+  function updateAutoLoopDirection(checked) {
+    if (checked) {
+      autoLoopDirectionDom.setAttribute('checked', 'true')
+    } else {
+      autoLoopDirectionDom.removeAttribute('checked')
+    }
+  }
+
+  function updateMoveDirectionRemember(checked) {
+    if (checked) {
+      moveDirectionRememberDom.setAttribute('checked', 'true')
+    } else {
+      moveDirectionRememberDom.removeAttribute('checked')
+    }
+  }
+
+  function openAutoLoop() {
+    closeAutoLoop()
+    autoLoopTimer = setInterval(() => {
+      if (autoLoopDirectionRightChecked) {
+        nextSelectedDom()
+      } else {
+        lastSelectedDom()
+      }
+    }, AUTO_LOOP_MS)
+  }
+
+  function closeAutoLoop() {
+    if (autoLoopTimer) {
+      clearInterval(autoLoopTimer)
+      autoLoopTimer = null
+    }
+  }
+
+  // 注意：轮播[向右] = 手指或鼠标[向左]滑动活拖动
+  function changeAutoDirectionByMove({ isMoveLeft }) {
+    if(moveDirectionRememberTimer) {
+      clearTimeout(moveDirectionRememberTimer)
+    }
+    // 仅开关开启时改功能有效
+    if (!moveDirectionRememberChecked) {
+      moveChangedTimesWhenAutoLoop = 0
+      return
+    }
+    // 拖拽移动方向记忆有效时间，超时则计数变量归零
+    moveDirectionRememberTimer = setTimeout(() => {
+      moveChangedTimesWhenAutoLoop = 0
+    }, MOVE_DIRECTION_REMEMBER_MS);
+    // ---
+    moveChangedTimesWhenAutoLoop += 1
+    if (isMoveLeft) {
+      // 向左拖动，图片趋势是滚动到下一张
+      if (lastMoveDirectionRemember === 'right' && moveChangedTimesWhenAutoLoop !== 0) {
+        moveChangedTimesWhenAutoLoop = 1
+      }
+      // 若当前轮播方向已经与此一致了，则没必要再去改变了
+      if(autoLoopDirectionRightChecked) {
+        moveChangedTimesWhenAutoLoop = 1
+      } else if (moveChangedTimesWhenAutoLoop >= MOVE_REMEMBER_MAX_TIMES) {
+        moveChangedTimesWhenAutoLoop = 0
+        autoLoopDirectionRightChecked = true
+        updateAutoLoopDirection(autoLoopDirectionRightChecked)
+      }
+    } else {
+      // 向右拖动，图片趋势是滚动到上一张
+      if (lastMoveDirectionRemember === 'left' && moveChangedTimesWhenAutoLoop !== 0) {
+        moveChangedTimesWhenAutoLoop = 1
+      }
+      // 若当前轮播方向已经与此一致了，则没必要再去改变了
+      if(!autoLoopDirectionRightChecked) {
+        moveChangedTimesWhenAutoLoop = 1
+      } else if (moveChangedTimesWhenAutoLoop >= MOVE_REMEMBER_MAX_TIMES) {
+        moveChangedTimesWhenAutoLoop = 0
+        autoLoopDirectionRightChecked = false
+        updateAutoLoopDirection(autoLoopDirectionRightChecked)
+      }
+    }
+    lastMoveDirectionRemember = isMoveLeft ? 'left' : 'right'
+  }
+
+
+  function initAutoLoopSwitch() {
+    if (autoLoopSwitchChecked) {
+      openAutoLoop()
+    } else {
+      closeAutoLoop()
+    }
+    updateAutoLoopSwitchChecked(autoLoopSwitchChecked)
+    updateMoveDirectionRemember(moveDirectionRememberChecked)
+  }
+  initAutoLoopSwitch()
+
+  autoLoopSwitchDom.addEventListener('change', (event) => {
+    autoLoopSwitchChecked = event.currentTarget.checked
+    if (event.currentTarget.checked) {
+      openAutoLoop()
+    } else {
+      closeAutoLoop()
+    }
+  })
+  autoLoopDirectionDom.addEventListener('change', (event) => {
+    autoLoopDirectionRightChecked = event.currentTarget.checked
+  })
+  moveDirectionRememberDom.addEventListener('change', (event) => {
+    moveDirectionRememberChecked = event.currentTarget.checked
+  })
+
+  // 鼠标悬浮在图片滑动区域，则关闭自动轮播；反之鼠标移出该区域，则继续自动轮播
+  loopAreaWrapperDom.addEventListener('mouseover', () => {
+    closeAutoLoop()
+  })
+  loopAreaWrapperDom.addEventListener('mouseout', () => {
+    autoLoopSwitchChecked && openAutoLoop()
+  })
+</script>
+
+
+<!-- ----------------------------手指/鼠标 滑动------------------------------- -->
 
 
 <script>
@@ -310,9 +467,11 @@
       if (moveDistance < 0) {
         // 向左划，切换下一张
         nextSelectedDom()
+        changeAutoDirectionByMove({ isMoveLeft: true })
       } else {
         // 向右划，切换上一张
         lastSelectedDom()
+        changeAutoDirectionByMove({ isMoveLeft: false })
       }
     } else {
       refreshCurrentSelectedDom()
@@ -363,74 +522,6 @@
   })
 </script>
 
-<!-- ----------------------------------------------------------- -->
 
-<script>
-  const AUTO_LOOP_MS = 3000
-
-  let autoLoopSwitchChecked = true
-  let autoLoopTimer = null
-  let autoLoopDirectionRightChecked = true
-
-  // 自动轮播开关
-  const autoLoopSwitchDom = document.querySelector('#auto-loop-switch')
-  const autoLoopDirectionDom = document.querySelector('#auto-loop-direction')
-
-  function updateAutoLoopSwitchChecked(checked) {
-    if (checked) {
-      autoLoopSwitchDom.setAttribute('checked', 'true')
-    } else {
-      autoLoopSwitchDom.removeAttribute('checked')
-    }
-  }
-
-  function openAutoLoop() {
-    closeAutoLoop()
-    autoLoopTimer = setInterval(() => {
-      if(autoLoopDirectionRightChecked) {
-        nextSelectedDom()
-      } else {
-        lastSelectedDom()
-      }
-    }, AUTO_LOOP_MS)
-  }
-
-  function closeAutoLoop() {
-    if (autoLoopTimer) {
-      clearInterval(autoLoopTimer)
-      autoLoopTimer = null
-    }
-  }
-
-  function initAutoLoopSwitch() {
-    if (autoLoopSwitchChecked) {
-      openAutoLoop()
-    } else {
-      closeAutoLoop()
-    }
-    updateAutoLoopSwitchChecked(autoLoopSwitchChecked)
-  }
-  initAutoLoopSwitch()
-
-  autoLoopSwitchDom.addEventListener('change', (event) => {
-    autoLoopSwitchChecked = event.currentTarget.checked
-    if (event.currentTarget.checked) {
-      openAutoLoop()
-    } else {
-      closeAutoLoop()
-    }
-  })
-  autoLoopDirectionDom.addEventListener('change', (event) => {
-    autoLoopDirectionRightChecked = event.currentTarget.checked
-  })
-
-  // 鼠标悬浮在图片滑动区域，则关闭自动轮播；反之鼠标移出该区域，则继续自动轮播
-  loopAreaWrapperDom.addEventListener('mouseover',()=>{
-    closeAutoLoop()
-  })
-  loopAreaWrapperDom.addEventListener('mouseout',()=>{
-    autoLoopSwitchChecked && openAutoLoop()
-  })
-</script>
 
 </html>
