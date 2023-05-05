@@ -4,9 +4,11 @@ import { PropsWithChildren } from 'react'
 import styled from 'styled-components'
 
 const LayoutWrapper = styled.div({
-  height: '100vh',
   width: '100vw',
-  border: '1px solid red'
+  height: '100vh',
+  border: '1px solid red',
+  display: 'flex',
+  flexDirection: 'column'
 })
 
 const HeaderWrapper = styled.div({
@@ -14,11 +16,15 @@ const HeaderWrapper = styled.div({
 })
 
 const BodyWrapper = styled.div({
-
+  width: '100%',
+  flex: '1',
+  // overflow: 'auto'
 })
 
 const FooterWrapper = styled.div({
-
+  width: '100%',
+  height: '50px',
+  backgroundColor: 'green'
 })
 
 export default function DefaultLayout({ children }: PropsWithChildren) {
