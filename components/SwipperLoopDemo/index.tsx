@@ -1,4 +1,4 @@
-import { SingleSwipper } from '@/ecc-lib'
+import { SingleLoopSwipper } from '@/ecc-lib'
 
 const swipperData = [{
   unikey: '1',
@@ -18,5 +18,5 @@ const swipperData = [{
 }]
 
 export default function SwipperDemo() {
-  return (<SingleSwipper list={swipperData} />)
+  return (<SingleLoopSwipper list={swipperData} />)
 }

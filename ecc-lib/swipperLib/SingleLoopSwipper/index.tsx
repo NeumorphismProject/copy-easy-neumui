@@ -153,10 +153,8 @@ export default function SingleLoopSwipper({ list, containerHeight = 300, default
 
   useEffect(() => {
     refreshMoveArea()
-    return () => {
-      setMagicList(getMagicList())
-    }
-  }, [getMagicList, refreshMoveArea])
+    setMagicList(getMagicList())
+  }, [])
 
   return (<Wrapper ref={moveEffectiveWrapperRef} areaHeight={containerHeight}>
     <MoveArea ref={moveAreaRef} list={magicList} rootStyle={moveAreaStyle} height={containerHeight} itemSpacing={itemSpacing} />

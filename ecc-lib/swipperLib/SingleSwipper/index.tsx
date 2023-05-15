@@ -10,17 +10,16 @@ import {
   Wrapper
 } from './style'
 
-const MOVE_AREA_TRANSITION_DURATION_MS = 300
-const MOVE_ITEM_MARGIN = 0
-
 let currentMoveAreaPositionX = 0
 
 export interface SingleSwipperProps {
   list: Array<any>
   containerHeight?:number
+  defaultMoveDurationMs?: number
+  itemSpacing?: number
 }
 
-export default function SingleSwipper({ list, containerHeight = 300 }: SingleSwipperProps) {
+export default function SingleSwipper({ list, containerHeight = 300, defaultMoveDurationMs=300, itemSpacing = 0 }: SingleSwipperProps) {
   const moveAreaRef = useRef<HTMLDivElement | null>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [moveAreaTransDurationMs, setMoveAreaTransDurationMs] = useState(0)
@@ -33,8 +32,8 @@ export default function SingleSwipper({ list, containerHeight = 300 }: SingleSwi
 
   const getMoveAreaPositionX = useCallback((index: number) => {
     const moveAreaWidth = moveAreaRef.current?.clientWidth ?? 0
-    return -(moveAreaWidth + MOVE_ITEM_MARGIN) * index
-  }, [])
+    return -(moveAreaWidth + itemSpacing) * index
+  }, [itemSpacing])
 
   const setMoveArea = useCallback((index: number) => {
     setMoveAreaPostionX(getMoveAreaPositionX(index))
@@ -73,8 +72,8 @@ export default function SingleSwipper({ list, containerHeight = 300 }: SingleSwi
 
   const endReset = useCallback(() => {
     currentMoveAreaPositionX = 0
-    setMoveAreaTransDurationMs(MOVE_AREA_TRANSITION_DURATION_MS)
-  }, [])
+    setMoveAreaTransDurationMs(defaultMoveDurationMs)
+  }, [defaultMoveDurationMs])
 
   const handleMoveInvalidEnd = useCallback(() => {
     endReset()
@@ -106,7 +105,7 @@ export default function SingleSwipper({ list, containerHeight = 300 }: SingleSwi
       style={moveAreaStyle} >
       {list.map((item, index) => (<MoveItem key={`swpitem_${item.unikey}`} areaHeight={containerHeight}>
         <MoveItemImg src={item.imgUrl} alt="img" draggable={false}
-          first={index === 0} spacing={MOVE_ITEM_MARGIN} />
+          first={index === 0} spacing={itemSpacing} />
       </MoveItem>))}
     </MoveAreaWrapper>
     <IndicatorWrapper draggable={false} >

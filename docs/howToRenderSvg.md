@@ -27,3 +27,4 @@ import ItachiSvg from '@/assets/svgs/itachi.svg'
 export default function Itachi() {
   return <ItachiSvg />
 }
+```
