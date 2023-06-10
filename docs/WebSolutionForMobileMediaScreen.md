@@ -6,3 +6,4 @@
 ## how to use rem
 
 * We can find px-to-rem plugin on VSCode. Then we can code px and the px-to-rem plugin will help us to instead.
+* video link: https://www.bilibili.com/video/BV1a84y1K7WF?p=14&vd_source=70eab574cc508f954057839eef5f52b6
