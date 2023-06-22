@@ -1,5 +1,35 @@
 {
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "workbench.editorAssociations": {
+    "*.exe": "default"
+  },
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "html", "vue"],
+  "javascript.format.semicolons": "remove",
+  "typescript.format.semicolons": "remove",
   "editor.codeActionsOnSave": {
-    "source.fixAll": true
-  }
+    "source.fixAll": true,
+    "source.organizeImports": true
+  },
+  "editor.formatOnSave": false,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "files.eol": "\n",
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "Wscats.qf"
+  },
+  "editor.wordWrapColumn": 191080000,
+  "editor.wordWrap": "wordWrapColumn",
+  "[python]": {
+    "editor.formatOnType": true
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
 }

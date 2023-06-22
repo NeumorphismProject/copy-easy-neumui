@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Html5 语义化练习1 -- 文章结构练习</title>
+  <style>
+    body {
+      background-color: #f8f8f8;
+    }
+
+    header {
+      width: 100%;
+      height: 32px;
+      background-color: #373d41;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    li {
+      list-style: none;
+    }
+
+    nav {
+      line-height: 32px;
+    }
+
+    header>div {
+      width: 1200px;
+      height: 32px;
+      margin: 0 auto;
+      line-height: 32px;
+    }
+
+    nav>img {
+      width: 66px;
+      float: left;
+      padding-top: 10px;
+    }
+
+    nav>a {
+      float: right;
+      color: white;
+      margin-left: 30px;
+      padding: 0 42px;
+    }
+
+    nav>a:hover {
+      background-color: #00c0dd;
+    }
+
+    /* 导航栏实现代码  */
+
+    .yunshichang {
+      width: 100%;
+      height: 128px;
+      background-color: #fdfdfd;
+      margin-top: 20px;
+    }
+
+    /* 搜索栏 */
+
+    /*云市场上边*/
+
+    .yunshichang-top {
+      width: 1200px;
+      height: 68px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .input {
+      width: 632xp;
+      height: 31;
+    }
+
+    .yunshichang-top>img {
+      width: 100px;
+      float: left;
+      overflow: hidden;
+    }
+
+    .fuwu {
+      border: 1px solid gray;
+      width: 634px;
+      height: 28px;
+      margin-left: 160px;
+      float: left;
+      overflow: hidden;
+    }
+
+    .fuwu>p {
+      color: gray;
+      float: left;
+      line-height: 28px;
+    }
+
+    .fuwu>a {
+      line-height: 28px;
+      float: right;
+      color: white;
+      background-color: #00c0dd;
+    }
+
+    .yunshichang-top span {
+      font-weight: 800;
+      float: right;
+      color: #00c0dd;
+      margin-right: 6px;
+      border: 1px solid#00c0dd;
+    }
+
+    .wangzhan>a {
+      color: gray;
+      margin-right: 20px;
+      font-size: 14px;
+    }
+
+    .wangzhan {
+      float: left;
+      margin-left: 168px;
+      margin-bottom: 16px;
+      margin-top: 10px;
+    }
+
+    /* 导航栏 */
+
+    .yunshichang-bottom {
+      background-color: cyan;
+      width: 240px;
+      height: 343px;
+      justify-content: flex-start;
+    }
+
+    /* 云市场类蓝色小分区 */
+    .yunshichang2>img {
+      width: 960px;
+      height: 299px;
+      justify-content: space-between;
+    }
+
+    /* 找商品 */
+    .zhaoshangping {
+      width: 1200px;
+      height: 164px;
+      margin: 0 auto;
+      background-color: #ffffff;
+
+    }
+
+    .zhaoshangping {
+
+      display: flex;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <!-- 导航 -->
+    <nav>
+      <a href="#">首页</a>
+      <a href="#">易牛课堂</a>
+      <a href="#">易牛班级</a>
+      <a href="#">易牛咨询</a>
+      <a href="#">话题小组</a>
+    </nav>
+  </header>
+  <article>
+    <!--  文章标题 -->
+    <header class="biaoti">
+      <div>Web前端--HTML5基础知识</div>
+      <div>浏览：316 评论：10 赞：101</div>
+    </header>
+    <!-- 简述 -->
+    <section class="box1">
+      <div>HTML5发展简述</div>
+      <div>
+        HTML发展已久，而HTML5则是在这期间通过人们不断改进HTML而来的。在1991年世界上第一个网页诞生以来，HTML就是网站开发中最主要的语言之一，并且一直在不断发展与进化。而现在，美观、高速、多平台，这些词已经密切地和HTML5联系起来。在HTML5的帮助下，传统的网页，已经带给人们堪比桌面程序的用户体验。2012年12月
+        17日，W3C 发布了HTML5以及 Canvas 2D 两个标准的完全定义版本，标志着 HTML5
+        的标准已经在趋向稳定。随着移动互联网的高速发展，HTML5也将迎来前所未有的发展机会。越来越多的人涌入HTML5学习浪潮中。</div>
+    </section>
+    <!-- 新性能 -->
+    <section class="box2">
+      <div>HTML5新性能</div>
+      <div>HTML5 提供了有效的数据管理、绘图、视频和音频工具。它简化了面向 Web
+        和便携式设备的跨浏览器应用程序的开发。HTML5是推动移动云计算服务的技术之一，因为它可以实现更高程度的灵活性，可以开发出激动人心的交互式网站。它还引入了新的标记和增强，包括一个优雅的结构、表单控件、API、多媒体、数据库支持，并极大地加快了处理速度。
+      </div>
+      <div>
+        Html5的优点即是“一次性开发，多次分发”，使得一次设计适应不同终端成为可能。信息流架构应用化都是直接在WEB(或wap)端抓取数据，html5可以直接使用跨平台数据面不使用后台API，大大降低研发维护成本而且呈现的效果几乎没有什么区别。Html5最大的意义在于改变WEB文档的结构方式，借助于header,foot,section,article，这些标配、标签我们可以实现更具结构化语义化的WEB文档，这样，搜索引擎更容易索引到WEB站点，我们可以搜索到更快更准备的信息。
+      </div>
+      <div>
+        HTML5不仅仅局限于HTML语言本身，还包括了CSS3以及JavaScript语言里新增的函数和功能。HTML5能始终坚持不断发展，并很快得到广泛认可，与其在制定之初就确立的核心理念有很大的关系。这些核心理念就是我们今天在W3C站点上所看到的HTML5设计原理这份文档，概括起来就是——兼容性、实用性、互操作性以及普遍可访问性。
+      </div>
+    </section>
+    <!-- 两大特点 -->
+    <section class="box3">
+      <div>HTML5两大特点</div>
+      <div>HTML5有两大特点：</div>
+      <div>首先，<span> 它强化了Web网页的表现性能。</span></div>
+      <div>其次，<span>追加了本地数据库等 Web 应用的功能。</span> </div>
+      <div>
+        在语义上，HTML5赋予网页更好的意义和结构。更加丰富的标签将随着对RDFa的，微数据与微格式等方面的支持，构建对程序、对用户都更有价值的数据驱动的Web。而本地存储特性使基于HTML5开发的网页APP拥有更短的启动时间，更快的联网速度。这些全得益于HTML5
+        APP Cache，以及本地存储功能。
+      </div>
+      <div>
+        总的来说HTML5实际指的是包括HTML、CSS和JavaScript在内的一套技术组合。虽然HTML5有CSS、JavaScript技术，但还是要单独提出CSS3和JS来进行学习更好。如今HTML5是IT行业网站开发不可或缺的技术，也是web前端开发必备技能之一，是很值得大家学习的。
+      </div>
+    </section>
+    <!--  -->
+    <footer>
+      <div>文章来源：<span>易牛云课堂</span> </div>
+      <a href="#">原文链接：http://www.16ketang.com/article/12</a>
+    </footer>
+
+  </article>
+  <!--  咨询内容 -->
+  <div class="zixu">
+    <aside>
+      <div>相关资讯</div>
+      <a href="#">Lorem ipsum dolor sit.</a>
+      <a href="#">Lorem ipsum dolor sit.</a>
+      <a href="#">Lorem ipsum dolor sit.</a>
+      <a href="#">Lorem ipsum dolor sit.</a>
+      <a href="#">Lorem ipsum dolor sit.</a>
+
+    </aside>
+    <aside>
+      <div>热门资讯</div>
+      <a href="#">Lorem ipsum dolor sit.</a>
+      <a href="#">Lorem ipsum dolor sit.</a>
+      <a href="#">Lorem ipsum dolor sit.</a>
+      <a href="#">Lorem ipsum dolor sit.</a>
+      <a href="#">Lorem ipsum dolor sit.</a>
+
+    </aside>
+  </div>
+  <footer class="jiaozhu">
+    <p>Powered by EduSoho v8.0.23 &#169;2014-2017 好知网 课程存档</p>
+    <p>课程内容版权均归 易牛云课堂 所有 蜀ICP备16007351号
+    </p>
+
+  </footer>
+</body>
+
+</html>
