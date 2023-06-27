@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JS 继承</title>
+</head>
+<body>
+<script>
+  /* ---- 继承方式 1： 原型链继承 ---- */
+  // 必知知识点：function 中的 this 指向具有不确定性，
+  // 1 - 通过 new 来实例化一个function时，其中的this执行当前实例，
+  // 2 - 通过直接调用 function 时，那么 this
+
+  function Parent() {
+    this.speak = () => {
+      console.log('I am parent');
+    }
+  }
+
+  function Child() {
+    this.speakLoudly = () => {
+      console.log('I am child!!!');
+    }
+  }
+
+  Child.prototype = new Parent();
+
+  var A = new Child();
+  var B = new Child();
+
+  A.speakLoudly();
+  B.speak();
+  console.log('A=>', A.speakLoudly);
+  console.log('B=>',B.speak);
+  console.log('A.speak === B.speak => ',A.speak === B.speak);
+
+</script>
+<script>
+
+var id = 'Global';
+
+function fun1() {
+    var that = this;
+    // 使用普通函数
+    (function(){
+        // 普通函数中的 this 取决于被调用时的作用域
+        console.log('func1 this.id = ',this.id);
+        console.log('that = ',that.id);
+    })()
+}
+
+function fun2() {
+    // 使用箭头函数
+    (() => {
+        // （箭头函数没有作用域） 箭头函数时不会创建自己作用域的，其中的 this 指向时永久不变的，即当前所处的作用域
+        console.log(this.id);
+    })()
+}
+
+fun1.call({id: 'Obj'});     // 'Global'
+
+fun2.call({id: 'Obj'});     // 'Obj'
+
+</script>
+
+<script>
+  // JS Class 的特性
+  // 重点：
+
+  class Phone {
+    constructor(name, price) {
+        // 构造函数内的 属性 都会存在于实例本身
+        this.name = name;
+        this.price = price
+        this.instanceFunc = function(){
+          console.log(this.name,'im your dad');
+        }
+    }
+    // 构造函数外的 属性 都会存在于 原型链 对象中，即 Phone.__proto__
+    // 这一点很危险：无论怎么创建实例，只要其中一个实例对象重写了 __proto__ 中的某个函数，那么其他实例都会受到影响
+    start(){
+        console.log(this.name,'开始执行函数');
+        this.father(this.name,this.price);
+    }
+    father(){
+        console.log(this.name,'im your dad');
+    }
+    play(){
+        console.log('im your dad,im playing game');
+    }
+  }
+
+  var p1 = new Phone()
+  var p2 = new Phone()
+
+  // 如果我们通过p1去重写 Phone 的 start 函数
+  p1.__proto__.start = function(){
+    console.log('p1重写啦')
+  }
+
+  // 那么会发现 p2 实例的 start 也被重写了，这违背了实例之间的封装性
+  p2.start() // 输出：'p1重写啦'
+
+</script>
+</body>
+</html>
