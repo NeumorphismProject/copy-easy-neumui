@@ -8,7 +8,9 @@ const Wrapper = styled.div({
   width: '100%',
   position: 'fixed',
   top: 0,
-  bottom: 0
+  bottom: 0,
+  display: 'flex',
+  flexDirection: 'column'
 })
 
 const TopWrapper = styled.div({
@@ -17,22 +19,23 @@ const TopWrapper = styled.div({
   width: '100%'
 })
 
-
-const HeaderWrapper = styled.div({
+const HeaderBaseWrapper = styled.div({
   display: 'flex',
+})
+
+
+const HeaderWrapper = styled(HeaderBaseWrapper)({
   borderTop: '1px solid black'
 })
 
-const MoveAreaWrapper = styled.div({
-  width: '100%',
-  backgroundColor: 'blue'
-})
-
-const HeaderCell = styled.div({
-  padding: '8px',
-  flex: 1,
+const HeaderBaseCell = styled.div({
+  width: '50%',
   textAlign: 'center',
   borderBottom: '1px solid black'
+})
+
+const HeaderCell = styled(HeaderBaseCell)({
+  padding: '8px'
 })
 
 const HeaderDividingLine = styled.div({
@@ -55,19 +58,38 @@ const HeaderCellSubTitle = styled.h3({
 
 //---------
 
-const BodyWrapper = styled.div({
-
+const MoveAreaWrapper = styled.div({
+  width: '100%',
+  height: '100%',
+  // backgroundColor: 'blue',
+  overflow: 'hidden'
 })
 
-export default function DiffTableDemo () {
-  const [dataList] = useState<Array<any>>((new Array(5)).fill('').map((a,i)=>({...a,unikey:i+1})))
+// --------
+
+const BodyWrapper = styled.div({
+  flex: 1,
+  overflowY: 'auto'
+})
+
+export default function DiffTableDemo() {
+  const [dataList] = useState<Array<any>>((new Array(5)).fill('').map((a, i) => ({ ...a, unikey: i + 1 })))
+  const [rowList] = useState<Array<any>>((new Array(15)).fill('').map((a, i) => ({ ...a, unikey: `row_${i + 1}` })))
+
+  const insideEffectiveWrapper = (targetDom: EventTarget | null) => {
+    return true
+  }
+
   const {
     moveEffectiveWrapperRef,
     moveAreaRef,
     magicList,
     moveAreaStyle,
     itemSpacing
-  } = useMove({list:dataList})
+  } = useMove({
+    list: dataList,
+    customInsideEffectiveWrapper: insideEffectiveWrapper
+  })
   const imgUrl = (new URL('@/assets/imgs/laptop.png', import.meta.url)).toString()
   return (<Wrapper>
     <TopWrapper>左右滑动切换对照卡片</TopWrapper>
@@ -78,14 +100,35 @@ export default function DiffTableDemo () {
         <HeaderCellSubTitle>一个你想象不到的笔记本</HeaderCellSubTitle>
       </HeaderCell>
       <HeaderDividingLine />
-      <MoveAreaWrapper ref={moveEffectiveWrapperRef} >
-        <MoveArea ref={moveAreaRef} list={magicList} rootStyle={moveAreaStyle} itemSpacing={itemSpacing}>
+      <HeaderBaseCell>
+        <MoveAreaWrapper ref={moveEffectiveWrapperRef} >
+          <MoveArea ref={moveAreaRef} list={magicList} rootStyle={moveAreaStyle} itemSpacing={itemSpacing}>
             <HeaderCellTitle>牛牛笔记本</HeaderCellTitle>
             <HeaderCellImg alt="laptop" src={imgUrl} ></HeaderCellImg>
             <HeaderCellSubTitle>牛牛爱用的笔记本</HeaderCellSubTitle>
-        </MoveArea>
-      </MoveAreaWrapper>
+          </MoveArea>
+        </MoveAreaWrapper>
+      </HeaderBaseCell>
     </HeaderWrapper>
 
+    <BodyWrapper>
+      {rowList.map(r=>(<HeaderBaseWrapper key={r.unikey}>
+        <HeaderCell>
+          <HeaderCellTitle>超超笔记本</HeaderCellTitle>
+          <HeaderCellImg alt="laptop" src={imgUrl} ></HeaderCellImg>
+          <HeaderCellSubTitle>一个你想象不到的笔记本</HeaderCellSubTitle>
+        </HeaderCell>
+        <HeaderDividingLine />
+        <HeaderBaseCell>
+          <MoveAreaWrapper ref={moveEffectiveWrapperRef} >
+            <MoveArea ref={moveAreaRef} list={magicList} rootStyle={moveAreaStyle} itemSpacing={itemSpacing}>
+              <HeaderCellTitle>牛牛笔记本</HeaderCellTitle>
+              <HeaderCellImg alt="laptop" src={imgUrl} ></HeaderCellImg>
+              <HeaderCellSubTitle>牛牛爱用的笔记本</HeaderCellSubTitle>
+            </MoveArea>
+          </MoveAreaWrapper>
+        </HeaderBaseCell>
+      </HeaderBaseWrapper>))}
+    </BodyWrapper>
   </Wrapper>)
 }

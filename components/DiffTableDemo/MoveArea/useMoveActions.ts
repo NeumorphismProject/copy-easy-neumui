@@ -11,13 +11,15 @@ export interface MoveActionsOptions {
   onMoveRightEnd?: (distance:number, vector:number) => void
   onMoveUpEnd?: (distance:number, vector:number) => void
   onMoveDownEnd?: (distance:number, vector:number) => void
+  customInsideEffectiveWrapper?: (targetDom: EventTarget | null) => boolean
 }
 
 export default function useMoveActions({ type='horizontal', moveEffectiveMinDistance=80,
   onMoveStart, onMoving,
   onMoveInvalidEnd,
   onMoveLeftEnd, onMoveRightEnd,
-  onMoveUpEnd, onMoveDownEnd }: MoveActionsOptions) {
+  onMoveUpEnd, onMoveDownEnd,
+  customInsideEffectiveWrapper }: MoveActionsOptions) {
 
   const moveEffectiveWrapperRef = useRef<HTMLDivElement | null>(null)
   const moveStartPosition = useRef([0, 0])
@@ -58,7 +60,7 @@ export default function useMoveActions({ type='horizontal', moveEffectiveMinDist
     reset()
   }, [moveEffectiveMinDistance, onMoveDownEnd, onMoveInvalidEnd, onMoveLeftEnd, onMoveRightEnd, onMoveUpEnd, type])
 
-  const insideEffectiveWrapper = (targetDom: EventTarget | null) => moveEffectiveWrapperRef && targetDom && moveEffectiveWrapperRef.current?.contains(targetDom as Node)
+  const insideEffectiveWrapper = customInsideEffectiveWrapper ?? ((targetDom: EventTarget | null) => moveEffectiveWrapperRef && targetDom && moveEffectiveWrapperRef.current?.contains(targetDom as Node))
 
   useMoveEventListeners({
     onMoveStart: (clientPosition: number[], targetDom: EventTarget | null) => {

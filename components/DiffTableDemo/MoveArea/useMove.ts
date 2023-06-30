@@ -12,9 +12,10 @@ export interface SingleLoopSwipperOptions {
   list: Array<any>
   defaultMoveDurationMs?: number
   itemSpacing?: number
+  customInsideEffectiveWrapper?: (targetDom: EventTarget | null) => boolean
 }
 
-export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing = 0 }: SingleLoopSwipperOptions){
+export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing = 0, customInsideEffectiveWrapper }: SingleLoopSwipperOptions){
   const timerRec = useRef<any>(null)
   const moveAreaRef: MutableRefObject<HTMLDivElement | null> = useRef<HTMLDivElement | null>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -132,7 +133,8 @@ export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing =
     onMoveStart: handleMoveStart,
     onMoveInvalidEnd: handleMoveInvalidEnd,
     onMoveLeftEnd: handleMoveLeftEnd,
-    onMoveRightEnd: handleMoveRightEnd
+    onMoveRightEnd: handleMoveRightEnd,
+    customInsideEffectiveWrapper
   })
 
   // #endregion
