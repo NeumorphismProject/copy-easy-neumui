@@ -1,21 +1,25 @@
 import type { CSSProperties, MutableRefObject } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import useMoveActions from './useMoveActions'
+import useMoveActions, { MoveActionsOptions, MoveDirection } from './useMoveActions'
 
 let currentMoveAreaPositionX = 0
 
-function getDefaultMoveTransition (durationMs:number) {
+function getDefaultMoveTransition(durationMs: number) {
   return `left ${durationMs}ms linear`
 }
 
-export interface SingleLoopSwipperOptions {
+export interface SingleLoopSwipperOptions extends Pick<MoveActionsOptions, 'onMoveStart'|'onMoving'|'onMoveLeftEnd'|'onMoveRightEnd'|'onMoveUpEnd'|'onMoveDownEnd'|'onMoveInvalidEnd'> {
   list: Array<any>
   defaultMoveDurationMs?: number
   itemSpacing?: number
   customInsideEffectiveWrapper?: (targetDom: EventTarget | null) => boolean
 }
 
-export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing = 0, customInsideEffectiveWrapper }: SingleLoopSwipperOptions){
+export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing = 0, customInsideEffectiveWrapper,
+  onMoveStart, onMoving,
+  onMoveLeftEnd, onMoveRightEnd,
+  onMoveUpEnd, onMoveDownEnd,
+  onMoveInvalidEnd }: SingleLoopSwipperOptions) {
   const timerRec = useRef<any>(null)
   const moveAreaRef: MutableRefObject<HTMLDivElement | null> = useRef<HTMLDivElement | null>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -34,7 +38,7 @@ export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing =
   }, [itemSpacing])
 
   const setMoveArea = useCallback((index: number) => {
-    setMoveAreaPostionX(getMoveAreaPositionX(index+1))
+    setMoveAreaPostionX(getMoveAreaPositionX(index + 1))
     setSelectedIndex(index)
   }, [getMoveAreaPositionX])
 
@@ -48,7 +52,7 @@ export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing =
     if (nextIndex > endIndex) {
       setMoveAreaPostionX(getMoveAreaPositionX(endIndex + 2))
       // 在transition动画播放完成后，此时把transition设置为0或none，然后把图片瞬间移动到第1张，这样用户眼睛不会发现变化，就有了循环回第1张图片的假象了
-      timerRec.current = setTimeout(()=>{
+      timerRec.current = setTimeout(() => {
         setMoveAreaTransition('none')
         setMoveArea(0)
         clearTimeout(timerRec.current)
@@ -66,7 +70,7 @@ export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing =
       const endIndex = list.length - 1
       setMoveAreaPostionX(getMoveAreaPositionX(0))
       // 在transition动画播放完成后，此时把transition设置为0或none，然后把图片瞬间移动到最后1张，这样用户眼睛不会发现变化，就有了循环回最后1张图片的假象了
-      timerRec.current = setTimeout(()=>{
+      timerRec.current = setTimeout(() => {
         setMoveAreaTransition('none')
         setMoveArea(endIndex)
         clearTimeout(timerRec.current)
@@ -77,22 +81,18 @@ export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing =
     }
   }, [defaultMoveDurationMs, getMoveAreaPositionX, list.length, selectedIndex, setMoveArea])
 
-  const handleIndicatorClick = useCallback((item: any, index: number) => {
-    setMoveArea(index)
-  }, [setMoveArea])
-
   // #region ------ move handle -----
 
-  const handleMoveStart = useCallback(() => {
+  const handleMoveStart = useCallback((position: number[]) => {
     // 若滑动到了虚假头或者虚假尾，且移动的transition动画还没播放完的情况下，又去滑动了，那么为了不穿帮，此时需要把当前项设置到实际需要到头或这尾上，这样就能让用户感受到头尾无缝循环到假象
-    if(timerRec.current) {
+    if (timerRec.current) {
       clearTimeout(timerRec.current)
       timerRec.current = null
-      if(selectedIndex <= 0) {
+      if (selectedIndex <= 0) {
         const endIndex = list.length - 1
         setMoveAreaTransition('none')
         setMoveArea(endIndex)
-        currentMoveAreaPositionX = getMoveAreaPositionX(endIndex+1)
+        currentMoveAreaPositionX = getMoveAreaPositionX(endIndex + 1)
       } else {
         setMoveAreaTransition('none')
         setMoveArea(0)
@@ -102,31 +102,38 @@ export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing =
       currentMoveAreaPositionX = moveAreaPostionX
       setMoveAreaTransition('none')
     }
+    onMoveStart && onMoveStart(position)
   }, [getMoveAreaPositionX, list.length, moveAreaPostionX, selectedIndex, setMoveArea])
 
-  const handleMoving = useCallback((vector: number) => {
-    setMoveAreaPostionX(currentMoveAreaPositionX + vector)
-  }, [])
+  const handleMoving = useCallback((vector: number, direction: MoveDirection) => {
+    if (direction === 'LEFT' || direction === 'RIGHT') {
+      setMoveAreaPostionX(currentMoveAreaPositionX + vector)
+    }
+    onMoving && onMoving(vector, direction)
+  }, [setMoveAreaPostionX, onMoving])
 
   const endReset = useCallback(() => {
     currentMoveAreaPositionX = 0
     setMoveAreaTransition(getDefaultMoveTransition(defaultMoveDurationMs))
   }, [defaultMoveDurationMs])
 
-  const handleMoveInvalidEnd = useCallback(() => {
+  const handleMoveInvalidEnd = useCallback((distance: number, vector: number, direction: MoveDirection) => {
     endReset()
     refreshMoveArea()
-  }, [endReset, refreshMoveArea])
+    onMoveInvalidEnd && onMoveInvalidEnd(distance, vector, direction)
+  }, [endReset, refreshMoveArea, onMoveInvalidEnd])
 
   const handleMoveLeftEnd = useCallback((distance: number, vector: number) => {
     endReset()
     nextMoveArea()
-  }, [endReset, nextMoveArea])
+    onMoveLeftEnd && onMoveLeftEnd(distance, vector)
+  }, [endReset, nextMoveArea, onMoveLeftEnd])
 
   const handleMoveRightEnd = useCallback((distance: number, vector: number) => {
     endReset()
     lastMoveArea()
-  }, [endReset, lastMoveArea])
+    onMoveRightEnd && onMoveRightEnd(distance, vector)
+  }, [endReset, lastMoveArea, onMoveRightEnd])
 
   const { moveEffectiveWrapperRef } = useMoveActions({
     onMoving: handleMoving,
@@ -134,6 +141,8 @@ export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing =
     onMoveInvalidEnd: handleMoveInvalidEnd,
     onMoveLeftEnd: handleMoveLeftEnd,
     onMoveRightEnd: handleMoveRightEnd,
+    onMoveUpEnd,
+    onMoveDownEnd,
     customInsideEffectiveWrapper
   })
 
@@ -144,7 +153,7 @@ export default function useMove({ list, defaultMoveDurationMs=300, itemSpacing =
       { ...list[list.length - 1], unikey: 'singleloopswipperitem_magicfirst' },
       ...list,
       { ...list[0], unikey: 'singleloopswipperitem_magicend' }]
-  },[list])
+  }, [list])
 
   useEffect(() => {
     refreshMoveArea()
