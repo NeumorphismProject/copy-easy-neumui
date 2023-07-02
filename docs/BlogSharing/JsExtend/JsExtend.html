@@ -103,5 +103,31 @@ fun2.call({id: 'Obj'});     // 'Obj'
   p2.start() // 输出：'p1重写啦'
 
 </script>
+
+<script>
+  class Car {
+    run(){
+      console.log('car is running')
+    }
+  }
+
+  class OtherCar extends Car {
+    run(){
+      console.log('other car is running')
+    }
+  }
+
+  var c1 = new OtherCar()
+  var c2 = new Car()
+  c1.run()
+  c1.__proto__.run()
+  c2.run()
+  c2.__proto__.run()
+
+  console.log('---------')
+  console.log('c1 = ', c1)
+  console.log('c2 = ', c2)
+
+</script>
 </body>
 </html>
