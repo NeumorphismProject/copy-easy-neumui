@@ -24,14 +24,11 @@ const HeaderBaseWrapper = styled.div({
   display: 'flex',
 })
 
-type HeaderWrapperProps = {
-  wrapperHeight?: number
-}
-const HeaderWrapper = styled(HeaderBaseWrapper)<HeaderWrapperProps>(({ wrapperHeight }) => ({
+const HeaderWrapper = styled(HeaderBaseWrapper)({
   transition: 'all 0.5s ease-out',
   borderTop: '1px solid black',
-  height: !wrapperHeight ? 'auto' : `${wrapperHeight}px`
-}))
+  height: 'auto'
+})
 
 const HeaderBaseCell = styled.div({
   width: '50%',
@@ -59,7 +56,6 @@ type HeaderCellImgWrapperProps = {
 const HeaderCellImgWrapper = styled('div')<HeaderCellImgWrapperProps>(({ wrapperDefaultHeight, wrapperHeight }) => ({
   transition: 'all 0.5s ease-out',
   overflow: 'hidden',
-  // height: !wrapperHeight ? 'auto' : `${wrapperHeight}px`,
   height: !wrapperHeight ? (!wrapperDefaultHeight ? 'auto' :`${wrapperDefaultHeight}px`) : `${wrapperHeight}px`,
 }))
 
@@ -97,20 +93,17 @@ const BodyWrapper = styled.div({
 })
 
 const IMG_HEIGHT = 60
+const HEADER_IMG_SHRINK_RELATIVE_TOP = -80
 
 export default function DiffTableDemo() {
   const [dataList] = useState<Array<any>>((new Array(5)).fill('').map((a, i) => ({ ...a, unikey: i + 1 })))
   const [rowList] = useState<Array<any>>((new Array(15)).fill('').map((a, i) => ({ ...a, unikey: `row_${i + 1}` })))
-  const scrollRec = useRef(0)
-  const scrollOffset = useRef(0)
-  const timerRec = useRef<any>(null)
-  const [imgHeight, setImgHeight] = useState(IMG_HEIGHT)
+  const [imgHeight] = useState(IMG_HEIGHT)
   // --
   const headerWrapperRef = useRef<HTMLDivElement | null>(null)
   const headerCellImgWrapperRef = useRef<HTMLDivElement | null>(null)
   const headerCellImgWrappeRec = useRef(0)
   const headerImgRef = useRef<HTMLImageElement | null>(null)
-  const [headerWrapperHeight, setHeaderWrapperHeight] = useState(0)
   const [imgWrapperHeight, setImgWrapperHeight] = useState(0)
   const [imgRelativeTop, setImgRelativeTop] = useState(0)
   // --
@@ -124,29 +117,46 @@ export default function DiffTableDemo() {
 
   }
   const handleMoving = useCallback((vector: number, direction: MoveDirection) => {
-    // const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
-    // console.log('bodyWrapperScrolltop = ', bodyWrapperScrolltop)
-    // console.log('imgRelativeTop = ', imgRelativeTop)
-    // if(direction === 'DOWN' && bodyWrapperScrolltop === 0 && imgRelativeTop < 0 && imgRelativeTop >= -80){
-    //   let h = (headerCellImgWrapperRef.current?.clientHeight ?? 0) + 18
-    //   // h = h > headerCellImgWrappeRec.current ? headerCellImgWrappeRec.current : h
-    //   setImgWrapperHeight(h)
-    //   let t = imgRelativeTop + 2
-    //   t = t > 0 ? 0 : t
-    //   setImgRelativeTop(t)
-    // }
-  }, [bodyWrapperRef, headerCellImgWrapperRef, headerImgRef, imgRelativeTop, headerCellImgWrappeRec])
-  const handleMoveUpEnd = (distance: number, vector: number) => {
-    setImgWrapperHeight(1)
-    setImgRelativeTop(-80)
-  }
-  const handleMoveDownEnd = (distance: number, vector: number) => {
+    const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
+    console.log('bodyWrapperScrolltop = ', bodyWrapperScrolltop)
+    console.log('imgRelativeTop = ', imgRelativeTop)
+    if(direction === 'DOWN' && bodyWrapperScrolltop === 0 && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0){
+      let h = imgWrapperHeight + vector
+      h = h > headerCellImgWrappeRec.current ? headerCellImgWrappeRec.current : h
+      setImgWrapperHeight(h)
+      let t = imgRelativeTop + vector
+      t = t > 0 ? 0 : t
+      setImgRelativeTop(t)
+    } else if(direction === 'UP' && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
+      let h = imgWrapperHeight + vector
+      h = h < 2 ? 1 : h
+      setImgWrapperHeight(h)
+      let t = imgRelativeTop + vector
+      t = t < HEADER_IMG_SHRINK_RELATIVE_TOP ? HEADER_IMG_SHRINK_RELATIVE_TOP : t
+      setImgRelativeTop(t)
+    }
+  }, [bodyWrapperRef, headerCellImgWrapperRef, headerImgRef, imgWrapperHeight, imgRelativeTop, headerCellImgWrappeRec])
+
+  const handleMoveUpEnd = useCallback((distance: number, vector: number) => {
+    setImgWrapperHeight(1) // 0 = height='auto', 所以这里设置为 1 确保最小高度即可
+    setImgRelativeTop(HEADER_IMG_SHRINK_RELATIVE_TOP)
+  }, [setImgWrapperHeight, setImgRelativeTop])
+
+  const handleMoveDownEnd = useCallback((distance: number, vector: number) => {
     const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
     if(bodyWrapperScrolltop === 0){
-      setImgWrapperHeight(0)
+      setImgWrapperHeight(0) // 0 = height='auto', 这里表示让容器展开至原始高度
       setImgRelativeTop(0)
     }
-  }
+  }, [setImgWrapperHeight, setImgRelativeTop])
+
+  const handleMoveInvalidEnd = useCallback((distance: number, vector: number, direction: MoveDirection) => {
+    if(direction === 'UP') {
+      handleMoveUpEnd(distance,vector)
+    } else if (direction === 'DOWN') {
+      handleMoveDownEnd(distance,vector)
+    }
+  }, [handleMoveUpEnd, handleMoveDownEnd])
 
   const {
     moveEffectiveWrapperRef,
@@ -161,72 +171,17 @@ export default function DiffTableDemo() {
     onMoving: handleMoving,
     onMoveUpEnd: handleMoveUpEnd,
     onMoveDownEnd: handleMoveDownEnd,
-    onMoveInvalidEnd: (distance: number, vector: number, direction: MoveDirection) => {
-      if(direction === 'UP') {
-        handleMoveUpEnd(distance,vector)
-      } else if (direction === 'DOWN') {
-        handleMoveDownEnd(distance,vector)
-      }
-    }
+    onMoveInvalidEnd: handleMoveInvalidEnd
   })
 
   useEffect(() => {
-    // headerWrapperHeightRec.current = headerWrapperRef.current?.clientHeight ?? 0
     headerCellImgWrappeRec.current = headerCellImgWrapperRef.current?.clientHeight ?? 0
   }, [])
-
-  const headerShrink = useCallback((scrollTop: number, scrollOffsetVal: number) => {
-    if (scrollTop > 80 && scrollOffsetVal > 0) {
-      if ((headerCellImgWrapperRef.current?.clientHeight ?? 0) > 10) {
-        // setHeaderWrapperHeight((headerWrapperRef.current?.clientHeight ?? 0) - 1)
-        setImgWrapperHeight((headerCellImgWrapperRef.current?.clientHeight ?? 0) - 2)
-        setImgRelativeTop(imgRelativeTop - 2)
-      }
-    } else if ((headerCellImgWrapperRef.current?.clientHeight ?? 0) >= headerCellImgWrappeRec.current) {
-      setImgWrapperHeight(0)
-    } else if (scrollOffsetVal < 1) {
-      setImgWrapperHeight((headerCellImgWrapperRef.current?.clientHeight ?? 0) + 2)
-      setImgRelativeTop(imgRelativeTop + 2)
-    }
-  }, [headerWrapperRef, headerCellImgWrapperRef, headerCellImgWrapperRef, imgRelativeTop, scrollOffset])
-
-  const headerShrinkForScrollEnd = useCallback(() => {
-    const halfHeight = headerCellImgWrappeRec.current / 2
-    if ((headerCellImgWrapperRef.current?.clientHeight ?? 0) <= halfHeight) {
-      setImgWrapperHeight(1)
-      setImgRelativeTop(50)
-    } else {
-      setImgWrapperHeight(0)
-      setImgRelativeTop(0)
-    }
-
-
-  }, [headerCellImgWrappeRec, headerCellImgWrapperRef])
-
-  // const handleBodyScroll = useCallback((ev:any)=>{
-  //   // const scrollTop = ev.target.scrollTop
-
-  //   // const scrollOffsetVal = scrollTop - scrollRec.current
-  //   // scrollOffset.current = scrollOffsetVal
-  //   // headerShrink(scrollTop, scrollOffsetVal)
-
-  //   // console.log(ev.target.scrollTop)
-  //   // console.log('-------------------')
-
-  //   // if(timerRec.current){
-  //   //   clearTimeout(timerRec.current)
-  //   //   timerRec.current = null
-  //   // }
-  //   // timerRec.current = setTimeout(()=>{
-  //   //   scrollRec.current = scrollTop
-  //   //   headerShrinkForScrollEnd()
-  //   // }, 500)
-  // }, [scrollOffset, timerRec, scrollRec, headerShrink, headerShrinkForScrollEnd])
 
   const imgUrl = (new URL('@/assets/imgs/laptop.png', import.meta.url)).toString()
   return (<Wrapper>
     <TopWrapper>左右滑动切换对照卡片</TopWrapper>
-    <HeaderWrapper ref={headerWrapperRef} wrapperHeight={headerWrapperHeight}>
+    <HeaderWrapper ref={headerWrapperRef}>
       <HeaderCell style={{ borderRight: '1px solid black' }}>
         <HeaderCellTitle>超超笔记本</HeaderCellTitle>
         <HeaderCellImgWrapper ref={headerCellImgWrapperRef} wrapperDefaultHeight={IMG_HEIGHT + 20} wrapperHeight={imgWrapperHeight}><HeaderCellImg ref={headerImgRef} imgHeight={imgHeight} relativeTop={imgRelativeTop} alt="laptop" src={imgUrl} ></HeaderCellImg></HeaderCellImgWrapper>
