@@ -106,7 +106,7 @@ export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing
   }, [getMoveAreaPositionX, list.length, moveAreaPostionX, selectedIndex, setMoveArea])
 
   const handleMoving = useCallback((vector: MoveVectorOffset, direction: MoveDirection) => {
-    if (direction === 'LEFT' || direction === 'RIGHT') {
+    if (vector.x !== 0) {
       setMoveAreaPostionX(currentMoveAreaPositionX + vector.x)
     }
     onMoving && onMoving(vector, direction)
@@ -136,8 +136,8 @@ export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing
   }, [endReset, lastMoveArea, onMoveRightEnd])
 
   const { moveEffectiveWrapperRef } = useMoveActions({
-    onMoving: handleMoving,
     onMoveStart: handleMoveStart,
+    onMoving: handleMoving,
     onMoveInvalidEnd: handleMoveInvalidEnd,
     onMoveLeftEnd: handleMoveLeftEnd,
     onMoveRightEnd: handleMoveRightEnd,

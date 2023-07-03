@@ -118,8 +118,6 @@ export default function DiffTableDemo() {
   }
   const handleMoving = useCallback((vector: MoveVectorOffset, direction: MoveDirection) => {
     const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
-    console.log('bodyWrapperScrolltop = ', bodyWrapperScrolltop)
-    console.log('imgRelativeTop = ', imgRelativeTop)
     if (direction === 'DOWN' && bodyWrapperScrolltop === 0 && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
       let h = imgWrapperHeight + vector.y
       h = h > headerCellImgWrappeRec.current ? headerCellImgWrappeRec.current : h

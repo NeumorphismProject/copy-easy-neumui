@@ -13,7 +13,7 @@ function getMoveDirection(p1: Array<number>, p2: Array<number>): MoveDirection {
   // 通过 p1 和 p2 两坐标点的坐标偏移量大小实现上左下右角度方向的判断：(x2 - x1) >= (y2 - y1) 表示左右移动，反之上下移动
   // 这种方式就能简洁得实现通过跟计算角度一样的效果了
 
-  const pOffset = 0 // 控制角度偏差的偏移量，(x2 - x1) >= (y2 - y1) 表示以 45度角为界，那 (x2 - x1) + pOffset >= (y2 - y1) 就可以控制界线角度大于或小于45度
+  const pOffset = 10 // 控制角度偏差的偏移量，(x2 - x1) >= (y2 - y1) 表示以 45度角为界，那 (x2 - x1) + pOffset >= (y2 - y1) 就可以控制界线角度大于或小于45度
   const x1 = p1[0]
   const y1 = p1[1]
   const x2 = p2[0]
@@ -85,7 +85,7 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
     const moveDistanceX = Math.abs(moveVector.current.x)
     const moveDistanceY = Math.abs(moveVector.current.y)
     const moveDistance: MoveVectorOffset = { x: moveDistanceX, y: moveDistanceY }
-    if (moveDistanceX !== 0 && moveDistanceY !== 0 && moveDistanceX >= moveEffectiveMinDistance || moveDistanceY >= moveEffectiveMinDistance) {
+    if ((moveDistanceX !== 0 || moveDistanceY !== 0) && (moveDistanceX >= moveEffectiveMinDistance || moveDistanceY >= moveEffectiveMinDistance)) {
       if (moveVector.current.x < 0) {
         onMoveLeftEnd && onMoveLeftEnd(moveDistanceX, moveVector.current)
       } else if (moveVector.current.x > 0) {
@@ -105,23 +105,23 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
   const insideEffectiveWrapper = customInsideEffectiveWrapper ?? ((targetDom: EventTarget | null) => moveEffectiveWrapperRef && targetDom && moveEffectiveWrapperRef.current?.contains(targetDom as Node))
 
   useMoveEventListeners({
-    onMoveStart: (clientPosition: number[], targetDom: EventTarget | null) => {
+    onMoveStart: useCallback((clientPosition: number[], targetDom: EventTarget | null) => {
       if (insideEffectiveWrapper(targetDom)) {
         handleMoveStart(clientPosition, targetDom)
       }
-    },
-    onMoving: (clientPosition: number[], targetDom: EventTarget | null) => {
+    }, [insideEffectiveWrapper, handleMoveStart]),
+    onMoving: useCallback((clientPosition: number[], targetDom: EventTarget | null) => {
       if (insideEffectiveWrapper(targetDom)) {
         handleMoving(clientPosition, targetDom)
       } else {
         handleMoveEnd()
       }
-    },
-    onMoveEnd: (targetDom: EventTarget | null) => {
+    }, [insideEffectiveWrapper, handleMoving, handleMoveEnd]),
+    onMoveEnd: useCallback((targetDom: EventTarget | null) => {
       if (insideEffectiveWrapper(targetDom)) {
         handleMoveEnd()
       }
-    }
+    }, [insideEffectiveWrapper, handleMoveEnd])
   })
 
   return {
