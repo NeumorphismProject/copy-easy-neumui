@@ -1,6 +1,6 @@
 import type { CSSProperties, MutableRefObject } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import useMoveActions, { MoveActionsOptions, MoveDirection } from './useMoveActions'
+import useMoveActions, { MoveActionsOptions, MoveDirection, MoveVectorOffset } from './useMoveActions'
 
 let currentMoveAreaPositionX = 0
 
@@ -8,7 +8,7 @@ function getDefaultMoveTransition(durationMs: number) {
   return `left ${durationMs}ms linear`
 }
 
-export interface SingleLoopSwipperOptions extends Pick<MoveActionsOptions, 'onMoveStart'|'onMoving'|'onMoveLeftEnd'|'onMoveRightEnd'|'onMoveUpEnd'|'onMoveDownEnd'|'onMoveInvalidEnd'> {
+export interface SingleLoopSwipperOptions extends Pick<MoveActionsOptions, 'onMoveStart' | 'onMoving' | 'onMoveLeftEnd' | 'onMoveRightEnd' | 'onMoveUpEnd' | 'onMoveDownEnd' | 'onMoveInvalidEnd'> {
   list: Array<any>
   defaultMoveDurationMs?: number
   itemSpacing?: number
@@ -105,9 +105,9 @@ export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing
     onMoveStart && onMoveStart(position)
   }, [getMoveAreaPositionX, list.length, moveAreaPostionX, selectedIndex, setMoveArea])
 
-  const handleMoving = useCallback((vector: number, direction: MoveDirection) => {
+  const handleMoving = useCallback((vector: MoveVectorOffset, direction: MoveDirection) => {
     if (direction === 'LEFT' || direction === 'RIGHT') {
-      setMoveAreaPostionX(currentMoveAreaPositionX + vector)
+      setMoveAreaPostionX(currentMoveAreaPositionX + vector.x)
     }
     onMoving && onMoving(vector, direction)
   }, [setMoveAreaPostionX, onMoving])
@@ -117,19 +117,19 @@ export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing
     setMoveAreaTransition(getDefaultMoveTransition(defaultMoveDurationMs))
   }, [defaultMoveDurationMs])
 
-  const handleMoveInvalidEnd = useCallback((distance: number, vector: number, direction: MoveDirection) => {
+  const handleMoveInvalidEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => {
     endReset()
     refreshMoveArea()
     onMoveInvalidEnd && onMoveInvalidEnd(distance, vector, direction)
   }, [endReset, refreshMoveArea, onMoveInvalidEnd])
 
-  const handleMoveLeftEnd = useCallback((distance: number, vector: number) => {
+  const handleMoveLeftEnd = useCallback((distance: number, vector: MoveVectorOffset) => {
     endReset()
     nextMoveArea()
     onMoveLeftEnd && onMoveLeftEnd(distance, vector)
   }, [endReset, nextMoveArea, onMoveLeftEnd])
 
-  const handleMoveRightEnd = useCallback((distance: number, vector: number) => {
+  const handleMoveRightEnd = useCallback((distance: number, vector: MoveVectorOffset) => {
     endReset()
     lastMoveArea()
     onMoveRightEnd && onMoveRightEnd(distance, vector)

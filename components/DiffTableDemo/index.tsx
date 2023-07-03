@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import MoveArea from './MoveArea'
 import useMove from './MoveArea/useMove'
-import { MoveDirection } from './MoveArea/useMoveActions'
+import { MoveDirection, MoveVectorOffset } from './MoveArea/useMoveActions'
 
 const Wrapper = styled.div({
   backgroundColor: 'gray',
@@ -56,7 +56,7 @@ type HeaderCellImgWrapperProps = {
 const HeaderCellImgWrapper = styled('div')<HeaderCellImgWrapperProps>(({ wrapperDefaultHeight, wrapperHeight }) => ({
   transition: 'all 0.5s ease-out',
   overflow: 'hidden',
-  height: !wrapperHeight ? (!wrapperDefaultHeight ? 'auto' :`${wrapperDefaultHeight}px`) : `${wrapperHeight}px`,
+  height: !wrapperHeight ? (!wrapperDefaultHeight ? 'auto' : `${wrapperDefaultHeight}px`) : `${wrapperHeight}px`,
 }))
 
 type HeaderCellImgProps = {
@@ -116,45 +116,45 @@ export default function DiffTableDemo() {
   const handleMoveStart = (position: Array<number>) => {
 
   }
-  const handleMoving = useCallback((vector: number, direction: MoveDirection) => {
+  const handleMoving = useCallback((vector: MoveVectorOffset, direction: MoveDirection) => {
     const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
     console.log('bodyWrapperScrolltop = ', bodyWrapperScrolltop)
     console.log('imgRelativeTop = ', imgRelativeTop)
-    if(direction === 'DOWN' && bodyWrapperScrolltop === 0 && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0){
-      let h = imgWrapperHeight + vector
+    if (direction === 'DOWN' && bodyWrapperScrolltop === 0 && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
+      let h = imgWrapperHeight + vector.y
       h = h > headerCellImgWrappeRec.current ? headerCellImgWrappeRec.current : h
       setImgWrapperHeight(h)
-      let t = imgRelativeTop + vector
+      let t = imgRelativeTop + vector.y
       t = t > 0 ? 0 : t
       setImgRelativeTop(t)
-    } else if(direction === 'UP' && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
-      let h = imgWrapperHeight + vector
+    } else if (direction === 'UP' && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
+      let h = imgWrapperHeight + vector.y
       h = h < 2 ? 1 : h
       setImgWrapperHeight(h)
-      let t = imgRelativeTop + vector
+      let t = imgRelativeTop + vector.y
       t = t < HEADER_IMG_SHRINK_RELATIVE_TOP ? HEADER_IMG_SHRINK_RELATIVE_TOP : t
       setImgRelativeTop(t)
     }
   }, [bodyWrapperRef, headerCellImgWrapperRef, headerImgRef, imgWrapperHeight, imgRelativeTop, headerCellImgWrappeRec])
 
-  const handleMoveUpEnd = useCallback((distance: number, vector: number) => {
+  const handleMoveUpEnd = useCallback((distance: number, vector: MoveVectorOffset) => {
     setImgWrapperHeight(1) // 0 = height='auto', 所以这里设置为 1 确保最小高度即可
     setImgRelativeTop(HEADER_IMG_SHRINK_RELATIVE_TOP)
   }, [setImgWrapperHeight, setImgRelativeTop])
 
-  const handleMoveDownEnd = useCallback((distance: number, vector: number) => {
+  const handleMoveDownEnd = useCallback((distance: number, vector: MoveVectorOffset) => {
     const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
-    if(bodyWrapperScrolltop === 0){
+    if (bodyWrapperScrolltop === 0) {
       setImgWrapperHeight(0) // 0 = height='auto', 这里表示让容器展开至原始高度
       setImgRelativeTop(0)
     }
   }, [setImgWrapperHeight, setImgRelativeTop])
 
-  const handleMoveInvalidEnd = useCallback((distance: number, vector: number, direction: MoveDirection) => {
-    if(direction === 'UP') {
-      handleMoveUpEnd(distance,vector)
+  const handleMoveInvalidEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => {
+    if (direction === 'UP') {
+      handleMoveUpEnd(distance.y, vector)
     } else if (direction === 'DOWN') {
-      handleMoveDownEnd(distance,vector)
+      handleMoveDownEnd(distance.y, vector)
     }
   }, [handleMoveUpEnd, handleMoveDownEnd])
 

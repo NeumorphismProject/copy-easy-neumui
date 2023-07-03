@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react'
 import useMoveEventListeners from './useMoveEventListeners'
 
-export type MoveDirection = 'UP' | 'RIGHT' | 'DOWN' | 'LEFT'
-type MoveType = 'horizontal' | 'vertical'
+export type MoveDirection = 'UP' | 'RIGHT' | 'DOWN' | 'LEFT' | 'NONE'
+export type MoveVectorOffset = { x: number, y: number }
 /**
  * 获取当前鼠标或手指的移动方向
  * @param p1 鼠标或手指起始位置数组， p1[0]=x, p1[1]=y
@@ -22,14 +22,14 @@ function getMoveDirection(p1: Array<number>, p2: Array<number>): MoveDirection {
   const yV = y2 - y1
   const xL = Math.abs(xV + pOffset) // xL yL 表示 p1点 和 p2 点之间的 x y 坐标距离
   const yL = Math.abs(yV)
-  let direction: MoveDirection
-  if(xL <= yL && yV <= 0) {
+  let direction: MoveDirection = 'NONE'
+  if (xL <= yL && yV < 0) {
     direction = 'UP'
-  } else if (xL <= yL &&  yV > 0) {
+  } else if (xL <= yL && yV > 0) {
     direction = 'DOWN'
-  } else if (xL > yL && xV >= 0) {
+  } else if (xL > yL && xV > 0) {
     direction = 'RIGHT'
-  } else {
+  } else if (xL > yL && xV < 0) {
     direction = 'LEFT'
   }
 
@@ -39,12 +39,12 @@ function getMoveDirection(p1: Array<number>, p2: Array<number>): MoveDirection {
 export interface MoveActionsOptions {
   moveEffectiveMinDistance?: number
   onMoveStart?: (position: Array<number>) => void
-  onMoving?: (vector: number, direction: MoveDirection) => void
-  onMoveInvalidEnd?: (distance: number, vector: number, direction: MoveDirection) => void
-  onMoveLeftEnd?: (distance: number, vector: number) => void
-  onMoveRightEnd?: (distance: number, vector: number) => void
-  onMoveUpEnd?: (distance: number, vector: number) => void
-  onMoveDownEnd?: (distance: number, vector: number) => void
+  onMoving?: (vector: MoveVectorOffset, direction: MoveDirection) => void
+  onMoveInvalidEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => void
+  onMoveLeftEnd?: (distance: number, vector: MoveVectorOffset) => void
+  onMoveRightEnd?: (distance: number, vector: MoveVectorOffset) => void
+  onMoveUpEnd?: (distance: number, vector: MoveVectorOffset) => void
+  onMoveDownEnd?: (distance: number, vector: MoveVectorOffset) => void
   customInsideEffectiveWrapper?: (targetDom: EventTarget | null) => boolean
 }
 
@@ -57,12 +57,12 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
 
   const moveEffectiveWrapperRef = useRef<HTMLDivElement | null>(null)
   const moveStartPosition = useRef([0, 0])
-  const moveVector = useRef(0)
+  const moveVector = useRef<MoveVectorOffset>({ x: 0, y: 0 })
   const moveDirection = useRef<MoveDirection>('LEFT')
 
   const reset = () => {
     moveStartPosition.current = [0, 0]
-    moveVector.current = 0
+    moveVector.current = { x: 0, y: 0 }
   }
 
   const handleMoveStart = useCallback((clientPosition: Array<number>, _targetDom: EventTarget | null) => {
@@ -73,23 +73,27 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
   const handleMoving = useCallback((clientPosition: Array<number>, _targetDom: EventTarget | null) => {
     const direction = getMoveDirection(moveStartPosition.current, clientPosition)
     moveDirection.current = direction
-    const type: MoveType = (direction === 'LEFT' || direction === 'RIGHT') ? 'horizontal' : 'vertical'
-    const vector = type === 'horizontal' ? (clientPosition[0] - moveStartPosition.current[0]) : (clientPosition[1] - moveStartPosition.current[1])
-    moveVector.current = vector
-    onMoving && onMoving(vector, direction)
+    const vectorOffset: MoveVectorOffset = {
+      x: clientPosition[0] - moveStartPosition.current[0],
+      y: clientPosition[1] - moveStartPosition.current[1]
+    }
+    moveVector.current = vectorOffset
+    onMoving && onMoving(vectorOffset, direction)
   }, [moveDirection, moveStartPosition, onMoving])
 
   const handleMoveEnd = useCallback(() => {
-    const moveDistance = Math.abs(moveVector.current)
-    if (moveDistance >= moveEffectiveMinDistance) {
-      if (moveDirection.current === 'LEFT') {
-        onMoveLeftEnd && onMoveLeftEnd(moveDistance, moveVector.current)
-      } else if (moveDirection.current === 'RIGHT') {
-        onMoveRightEnd && onMoveRightEnd(moveDistance, moveVector.current)
-      } else if (moveDirection.current === 'UP') {
-        onMoveUpEnd && onMoveUpEnd(moveDistance, moveVector.current)
-      } else {
-        onMoveDownEnd && onMoveDownEnd(moveDistance, moveVector.current)
+    const moveDistanceX = Math.abs(moveVector.current.x)
+    const moveDistanceY = Math.abs(moveVector.current.y)
+    const moveDistance: MoveVectorOffset = { x: moveDistanceX, y: moveDistanceY }
+    if (moveDistanceX !== 0 && moveDistanceY !== 0 && moveDistanceX >= moveEffectiveMinDistance || moveDistanceY >= moveEffectiveMinDistance) {
+      if (moveVector.current.x < 0) {
+        onMoveLeftEnd && onMoveLeftEnd(moveDistanceX, moveVector.current)
+      } else if (moveVector.current.x > 0) {
+        onMoveRightEnd && onMoveRightEnd(moveDistanceX, moveVector.current)
+      } else if (moveVector.current.y > 0) {
+        onMoveUpEnd && onMoveUpEnd(moveDistanceY, moveVector.current)
+      } else if (moveVector.current.y < 0) {
+        onMoveDownEnd && onMoveDownEnd(moveDistanceY, moveVector.current)
       }
     } else {
       onMoveInvalidEnd && onMoveInvalidEnd(moveDistance, moveVector.current, moveDirection.current)
