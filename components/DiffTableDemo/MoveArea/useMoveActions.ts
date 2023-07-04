@@ -90,7 +90,8 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
       onMoveLeftEnd && onMoveLeftEnd(moveDistance, moveVector.current)
     } else if (moveVector.current.x > 0) {
       onMoveRightEnd && onMoveRightEnd(moveDistance, moveVector.current)
-    } else if (moveVector.current.y < 0) {
+    }
+    if (moveVector.current.y < 0) {
       onMoveUpEnd && onMoveUpEnd(moveDistance, moveVector.current)
     } else if (moveVector.current.y > 0) {
       onMoveDownEnd && onMoveDownEnd(moveDistance, moveVector.current)
