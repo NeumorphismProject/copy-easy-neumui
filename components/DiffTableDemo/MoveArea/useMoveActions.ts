@@ -13,7 +13,7 @@ function getMoveDirection(p1: Array<number>, p2: Array<number>): MoveDirection {
   // 通过 p1 和 p2 两坐标点的坐标偏移量大小实现上左下右角度方向的判断：(x2 - x1) >= (y2 - y1) 表示左右移动，反之上下移动
   // 这种方式就能简洁得实现通过跟计算角度一样的效果了
 
-  const pOffset = 10 // 控制角度偏差的偏移量，(x2 - x1) >= (y2 - y1) 表示以 45度角为界，那 (x2 - x1) + pOffset >= (y2 - y1) 就可以控制界线角度大于或小于45度
+  const pOffset = 0 // 控制角度偏差的偏移量，(x2 - x1) >= (y2 - y1) 表示以 45度角为界，那 (x2 - x1) + pOffset >= (y2 - y1) 就可以控制界线角度大于或小于45度
   const x1 = p1[0]
   const y1 = p1[1]
   const x2 = p2[0]
@@ -44,6 +44,7 @@ export interface MoveActionsOptions {
   onMoveRightEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset) => void
   onMoveUpEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset) => void
   onMoveDownEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset) => void
+  onMoveEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset) => void
   customInsideEffectiveWrapper?: (targetDom: EventTarget | null) => boolean
 }
 
@@ -51,16 +52,18 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
   onMoveStart, onMoving,
   onMoveLeftEnd, onMoveRightEnd,
   onMoveUpEnd, onMoveDownEnd,
+  onMoveEnd,
   customInsideEffectiveWrapper }: MoveActionsOptions) {
 
   const moveEffectiveWrapperRef = useRef<HTMLDivElement | null>(null)
   const moveStartPosition = useRef([0, 0])
   const moveVector = useRef<MoveVectorOffset>({ x: 0, y: 0 })
-  const moveDirection = useRef<MoveDirection>('LEFT')
+  const moveDirection = useRef<MoveDirection | null>(null)
 
   const reset = () => {
     moveStartPosition.current = [0, 0]
     moveVector.current = { x: 0, y: 0 }
+    moveDirection.current = null
   }
 
   const handleMoveStart = useCallback((clientPosition: Array<number>, _targetDom: EventTarget | null) => {
@@ -80,7 +83,6 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
   }, [moveDirection, moveStartPosition, onMoving])
 
   const handleMoveEnd = useCallback(() => {
-    console.log('moveDirection = ', moveDirection)
     const moveDistanceX = Math.abs(moveVector.current.x)
     const moveDistanceY = Math.abs(moveVector.current.y)
     const moveDistance: MoveVectorOffset = { x: moveDistanceX, y: moveDistanceY }
@@ -95,7 +97,8 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
     }
 
     reset()
-  }, [moveDirection, moveEffectiveMinDistance, onMoveDownEnd, onMoveLeftEnd, onMoveRightEnd, onMoveUpEnd])
+    onMoveEnd && onMoveEnd(moveDistance, moveVector.current)
+  }, [moveDirection, moveEffectiveMinDistance, onMoveDownEnd, onMoveLeftEnd, onMoveRightEnd, onMoveUpEnd, onMoveEnd])
 
   const insideEffectiveWrapper = customInsideEffectiveWrapper ?? ((targetDom: EventTarget | null) => moveEffectiveWrapperRef && targetDom && moveEffectiveWrapperRef.current?.contains(targetDom as Node))
 

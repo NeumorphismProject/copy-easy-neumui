@@ -4,6 +4,10 @@ import MoveArea from './MoveArea'
 import useMove from './MoveArea/useMove'
 import { MoveDirection, MoveVectorOffset } from './MoveArea/useMoveActions'
 
+const IMG_HEIGHT = 60
+const HEADER_IMG_SHRINK_RELATIVE_TOP = -80
+const IMG_WRAPPER_HIDDEN_HEIGHT = 1
+
 const Wrapper = styled.div({
   backgroundColor: 'gray',
   width: '100%',
@@ -40,11 +44,6 @@ const HeaderCell = styled(HeaderBaseCell)({
   padding: '8px'
 })
 
-const HeaderDividingLine = styled.div({
-  width: '1px',
-  backgroundColor: 'black'
-})
-
 const HeaderCellTitle = styled.h2({
   fontSize: '16px'
 })
@@ -56,7 +55,7 @@ type HeaderCellImgWrapperProps = {
 const HeaderCellImgWrapper = styled('div')<HeaderCellImgWrapperProps>(({ wrapperDefaultHeight, wrapperHeight }) => ({
   transition: 'all 0.5s ease-out',
   overflow: 'hidden',
-  height: !wrapperHeight ? (!wrapperDefaultHeight ? 'auto' : `${wrapperDefaultHeight}px`) : `${wrapperHeight}px`,
+  height: !wrapperHeight ? (!wrapperDefaultHeight ? 'auto' : `${wrapperDefaultHeight}px`) : (wrapperHeight === IMG_WRAPPER_HIDDEN_HEIGHT ? 0 : `${wrapperHeight}px`),
 }))
 
 type HeaderCellImgProps = {
@@ -86,14 +85,14 @@ const MoveAreaWrapper = styled.div({
 
 // --------
 
-const BodyWrapper = styled.div({
+type BodyWrapperProps = {
+  scrollYEnabled: boolean
+}
+const BodyWrapper = styled('div')<BodyWrapperProps>(({scrollYEnabled})=>({
   flex: 1,
-  overflowY: 'auto',
+  overflowY: scrollYEnabled ? 'auto' : 'hidden',
   '::-webkit-scrollbar': { width: '0 !important' }
-})
-
-const IMG_HEIGHT = 60
-const HEADER_IMG_SHRINK_RELATIVE_TOP = -80
+}))
 
 export default function DiffTableDemo() {
   const [dataList] = useState<Array<any>>((new Array(5)).fill('').map((a, i) => ({ ...a, unikey: i + 1 })))
@@ -108,6 +107,8 @@ export default function DiffTableDemo() {
   const [imgRelativeTop, setImgRelativeTop] = useState(0)
   // --
   const bodyWrapperRef = useRef<HTMLDivElement | null>(null)
+  const curBodyWrapperScrollTopRec = useRef(0)
+  const bodyWrapperScrollEnabled = useRef(true)
 
   const insideEffectiveWrapper = (targetDom: EventTarget | null) => {
     return true
@@ -116,16 +117,25 @@ export default function DiffTableDemo() {
   const handleMoveStart = (position: Array<number>) => {
 
   }
-  const handleMoving = useCallback((vector: MoveVectorOffset, direction: MoveDirection) => {
+
+  const handleBeforeMovingValication = useCallback(() => {
+    return true //(bodyWrapperRef.current?.scrollTop ?? 0) - curBodyWrapperScrollTopRec.current !== 0
+  }, [bodyWrapperRef, curBodyWrapperScrollTopRec])
+
+  const handleMoving = useCallback((vector: MoveVectorOffset, direction: MoveDirection, firstMoveDirection: MoveDirection) => {
+    if(['LEFT', 'RIGHT'].includes(firstMoveDirection)) {
+      bodyWrapperScrollEnabled.current = false
+    }
     const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
-    if (direction === 'DOWN' && bodyWrapperScrolltop === 0 && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
+    const moveEnabled = ['UP', 'DOWN'].includes(firstMoveDirection)
+    if (moveEnabled && direction === 'DOWN' && bodyWrapperScrolltop === 0 && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
       let h = imgWrapperHeight + vector.y
       h = h > headerCellImgWrappeRec.current ? headerCellImgWrappeRec.current : h
       setImgWrapperHeight(h)
       let t = imgRelativeTop + vector.y
       t = t > 0 ? 0 : t
       setImgRelativeTop(t)
-    } else if (direction === 'UP' && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
+    } else if (moveEnabled && direction === 'UP' && imgRelativeTop >= HEADER_IMG_SHRINK_RELATIVE_TOP && imgRelativeTop <= 0) {
       let h = imgWrapperHeight + vector.y
       h = h < 2 ? 1 : h
       setImgWrapperHeight(h)
@@ -133,30 +143,37 @@ export default function DiffTableDemo() {
       t = t < HEADER_IMG_SHRINK_RELATIVE_TOP ? HEADER_IMG_SHRINK_RELATIVE_TOP : t
       setImgRelativeTop(t)
     }
-  }, [bodyWrapperRef, headerCellImgWrapperRef, headerImgRef, imgWrapperHeight, imgRelativeTop, headerCellImgWrappeRec])
+  }, [bodyWrapperRef, headerCellImgWrapperRef, headerImgRef, imgWrapperHeight, imgRelativeTop, headerCellImgWrappeRec, bodyWrapperScrollEnabled])
 
-  const handleMoveUpEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
-    console.log('handleMove UP End')
-    setImgWrapperHeight(1) // 0 = height='auto', 所以这里设置为 1 确保最小高度即可
-    setImgRelativeTop(HEADER_IMG_SHRINK_RELATIVE_TOP)
+  const handleMoveUpEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, firstMoveDirection: MoveDirection) => {
+    const moveEnabled = ['UP', 'DOWN'].includes(firstMoveDirection)
+    if (moveEnabled) {
+      setImgWrapperHeight(IMG_WRAPPER_HIDDEN_HEIGHT) // 0 = height='auto', 所以这里设置为 1 确保最小高度即可
+      setImgRelativeTop(HEADER_IMG_SHRINK_RELATIVE_TOP)
+    }
   }, [setImgWrapperHeight, setImgRelativeTop])
 
-  const handleMoveDownEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
-    console.log('handleMove DOWN End')
+  const handleMoveDownEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, firstMoveDirection: MoveDirection) => {
+    const moveEnabled = ['UP', 'DOWN'].includes(firstMoveDirection)
     const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
-    if (bodyWrapperScrolltop === 0) {
+    if (moveEnabled && bodyWrapperScrolltop === 0) {
       setImgWrapperHeight(0) // 0 = height='auto', 这里表示让容器展开至原始高度
       setImgRelativeTop(0)
     }
   }, [setImgWrapperHeight, setImgRelativeTop])
 
-  const handleMoveInvalidEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => {
+  const handleMoveInvalidEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection, firstMoveDirection: MoveDirection) => {
     if (direction === 'UP') {
-      handleMoveUpEnd(distance, vector)
+      handleMoveUpEnd(distance, vector, firstMoveDirection)
     } else if (direction === 'DOWN') {
-      handleMoveDownEnd(distance, vector)
+      handleMoveDownEnd(distance, vector, firstMoveDirection)
     }
   }, [handleMoveUpEnd, handleMoveDownEnd])
+
+  const handleMoveEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
+    // curBodyWrapperScrollTopRec.current = bodyWrapperRef.current?.scrollTop ?? 0
+    bodyWrapperScrollEnabled.current = true
+  }, [curBodyWrapperScrollTopRec, bodyWrapperRef, bodyWrapperScrollEnabled])
 
   const {
     moveEffectiveWrapperRef,
@@ -168,9 +185,11 @@ export default function DiffTableDemo() {
     list: dataList,
     customInsideEffectiveWrapper: insideEffectiveWrapper,
     onMoveStart: handleMoveStart,
+    onBeforeMovingValication: handleBeforeMovingValication,
     onMoving: handleMoving,
     onMoveUpEnd: handleMoveUpEnd,
     onMoveDownEnd: handleMoveDownEnd,
+    onMoveEnd: handleMoveEnd,
     onMoveInvalidEnd: handleMoveInvalidEnd
   })
 
@@ -199,7 +218,7 @@ export default function DiffTableDemo() {
       </HeaderBaseCell>
     </HeaderWrapper>
 
-    <BodyWrapper ref={bodyWrapperRef}>
+    <BodyWrapper ref={bodyWrapperRef} scrollYEnabled={bodyWrapperScrollEnabled.current}>
       {rowList.map(r => (<HeaderBaseWrapper key={r.unikey}>
         <HeaderCell style={{ borderRight: '1px solid black' }}>
           <HeaderCellTitle>超超笔记本</HeaderCellTitle>

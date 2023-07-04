@@ -9,18 +9,28 @@ function getDefaultMoveTransition(durationMs: number) {
   return `left ${durationMs}ms linear`
 }
 
-export interface SingleLoopSwipperOptions extends Pick<MoveActionsOptions, 'onMoveStart' | 'onMoving' | 'onMoveLeftEnd' | 'onMoveRightEnd' | 'onMoveUpEnd' | 'onMoveDownEnd'> {
+export interface SingleLoopSwipperOptions extends Pick<MoveActionsOptions, 'onMoveStart'> {
   list: Array<any>
   defaultMoveDurationMs?: number
   itemSpacing?: number
   customInsideEffectiveWrapper?: (targetDom: EventTarget | null) => boolean
-  onMoveInvalidEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => void
+  onMoveInvalidEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection, firstMoveDirection: MoveDirection) => void
+  onBeforeMovingValication?: () => boolean
+  onMoving?: (vector: MoveVectorOffset, direction: MoveDirection, firstMoveDirection: MoveDirection) => void
+  onMoveLeftEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, firstMoveDirection: MoveDirection) => void
+  onMoveRightEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, firstMoveDirection: MoveDirection) => void
+  onMoveUpEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, firstMoveDirection: MoveDirection) => void
+  onMoveDownEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, firstMoveDirection: MoveDirection) => void
+  onMoveEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, firstMoveDirection: MoveDirection) => void
 }
 
 export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing = 0, customInsideEffectiveWrapper,
-  onMoveStart, onMoving,
+  onMoveStart,
+  onBeforeMovingValication,
+  onMoving,
   onMoveLeftEnd, onMoveRightEnd,
   onMoveUpEnd, onMoveDownEnd,
+  onMoveEnd,
   onMoveInvalidEnd }: SingleLoopSwipperOptions) {
   const timerRec = useRef<any>(null)
   const moveAreaRef: MutableRefObject<HTMLDivElement | null> = useRef<HTMLDivElement | null>(null)
@@ -28,6 +38,8 @@ export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing
   const [moveAreaTransition, setMoveAreaTransition] = useState<string>('none')
   const [moveAreaPostionX, setMoveAreaPostionX] = useState<number>(0)
   const [magicList, setMagicList] = useState<Array<any>>([])
+  const movingEnabled = useRef<boolean | null>(null)
+  const moveDirection = useRef<MoveDirection | null>(null)
 
   const moveAreaStyle = useMemo<CSSProperties>(() => ({
     transition: moveAreaTransition,
@@ -108,43 +120,56 @@ export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing
   }, [getMoveAreaPositionX, list.length, moveAreaPostionX, selectedIndex, setMoveArea])
 
   const handleMoving = useCallback((vector: MoveVectorOffset, direction: MoveDirection) => {
-    if (vector.x !== 0) {
-      setMoveAreaPostionX(currentMoveAreaPositionX + vector.x)
+    const moveEnabled = !onBeforeMovingValication ? false : onBeforeMovingValication()
+    let firstMoveDirection = moveDirection.current
+    if (firstMoveDirection === null) {
+      firstMoveDirection = direction
+      moveDirection.current = direction
+    } else {
+      movingEnabled.current = moveEnabled
+      if (['LEFT', 'RIGHT'].includes(firstMoveDirection) && moveEnabled && vector.x !== 0) {
+        setMoveAreaPostionX(currentMoveAreaPositionX + vector.x)
+      }
+      onMoving && onMoving(vector, direction, firstMoveDirection)
     }
-    onMoving && onMoving(vector, direction)
-  }, [setMoveAreaPostionX, onMoving])
+    // const moveEnabledDirections = ['LEFT','RIGHT'].includes(firstMoveDirection) ? ['LEFT','RIGHT'] : ['UP','DOWN']
+
+
+  }, [setMoveAreaPostionX, onMoving, onBeforeMovingValication, movingEnabled, moveDirection])
 
   const endReset = useCallback(() => {
     currentMoveAreaPositionX = 0
     setMoveAreaTransition(getDefaultMoveTransition(defaultMoveDurationMs))
-  }, [defaultMoveDurationMs])
+    movingEnabled.current = null
+    moveDirection.current = null
+  }, [defaultMoveDurationMs, setMoveAreaTransition, getDefaultMoveTransition, movingEnabled, moveDirection])
 
-  const handleMoveInvalidEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => {
-    endReset()
+  const handleMoveInvalidEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection, firstMoveDirection: MoveDirection) => {
     refreshMoveArea()
-    onMoveInvalidEnd && onMoveInvalidEnd(distance, vector, direction)
+    onMoveInvalidEnd && onMoveInvalidEnd(distance, vector, direction, firstMoveDirection)
   }, [endReset, refreshMoveArea, onMoveInvalidEnd])
 
   const handleMoveLeftEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
-    if(distance.x >= moveEffectiveMinDistance) {
-      endReset()
-      nextMoveArea()
-      onMoveLeftEnd && onMoveLeftEnd(distance, vector)
-    } else {
-      handleMoveInvalidEnd(distance, vector, 'LEFT')
+    if (['LEFT', 'RIGHT'].includes(moveDirection.current!) && movingEnabled.current) {
+      if (distance.x >= moveEffectiveMinDistance) {
+        nextMoveArea()
+        onMoveLeftEnd && onMoveLeftEnd(distance, vector, moveDirection.current!)
+      } else {
+        handleMoveInvalidEnd(distance, vector, 'LEFT', moveDirection.current!)
+      }
     }
-
-  }, [endReset, nextMoveArea, onMoveLeftEnd])
+  }, [endReset, nextMoveArea, onMoveLeftEnd, movingEnabled, moveDirection])
 
   const handleMoveRightEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
-    if(distance.x >= moveEffectiveMinDistance) {
-      endReset()
-      lastMoveArea()
-      onMoveRightEnd && onMoveRightEnd(distance, vector)
-    } else {
-      handleMoveInvalidEnd(distance, vector, 'RIGHT')
+    if (['LEFT', 'RIGHT'].includes(moveDirection.current!) && movingEnabled.current) {
+      if (distance.x >= moveEffectiveMinDistance) {
+        lastMoveArea()
+        onMoveRightEnd && onMoveRightEnd(distance, vector, moveDirection.current!)
+      } else {
+        handleMoveInvalidEnd(distance, vector, 'RIGHT', moveDirection.current!)
+      }
     }
-  }, [endReset, lastMoveArea, onMoveRightEnd])
+  }, [endReset, lastMoveArea, onMoveRightEnd, movingEnabled])
 
   const { moveEffectiveWrapperRef } = useMoveActions({
     moveEffectiveMinDistance,
@@ -152,8 +177,16 @@ export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing
     onMoving: handleMoving,
     onMoveLeftEnd: handleMoveLeftEnd,
     onMoveRightEnd: handleMoveRightEnd,
-    onMoveUpEnd,
-    onMoveDownEnd,
+    onMoveUpEnd:(distance: MoveVectorOffset, vector: MoveVectorOffset)=>{
+      onMoveUpEnd && onMoveUpEnd(distance, vector, moveDirection.current!)
+    },
+    onMoveDownEnd:(distance: MoveVectorOffset, vector: MoveVectorOffset)=>{
+      onMoveDownEnd && onMoveDownEnd(distance, vector, moveDirection.current!)
+    },
+    onMoveEnd: (distance: MoveVectorOffset, vector: MoveVectorOffset) => {
+      endReset()
+      onMoveEnd && onMoveEnd(distance, vector, moveDirection.current!)
+    },
     customInsideEffectiveWrapper
   })
 
