@@ -40,17 +40,15 @@ export interface MoveActionsOptions {
   moveEffectiveMinDistance?: number
   onMoveStart?: (position: Array<number>) => void
   onMoving?: (vector: MoveVectorOffset, direction: MoveDirection) => void
-  onMoveInvalidEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => void
-  onMoveLeftEnd?: (distance: number, vector: MoveVectorOffset) => void
-  onMoveRightEnd?: (distance: number, vector: MoveVectorOffset) => void
-  onMoveUpEnd?: (distance: number, vector: MoveVectorOffset) => void
-  onMoveDownEnd?: (distance: number, vector: MoveVectorOffset) => void
+  onMoveLeftEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset) => void
+  onMoveRightEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset) => void
+  onMoveUpEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset) => void
+  onMoveDownEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset) => void
   customInsideEffectiveWrapper?: (targetDom: EventTarget | null) => boolean
 }
 
 export default function useMoveActions({ moveEffectiveMinDistance = 80,
   onMoveStart, onMoving,
-  onMoveInvalidEnd,
   onMoveLeftEnd, onMoveRightEnd,
   onMoveUpEnd, onMoveDownEnd,
   customInsideEffectiveWrapper }: MoveActionsOptions) {
@@ -68,7 +66,7 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
   const handleMoveStart = useCallback((clientPosition: Array<number>, _targetDom: EventTarget | null) => {
     moveStartPosition.current = clientPosition
     onMoveStart && onMoveStart(clientPosition)
-  }, [onMoveStart])
+  }, [onMoveStart, moveStartPosition])
 
   const handleMoving = useCallback((clientPosition: Array<number>, _targetDom: EventTarget | null) => {
     const direction = getMoveDirection(moveStartPosition.current, clientPosition)
@@ -82,25 +80,22 @@ export default function useMoveActions({ moveEffectiveMinDistance = 80,
   }, [moveDirection, moveStartPosition, onMoving])
 
   const handleMoveEnd = useCallback(() => {
+    console.log('moveDirection = ', moveDirection)
     const moveDistanceX = Math.abs(moveVector.current.x)
     const moveDistanceY = Math.abs(moveVector.current.y)
     const moveDistance: MoveVectorOffset = { x: moveDistanceX, y: moveDistanceY }
-    if ((moveDistanceX !== 0 || moveDistanceY !== 0) && (moveDistanceX >= moveEffectiveMinDistance || moveDistanceY >= moveEffectiveMinDistance)) {
-      if (moveVector.current.x < 0) {
-        onMoveLeftEnd && onMoveLeftEnd(moveDistanceX, moveVector.current)
-      } else if (moveVector.current.x > 0) {
-        onMoveRightEnd && onMoveRightEnd(moveDistanceX, moveVector.current)
-      } else if (moveVector.current.y > 0) {
-        onMoveUpEnd && onMoveUpEnd(moveDistanceY, moveVector.current)
-      } else if (moveVector.current.y < 0) {
-        onMoveDownEnd && onMoveDownEnd(moveDistanceY, moveVector.current)
-      }
-    } else {
-      onMoveInvalidEnd && onMoveInvalidEnd(moveDistance, moveVector.current, moveDirection.current)
+    if (moveVector.current.x < 0) {
+      onMoveLeftEnd && onMoveLeftEnd(moveDistance, moveVector.current)
+    } else if (moveVector.current.x > 0) {
+      onMoveRightEnd && onMoveRightEnd(moveDistance, moveVector.current)
+    } else if (moveVector.current.y < 0) {
+      onMoveUpEnd && onMoveUpEnd(moveDistance, moveVector.current)
+    } else if (moveVector.current.y > 0) {
+      onMoveDownEnd && onMoveDownEnd(moveDistance, moveVector.current)
     }
 
     reset()
-  }, [moveDirection, moveEffectiveMinDistance, onMoveDownEnd, onMoveInvalidEnd, onMoveLeftEnd, onMoveRightEnd, onMoveUpEnd])
+  }, [moveDirection, moveEffectiveMinDistance, onMoveDownEnd, onMoveLeftEnd, onMoveRightEnd, onMoveUpEnd])
 
   const insideEffectiveWrapper = customInsideEffectiveWrapper ?? ((targetDom: EventTarget | null) => moveEffectiveWrapperRef && targetDom && moveEffectiveWrapperRef.current?.contains(targetDom as Node))
 

@@ -135,12 +135,14 @@ export default function DiffTableDemo() {
     }
   }, [bodyWrapperRef, headerCellImgWrapperRef, headerImgRef, imgWrapperHeight, imgRelativeTop, headerCellImgWrappeRec])
 
-  const handleMoveUpEnd = useCallback((distance: number, vector: MoveVectorOffset) => {
+  const handleMoveUpEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
+    console.log('handleMove UP End')
     setImgWrapperHeight(1) // 0 = height='auto', 所以这里设置为 1 确保最小高度即可
     setImgRelativeTop(HEADER_IMG_SHRINK_RELATIVE_TOP)
   }, [setImgWrapperHeight, setImgRelativeTop])
 
-  const handleMoveDownEnd = useCallback((distance: number, vector: MoveVectorOffset) => {
+  const handleMoveDownEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
+    console.log('handleMove DOWN End')
     const bodyWrapperScrolltop = bodyWrapperRef.current?.scrollTop
     if (bodyWrapperScrolltop === 0) {
       setImgWrapperHeight(0) // 0 = height='auto', 这里表示让容器展开至原始高度
@@ -150,9 +152,9 @@ export default function DiffTableDemo() {
 
   const handleMoveInvalidEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => {
     if (direction === 'UP') {
-      handleMoveUpEnd(distance.y, vector)
+      handleMoveUpEnd(distance, vector)
     } else if (direction === 'DOWN') {
-      handleMoveDownEnd(distance.y, vector)
+      handleMoveDownEnd(distance, vector)
     }
   }, [handleMoveUpEnd, handleMoveDownEnd])
 

@@ -3,16 +3,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useMoveActions, { MoveActionsOptions, MoveDirection, MoveVectorOffset } from './useMoveActions'
 
 let currentMoveAreaPositionX = 0
+const moveEffectiveMinDistance = 80
 
 function getDefaultMoveTransition(durationMs: number) {
   return `left ${durationMs}ms linear`
 }
 
-export interface SingleLoopSwipperOptions extends Pick<MoveActionsOptions, 'onMoveStart' | 'onMoving' | 'onMoveLeftEnd' | 'onMoveRightEnd' | 'onMoveUpEnd' | 'onMoveDownEnd' | 'onMoveInvalidEnd'> {
+export interface SingleLoopSwipperOptions extends Pick<MoveActionsOptions, 'onMoveStart' | 'onMoving' | 'onMoveLeftEnd' | 'onMoveRightEnd' | 'onMoveUpEnd' | 'onMoveDownEnd'> {
   list: Array<any>
   defaultMoveDurationMs?: number
   itemSpacing?: number
   customInsideEffectiveWrapper?: (targetDom: EventTarget | null) => boolean
+  onMoveInvalidEnd?: (distance: MoveVectorOffset, vector: MoveVectorOffset, direction: MoveDirection) => void
 }
 
 export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing = 0, customInsideEffectiveWrapper,
@@ -123,22 +125,31 @@ export default function useMove({ list, defaultMoveDurationMs = 300, itemSpacing
     onMoveInvalidEnd && onMoveInvalidEnd(distance, vector, direction)
   }, [endReset, refreshMoveArea, onMoveInvalidEnd])
 
-  const handleMoveLeftEnd = useCallback((distance: number, vector: MoveVectorOffset) => {
-    endReset()
-    nextMoveArea()
-    onMoveLeftEnd && onMoveLeftEnd(distance, vector)
+  const handleMoveLeftEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
+    if(distance.x >= moveEffectiveMinDistance) {
+      endReset()
+      nextMoveArea()
+      onMoveLeftEnd && onMoveLeftEnd(distance, vector)
+    } else {
+      handleMoveInvalidEnd(distance, vector, 'LEFT')
+    }
+
   }, [endReset, nextMoveArea, onMoveLeftEnd])
 
-  const handleMoveRightEnd = useCallback((distance: number, vector: MoveVectorOffset) => {
-    endReset()
-    lastMoveArea()
-    onMoveRightEnd && onMoveRightEnd(distance, vector)
+  const handleMoveRightEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
+    if(distance.x >= moveEffectiveMinDistance) {
+      endReset()
+      lastMoveArea()
+      onMoveRightEnd && onMoveRightEnd(distance, vector)
+    } else {
+      handleMoveInvalidEnd(distance, vector, 'RIGHT')
+    }
   }, [endReset, lastMoveArea, onMoveRightEnd])
 
   const { moveEffectiveWrapperRef } = useMoveActions({
+    moveEffectiveMinDistance,
     onMoveStart: handleMoveStart,
     onMoving: handleMoving,
-    onMoveInvalidEnd: handleMoveInvalidEnd,
     onMoveLeftEnd: handleMoveLeftEnd,
     onMoveRightEnd: handleMoveRightEnd,
     onMoveUpEnd,
