@@ -107,7 +107,6 @@ export default function DiffTableDemo() {
   const [imgRelativeTop, setImgRelativeTop] = useState(0)
   // --
   const bodyWrapperRef = useRef<HTMLDivElement | null>(null)
-  const curBodyWrapperScrollTopRec = useRef(0)
   const bodyWrapperScrollEnabled = useRef(true)
 
   const insideEffectiveWrapper = (targetDom: EventTarget | null) => {
@@ -119,8 +118,8 @@ export default function DiffTableDemo() {
   }
 
   const handleBeforeMovingValication = useCallback(() => {
-    return true //(bodyWrapperRef.current?.scrollTop ?? 0) - curBodyWrapperScrollTopRec.current !== 0
-  }, [bodyWrapperRef, curBodyWrapperScrollTopRec])
+    return true
+  }, [bodyWrapperRef])
 
   const handleMoving = useCallback((vector: MoveVectorOffset, direction: MoveDirection, firstMoveDirection: MoveDirection) => {
     if(['LEFT', 'RIGHT'].includes(firstMoveDirection)) {
@@ -171,9 +170,8 @@ export default function DiffTableDemo() {
   }, [handleMoveUpEnd, handleMoveDownEnd])
 
   const handleMoveEnd = useCallback((distance: MoveVectorOffset, vector: MoveVectorOffset) => {
-    // curBodyWrapperScrollTopRec.current = bodyWrapperRef.current?.scrollTop ?? 0
     bodyWrapperScrollEnabled.current = true
-  }, [curBodyWrapperScrollTopRec, bodyWrapperRef, bodyWrapperScrollEnabled])
+  }, [bodyWrapperRef, bodyWrapperScrollEnabled])
 
   const {
     moveEffectiveWrapperRef,
