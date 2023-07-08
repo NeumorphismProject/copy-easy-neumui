@@ -42,7 +42,7 @@ module.exports = {
     // ↓type的类型
     'type-enum': [2, 'always', ['feat', 'fix', 'perf', 'style', 'docs', 'test', 'refactor', 'build', 'ci', 'chore', 'revert', 'wip', 'workflow', 'types', 'release', 'update']]
   }
-};
+}
 
 /** type：用于说明 commit 的类型，被指定在 commitlint.config.js 的 type-enum
 feat：新功能（feature）

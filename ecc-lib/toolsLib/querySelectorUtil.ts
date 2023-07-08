@@ -1,8 +1,8 @@
 
 /**
  * 同步查找 dom 元素
- * @param selectors 同 document.querySelector
- * @returns 查找到的 dom 节点
+ * @param {string} selectors 同 document.querySelector
+ * @returns {Promise<Element | null>} 查找到的 dom 节点
  */
 export async function querySelectorSync (selectors:string) {
   // 若一直找不到满足条件的元素，则会最多尝试 20 次，间隔200ms，即 20*200ms = 4s，因为我们认为一个页面如果4秒还没获取到我们需要的元素，那这个页面一定是加载太慢了，重点是要优化页面性能了
@@ -32,9 +32,9 @@ export async function querySelectorSync (selectors:string) {
 
 /**
  * 同步查找满足条件的所有 dom 元素集合
- * @param selectors 同 document.querySelectorAll
- * @param nodeCount 要求数量，默认为0；若设置了数量，则只有查找到的 dom 数量大于或等于这个数，才会返回，否则会继续查找
- * @returns 查找到的 dom 节点
+ * @param {string} selectors 同 document.querySelectorAll
+ * @param {number} nodeCount 要求数量，默认为0；若设置了数量，则只有查找到的 dom 数量大于或等于这个数，才会返回，否则会继续查找
+ * @returns {Promise<NodeListOf<Element>>} 查找到的 dom 节点
  */
 export async function querySelectorAllSync (selectors: string, nodeCount:number=0) {
   const needNodeCount = nodeCount < 1 ? 0 : nodeCount
