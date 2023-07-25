@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    .game-scene {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #player {
+      width: 50px;
+      height: 100px;
+      background: red;
+      border: 2px dashed yellow;
+      position: absolute;
+    }
+
+    .block {
+      width: 50px;
+      height: 50px;
+      background: blue;
+      border: 2px dashed green;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="game-scene">
+    <div id="player"></div>
+
+    <div class="block" style="left: 200px; top: 150px;"></div>
+    <div class="block" style="left: 300px; top: 150px;"></div>
+    <div class="block" style="left: 400px; top: 150px;"></div>
+
+    <div class="block" style="left: 0px; top: 400px; width: 250px;"></div>
+
+    <div class="block" style="left: 300px; top: 500px;"></div>
+    <div class="block" style="left: 400px; top: 500px;"></div>
+
+    <div class="block" style="left: 500px; top: 400px; width: 100px;"></div>
+    <div class="block" style="left: 600px; top: 400px;"></div>
+  </div>
+
+  <script>
+    const gameScene = document.querySelector('.game-scene')
+    const player = document.getElementById('player')
+    const blocks = document.querySelectorAll('.block')
+
+    // 玩家的最大连续跳跃次数
+    const JUMP_TIMES_MAX = 2
+    const JUMP_HEIGHT = 50
+    const X_INIT_SPEED = 8
+    const Y_INIT_SPEED = 8
+
+    let xSpeed = 0
+    let ySpeed = 0
+    let jumpTimes = 0
+    // 保存所有按键的状态，实现组合按键监听效果
+    let downKeys = {}
+    // 保存玩家停留时的顶部坐标，用于计算跳跃高度
+    let playerStopTop = 0
+
+    // -------------获取碰撞盒子的上下左右坐标--------------
+
+    function getBoxLeft(boxObj) {
+      return boxObj.offsetLeft
+    }
+
+    function getBoxRight(boxObj) {
+      return boxObj.offsetLeft + boxObj.offsetWidth
+    }
+
+    function getBoxTop(boxObj) {
+      return boxObj.offsetTop
+    }
+
+    function getBoxBottom(boxObj) {
+      return boxObj.offsetTop + boxObj.offsetHeight
+    }
+
+    // ---------------------------
+
+    function getPlayerJumpHeight() {
+      const jumpHeight = Math.abs(player.offsetTop - playerStopTop)
+      return { jumpHeight, playerOffsetTop: player.offsetTop }
+    }
+
+    function allowJump() {
+      return jumpTimes < JUMP_TIMES_MAX
+    }
+
+    function checkPlayerBottomCollision(playerObj, blockObj) {
+      return getBoxBottom(playerObj) >= getBoxTop(blockObj) && getBoxBottom(playerObj) < getBoxBottom(blockObj)
+    }
+
+    function checkPlayerTopCollision(playerObj, blockObj) {
+      return getBoxTop(playerObj) <= getBoxBottom(blockObj) && getBoxTop(playerObj) > getBoxTop(blockObj)
+    }
+
+    function checkPlayerLeftCollision(playerObj, blockObj) {
+      return getBoxLeft(player) <= getBoxRight(blockObj) && getBoxLeft(player) >= getBoxLeft(blockObj)
+    }
+
+    function checkPlayerRightCollision(playerObj, blockObj) {
+      return getBoxRight(player) >= getBoxLeft(blockObj) && getBoxRight(player) <= getBoxRight(blockObj)
+    }
+
+    function checkCollision({ touchlockCallback }) {
+      // 玩家到达游戏场景边缘控制
+      if (player.offsetLeft <= 2) {
+        player.style.left = 1 + 'px'
+      }
+      if (player.offsetTop >= gameScene.clientHeight + 100) {
+        player.style.left = 1 + 'px'
+        player.style.top = 1 + 'px'
+      }
+      // 检测玩家与障碍块的碰撞
+      for (block of blocks) {
+
+        // 判断玩家是否与障碍碰撞
+        if (player.offsetLeft + player.offsetWidth > block.offsetLeft &&
+          player.offsetLeft < block.offsetLeft + block.offsetWidth &&
+          player.offsetTop + player.offsetHeight > block.offsetTop &&
+          player.offsetTop < block.offsetTop + block.offsetHeight) {
+
+          if (!checkPlayerTopCollision(player, block)) {
+            // 发生碰撞则停止移动
+            xSpeed = 0
+            ySpeed = 0
+
+            if (checkPlayerBottomCollision(player, block)) {
+              playerStopTop = block.offsetTop - player.offsetHeight
+              player.style.top = playerStopTop + 1 + 'px'
+            } else if (checkPlayerLeftCollision(player, block)) {
+              const playerStopLeft = block.offsetLeft + block.offsetWidth
+              player.style.left = playerStopLeft + 1 + 'px'
+            } else if (checkPlayerRightCollision(player, block)) {
+              const playerStopLeft = block.offsetLeft - player.offsetWidth
+              player.style.left = playerStopLeft - 1 + 'px'
+            }
+
+            touchlockCallback && touchlockCallback()
+          } else {
+            // 玩家顶部碰到碰撞物则校准玩家顶部坐标，避免穿物
+            jumpTimes = JUMP_HEIGHT
+            ySpeed += 1
+            player.style.top = getBoxBottom(block) + 1 + 'px'
+          }
+        }
+      }
+
+      // 如果无碰撞才更新位置
+      if (xSpeed !== 0) {
+        player.style.left = player.offsetLeft + xSpeed + 'px'
+      }
+      if (ySpeed !== 0) {
+        player.style.top = player.offsetTop + ySpeed + 'px'
+      }
+    }
+
+    function update() {
+      // 更新玩家的位置
+      player.style.left = player.offsetLeft + xSpeed + 'px'
+      player.style.top = player.offsetTop + ySpeed + 'px'
+
+      // 处理玩家的下落
+      if (ySpeed < 10) {
+        // setTimeout(()=>{ySpeed += 1},50)
+        ySpeed += 1 // 模拟重力加速度
+      }
+
+      // 跳跃逻辑
+      if (allowJump()) {
+        const { jumpHeight, playerOffsetTop } = getPlayerJumpHeight()
+        if (ySpeed < 0 && jumpHeight < JUMP_HEIGHT && player.offsetTop > 0 && !checkPlayerTopCollision(player, block)) {
+          // setTimeout(()=>{ySpeed -= 10},50)
+          ySpeed -= 10
+        } else {
+          // setTimeout(()=>{ySpeed += 10},50)
+          ySpeed += 10 // 达到最高点后转换为下落
+        }
+      }
+
+      const touchlockCallback = () => {
+        jumpTimes = 0
+      }
+
+      // 检测碰撞
+      checkCollision({ touchlockCallback })
+
+      requestAnimationFrame(update)
+    }
+
+    document.addEventListener('keydown', (event) => {
+      // 记录当前按键状态
+      downKeys[event.key] = true
+
+      if (downKeys['ArrowLeft']) {
+        xSpeed = -X_INIT_SPEED
+      }
+      else if (downKeys['ArrowRight']) {
+        xSpeed = X_INIT_SPEED
+      }
+      if (downKeys['ArrowUp']) {
+        if (allowJump()) {
+          jumpTimes += 1
+          ySpeed = -Y_INIT_SPEED // 跳跃高度
+        }
+      }
+    })
+
+    document.addEventListener('keyup', (event) => {
+      // 记录当前按键状态
+      downKeys[event.key] = false
+    })
+
+    // 游戏循环
+    // setInterval(update, 50)
+    requestAnimationFrame(update);
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+
+    .wrapper {
+      height: 100vh;
+      width: 100vw;
+      background-color: gray;
+    }
+    .item {
+      height: 100px;
+      width: 100%;
+      background-color: rgb(44, 191, 210);
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+  </div>
+</body>
+<script>
+  const wpEl = document.querySelector('.wrapper')
+  let linkHtml = '<a href="#item11">link</a>'
+  let innerHTML = ''
+  for(let i=1; i<20; i+=1) {
+    innerHTML += `<div style="height:300px;width:100%;display:flex;flex-direction:column;justify-content:center;background-color:yellow;">
+      <div id="item${i}" class="item">${i}</div>
+      </div>`
+  }
+  wpEl.innerHTML = linkHtml + innerHTML
+
+  window.addEventListener('load',()=>{
+    console.log('window onload', window.location.hash)
+    document.querySelector(`${window.location.hash}`).scrollIntoView({ behavior: "smooth", block: "start" })
+  })
+</script>
+</html>
+
+

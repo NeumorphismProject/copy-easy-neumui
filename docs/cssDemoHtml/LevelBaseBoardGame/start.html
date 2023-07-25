@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: rgb(0, 0, 0);
+    }
+
+    .game-scene {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .player-default {
+      position: absolute;
+      transition: 0ms linear;
+      z-index: 1;
+    }
+
+    .block-default {
+      border: 1px dashed yellow;
+      position: absolute;
+      transition: 10ms linear;
+      opacity: 0.5;
+      z-index: 9;
+    }
+
+    .coin-default {
+      border: 1px dashed yellow;
+      position: absolute;
+      transition: 10ms linear;
+      opacity: 0.5;
+      z-index: 9;
+      font-size: 22px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div style="position: absolute; top: 0; left:0; color: rgb(255, 255, 255);">
+    <button style="color: rgb(255, 255, 255);" onclick="reloadGame()">重新开始</button>
+    <button style="color: rgb(255, 255, 255);" onclick="startGameEngine()">继续</button>
+    <button style="color: rgb(255, 255, 255);" onclick="stopGameEngine()">暂停</button>
+    <div class="player-score" style="font-size: 22px; color: yellow;">socre:0</div>
+  </div>
+
+  <div class="game-scene">
+  </div>
+
+  <!-- 全局变量 -->
+  <script>
+    const GAME_SENCE_BACKGROUND_IMAGE = '' // 整个游戏场景的背景图（为了游戏效果，背景图不会自适应，游戏场景中的每个物体目前均以px为单位进行布局，位置需要与背景图相对应）
+    const X_START_SPEED = 4 // 玩家移动初速度
+    const Y_FREE_FALL_STEP_SPEED = 8 // 控制玩家下落速度的单位值
+    const Y_JUMP_START_SPEED = 20 // 玩家跳跃的初速度值
+    const PLAYER_SIZE_CLASS_KEY = 'playerSize'
+    const PLAYER_TRANSFORM_CLASS_KEY = 'playerTransform'
+    const PLAYER_BORTH_POSITION = [250, 0] // 玩家出生位置
+    const COIN_DEFAULT_CLASS_KEY = 'coin-default' // 所有 金币div 都带有的一个默认的 class 样式名称
+    const COIN_COLLISION_OFFSET = 10 // 玩家与金币碰撞的边缘计算偏移量（为了体验更好，玩家需要进入金币div一定的范围内部才会让金币被碰撞而消失）
+    const PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT = [5.5, 7] // 玩家雪碧图背景的 background-position 的初始值（实际在css中的单位时百分比%）
+
+    let gameSceneDom = undefined
+    let playerDom = undefined
+    let playerSocreDom = undefined
+    let blockDoms = undefined
+    let coinsDoms = undefined
+
+    // 玩家得分
+    let playerScore = {
+      value: 0, // 当前得分
+      append: 0 // 追加得分属性
+    }
+    let playerScoreProxy = new Proxy(playerScore, {
+      get: function (target, key) {
+        return target[key]
+      },
+      set: function (target, key, value) {
+        const allowSetValues = ['value', 'append']
+        try {
+          if (!playerSocreDom) {
+            playerSocreDom = document.querySelector('.player-score')
+          }
+          if (key === 'append') {
+            const newValue = target[key] + value
+            playerSocreDom.innerHTML = `score: ${newValue}`
+            target[key] = newValue
+            return true
+          }
+          if (key === 'value') {
+            const newValue = value
+            playerSocreDom.innerHTML = `score: ${newValue}`
+            target[key] = newValue
+            return true
+          }
+          const allowSetHint = 'coinsDataProxy.' + allowSetValues.join('; ').split(' ').join('coinsDataProxy.')
+          throw new Error(`set playerScoreProxy Error : playerScoreProxy.${key} 不存在这种赋值方式，允许的赋值方式有=>${allowSetValues}`)
+        } catch (err) {
+          throw new Error(`set playerScoreProxy Error : ${err}`)
+        }
+      }
+    })
+
+    // 玩家运动初速度 [x,y]
+    let playerSpeed = [0, 0]
+    // 玩家div对应的插入在 <head> 中的 <style> 对象，用于动态修改 styleSheet
+    let playerHeadStyleObj = {}
+    // 玩家尺寸
+    let playerSize = [54, 32]
+    // 玩家角色图片
+    let playerSpritesBackgrundImageUrl = 'url("./cat-sprites.jpg")'
+    // 用于播放玩家跑步运动时，雪碧图不断切换的一些参数（目前仅支持 x 轴，即仅支持行上的动作切换）(这里的属性都是百分比值，即使用在 background-position:0% 0% 中)
+    let playerSpritesRunActionAnimationOptions = {
+      startX: PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
+      endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
+      stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
+    }
+    // 玩家雪碧图背景的 background-position（实际在css中的单位时百分比%）
+    let playerSpritesBackgrundPosition = {
+      value: PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
+    }
+    let playerSpritesBackgrundPositionProxy = new Proxy(playerSpritesBackgrundPosition, {
+      get: function (target, key) {
+        return target[key]
+      },
+      set: function (target, key, value) {
+        try {
+          const [px, py] = value
+          playerDom.style.backgroundPosition = `${px}% ${py}%`
+          target.value = value
+        } catch (err) {
+          throw Error(`set playerSpritesBackgrundPosition Error : ${err}`)
+        }
+      }
+    })
+    // 玩家位置
+    let playerPosition = {
+      value: PLAYER_BORTH_POSITION
+    }
+    let playerPositionProxy = new Proxy(playerPosition, {
+      get: function (target, key) {
+        return target[key]
+      },
+      set: function (target, key, value) {
+        try {
+          // const position = [...target]
+          // position[key] = value
+          const position = value
+
+          // 频繁操作 styleSheet 消耗大，所以直接用 dom.style 代替
+          // insertStyleRules({ style: playerHeadStyleObj, selector: `.${getPlayerTransformClassRealKey()}`, rules: `transform:translate(${position[0]}px, ${position[1]}px);` })
+
+          // 直接修改 dom.style 减少不必要的消耗
+          let styleTrans = playerDom.style.transform
+          let matchAry = styleTrans.match(/translate(.*?) scaleX/i)
+          if (!Array.isArray(matchAry) || matchAry.length < 1) {
+            styleTrans = `${styleTrans} ScaleX(1)`
+            matchAry = styleTrans.match(/translate(.*?) scaleX/i)
+          }
+          const transStr = styleTrans.replace(matchAry[1], `(${position[0]}px, ${position[1]}px)`)
+          playerDom.style.transform = transStr
+
+          target[key] = position
+          return true
+        } catch (err) {
+          throw new Error(`set playerPosition Error : ${err}`)
+        }
+      }
+    })
+    // 控制玩家背景图片水平镜像方向
+    let playerBgImgHorizontalDirection = {
+      right: true // false 则水平左翻转玩家图片
+    }
+    let playerBgImgHorizontalDirectionProxy = new Proxy(playerBgImgHorizontalDirection, {
+      get: function (target, key) {
+        return target[key]
+      },
+      set: function (target, key, value) {
+        try {
+          let styleTrans = playerDom.style.transform
+          let matchAry = styleTrans.match(/scaleX\((.*?)\)/i)
+          if (!Array.isArray(matchAry) || matchAry.length < 1) {
+            styleTrans = `${styleTrans} ScaleX(1)`
+            matchAry = styleTrans.match(/scaleX\((.*?)\)/i)
+          }
+          const transStr = styleTrans.replace(matchAry[1], value ? 1 : -1)
+          playerDom.style.transform = transStr
+          target[key] = value
+        } catch (err) {
+          throw new Error(`set playerBgImgHorizontalDirection Error : ${err}`)
+        }
+      }
+    })
+
+    // 游戏画面中的砖块集合
+    let blocksData = []
+    // 金币div对应的插入在 <head> 中的 <style> 对象，用于动态修改 styleSheet
+    let coinsHeadStyleObj = {}
+    // 金币集合
+    let coinsData = {
+      value: [],
+      removeCoinId: null // 通过对 coinsDataProxy.removeDomId = 1; 这种方式传值可以实现删除 value 中指定的数组元素，且会自动移除对应的dom元素
+    }
+    let coinsDataProxy = new Proxy(coinsData, {
+      get: function (target, key) {
+        const allowGetValues = ['value']
+        if (allowGetValues.includes(key)) {
+          return target.value
+        } else {
+          const allowGetHint = 'coinsDataProxy.' + allowGetValues.join('; ').split(' ').join('coinsDataProxy.')
+          throw new Error(`get coinsDataProxy Error: 不支持 coinsDataProxy.${key} 的赋值方式; \n赋值方式支持的属性有=>${allowGetHint}`)
+        }
+      },
+      set: function (target, key, value) {
+        const errorPrefix = 'set coinsDataProxy Error: '
+        try {
+          const allowSetValues = ['removeCoinId']
+          if (allowSetValues.includes(key)) {
+            const rmId = value
+            const data = [...target.value]
+
+            // 先先判断要删除的 coinId 是否存在，不存在则抛出异常
+            const findIndex = data.findIndex(d => d.coinId === rmId)
+            const findDomIndex = coinsDoms.findIndex(d => d.id === rmId)
+            if (findIndex === -1) {
+              throw new Error(`${errorPrefix}要删除的 coinId="${rmId}" 不存在`)
+            }
+            if (findDomIndex === -1) {
+              throw new Error(`${errorPrefix}要删除的 coinId="${rmId}" 对应的 dom元素 不存在`)
+            }
+
+            // 先移除dom，移除dom成功后，在处理数据，确保dom和数据同步
+            gameSceneDom.removeChild(coinsDoms[findIndex])
+
+            // 移除相应的数据
+            coinsDoms.splice(findDomIndex, 1)
+            const deleteData = data.splice(findIndex, 1)
+            target.value = data
+            return true
+          } else {
+            const allowSetHint = 'coinsDataProxy.' + allowSetValues.join('; ').split(' ').join('coinsDataProxy.')
+            throw new Error(`${errorPrefix}不支持 coinsDataProxy.${key} 的赋值方式; \n赋值方式支持的属性有：${allowSetHint}`)
+          }
+        } catch (err) {
+          throw new Error(`${errorPrefix}${err}`)
+        }
+      }
+    })
+
+
+    // 保存所有按键的状态，实现组合按键监听效果
+    let downKeys = {}
+
+    // 游戏暂停标识
+    let gameEngineStop = false
+
+    const getPlayerPositionBottomY = () => {
+      return playerPositionProxy.value[1] + playerSize[1]
+    }
+
+    const getPlayerPositionRightX = () => {
+      return playerPositionProxy.value[0] + playerSize[0]
+    }
+
+  </script>
+
+  <!-- 公共函数 -->
+  <script>
+
+    // 随机16进制颜色值
+    function createRandomColor() {
+      let r = Math.floor(Math.random() * 256)
+      let g = Math.floor(Math.random() * 256)
+      let b = Math.floor(Math.random() * 256)
+      let color = '#' + r.toString(16) + g.toString(16) + b.toString(16)
+      return color
+    }
+
+    function addDashBeforeUppercase(str) {
+      return str.replace(/([A-Z])/g, '-$1').toLowerCase()
+    }
+
+    function cssClassToRulesStr(cssClassObj = {}) {
+      return Object.keys(cssClassObj).map(k => `${addDashBeforeUppercase(k)}:${cssClassObj[k]}`).join(';') + ';'
+    }
+
+    function insertStyleRules({ style, selector, rules }) {
+      if (style.sheet.insertRule) {
+        const classStr = `${selector}{${rules}}`
+        style.sheet.insertRule(classStr, style.sheet.cssRules.length)
+      }
+      else { /* IE */
+        style.sheet.addRule(selector, rules, -1)
+      }
+    }
+
+    function insertRulesIntoStyleSheet(cssRules) {
+      const style = document.createElement('style')
+      document.head.append(style)
+      // WebKit hack
+      style.appendChild(document.createTextNode(''))
+      for (const cr of cssRules) {
+        const { selector, rules } = cr
+        insertStyleRules({ style, selector, rules })
+      }
+      return style
+    }
+
+  </script>
+
+  <!-- 场景初始化 -->
+  <script>
+
+    //#region ------------------
+
+    const getPlayerTransformClassRealKey = () => addDashBeforeUppercase(PLAYER_TRANSFORM_CLASS_KEY)
+
+    const createPlayer = () => {
+      const playerClassKey = 'player'
+      const playerSizeClassKey = PLAYER_SIZE_CLASS_KEY
+      const playerTransformClassKey = PLAYER_TRANSFORM_CLASS_KEY
+      // [x,y]
+      const position = playerPosition.value
+      const htmlStr = `<div id="player" class="player-default ${addDashBeforeUppercase(playerClassKey)} ${addDashBeforeUppercase(playerSizeClassKey)} ${addDashBeforeUppercase(playerTransformClassKey)}"
+      style="transform:translate(${position[0]}px, ${position[1]}px) scaleX(1);"></div>`
+      const playerClass = {
+        backgroundColor: 'red',
+      }
+      // [width,height]
+      const size = playerSize
+      const playerSizeClass = {
+        width: `${size[0]}px`,
+        height: `${size[1]}px`,
+      }
+
+      const [bpx, bpy] = playerSpritesBackgrundPosition.value
+      const playerTransformClass = {
+        // transform: `translate(${position[0]}px, ${position[1]}px)`,
+        backgroundImage: playerSpritesBackgrundImageUrl,
+        backgroundPosition: `${bpx}% ${bpy}%`,
+        // backgroundPosition: '35.5% 7%',
+        // backgroundPosition: '65.5% 7%',
+        // backgroundPosition: '95.5% 7%',
+      }
+      const data = {
+        htmlStr,
+        size,
+        position,
+        classes: {
+          [playerClassKey]: playerClass,
+          [playerSizeClassKey]: playerSizeClass,
+          [playerTransformClassKey]: playerTransformClass
+        }
+      }
+
+      return data
+    }
+
+    //#region ------------创建普通砖块-------------------
+
+    // 创建一个普通砖块的dom预置数据
+    const createSceneMapBlock = ({ size, position, backgroundImage, index }) => {
+      const blockClassKey = `block-${index}`
+      const blockSizeClassKey = `blockSize-${index}`
+      const blockTransformClassKey = `blockTransform-${index}`
+      const htmlStr = `<div class="block-default ${addDashBeforeUppercase(blockClassKey)} ${addDashBeforeUppercase(blockSizeClassKey)} ${addDashBeforeUppercase(blockTransformClassKey)}"></div>`
+      const blockClass = {
+        backgroundColor: createRandomColor(),
+      }
+      const blockSizeClass = {
+        width: `${size[0]}px`,
+        height: `${size[1]}px`,
+      }
+      const blockTransformClass = {
+        backgroundImage,
+        backgroundSize: '100% 100%',
+        transform: `translate(${position[0]}px, ${position[1]}px)`
+      }
+      const data = {
+        htmlStr,
+        size,
+        position,
+        classes: {
+          [blockClassKey]: blockClass,
+          [blockSizeClassKey]: blockSizeClass,
+          [blockTransformClassKey]: blockTransformClass
+        }
+      }
+      return data
+    }
+
+    // 创建普通砖块的集合数据
+    const createSceneMapBlocksData = () => {
+      const dataList = []
+      for (let i = 0; i < 10; i += 1) {
+        dataList.push({
+          size: [50, 50],
+          position: [50 * i, 400],
+          backgroundImage: ''
+        })
+      }
+
+      for (let i = 0; i < 5; i += 1) {
+        dataList.push({
+          size: [50, 50],
+          position: [400 + 50 * i, 340],
+          backgroundImage: ''
+        })
+      }
+
+      for (let i = 0; i < 2; i += 1) {
+        dataList.push({
+          size: [50, 50],
+          position: [100 + 50 * i, 300],
+          backgroundImage: ''
+        })
+      }
+
+      for (let i = 0; i < 2; i += 1) {
+        dataList.push({
+          size: [50, 50],
+          position: [100 + 50 * i, 100],
+          backgroundImage: ''
+        })
+      }
+
+      return dataList.map((d, index) => createSceneMapBlock({ ...d, type: 'block', index }))
+    }
+
+    //#endregion --------------------------------
+
+    //#region ------------创建金币物体-----------------
+
+    // 创建一个金币碰撞物的dom预置数据
+    const createSceneMapCoin = ({ size, position, score, backgroundImage, index }) => {
+      const blockClassKey = `coin-${index}`
+      const blockSizeClassKey = `coinSize-${index}`
+      const blockTransformClassKey = `coinTransform-${index}`
+      const htmlStr = `<div id="${blockClassKey}" class="${COIN_DEFAULT_CLASS_KEY} ${addDashBeforeUppercase(blockClassKey)} ${addDashBeforeUppercase(blockSizeClassKey)} ${addDashBeforeUppercase(blockTransformClassKey)}">币${index}</div>`
+      const blockClass = {
+        backgroundColor: 'yellow',
+      }
+      const blockSizeClass = {
+        width: `${size[0]}px`,
+        height: `${size[1]}px`,
+      }
+      const blockTransformClass = {
+        backgroundImage,
+        backgroundSize: '100% 100%',
+        transform: `translate(${position[0]}px, ${position[1]}px)`
+      }
+      const data = {
+        coinIndex: index,
+        coinId: blockClassKey,
+        score,
+        htmlStr,
+        size,
+        position,
+        classes: {
+          [blockClassKey]: blockClass,
+          [blockSizeClassKey]: blockSizeClass,
+          [blockTransformClassKey]: blockTransformClass
+        }
+      }
+      return data
+    }
+
+    const createSceneMapCoinsData = () => {
+      const dataList = []
+
+      for (let i = 0; i < 5; i += 1) {
+        dataList.push({
+          size: [50, 50],
+          position: [100 + 50 * i, 230],
+          score: (i + 1), // 金币代表的分数值
+          backgroundImage: '' // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
+        })
+      }
+
+      for (let i = 0; i < 8; i += 1) {
+        dataList.push({
+          size: [50, 50],
+          position: [300 + 50 * i, 280],
+          score: (i + 1), // 金币代表的分数值
+          backgroundImage: ''
+        })
+      }
+
+      return dataList.map((d, index) => createSceneMapCoin({ ...d, type: 'coin', index }))
+    }
+
+    //#endregion -------------------------------------
+
+    const createSceneMap = () => {
+      // 普通砖块数据集合
+      const blocks = createSceneMapBlocksData()
+      blocksData = blocks
+
+      // 得分金币碰撞物集合数据
+      const coins = createSceneMapCoinsData()
+      coinsData.value = coins
+
+      return {
+        divData: {
+          blocks,
+          coins
+        }
+      }
+    }
+
+    const createScene = () => {
+      const playerInitData = createPlayer()
+      const sceneMapInitData = createSceneMap()
+      return {
+        playerInitData,
+        sceneMapInitData
+      }
+    }
+
+    const createCssRules = (classes) => Object.keys(classes).map(ck => ({ selector: `.${addDashBeforeUppercase(ck)}`, rules: cssClassToRulesStr(classes[ck]) }))
+
+    const getCssRulesFromSceneData = ({ playerInitData, sceneMapInitData }) => {
+      const rules = []
+      // player cssRules
+      const playerCssRules = createCssRules(playerInitData.classes)
+      const playerStyleObj = insertRulesIntoStyleSheet(playerCssRules)
+      // blocks cssRules
+      const blocksCssRules = sceneMapInitData.divData.blocks.map(b => createCssRules(b.classes)).flat()
+      insertRulesIntoStyleSheet(blocksCssRules)
+      // coins cssRules
+      const coinsCssRules = sceneMapInitData.divData.coins.map(b => createCssRules(b.classes)).flat()
+      const coinsStyleObj = insertRulesIntoStyleSheet(coinsCssRules)
+      return { playerStyleObj, coinsStyleObj }
+    }
+
+    const appendStyleSheets = (sceneInitData) => {
+      // insert cssRules to head
+      const { playerStyleObj, coinsStyleObj } = getCssRulesFromSceneData(sceneInitData)
+      playerHeadStyleObj = playerStyleObj
+      coinsHeadStyleObj = coinsStyleObj
+    }
+
+    const getHtmlFromSceneData = ({ playerInitData, sceneMapInitData }) => {
+      const divList = Object.keys(sceneMapInitData.divData).map(k => sceneMapInitData.divData[k]).flat()
+      const blocksHtmlStr = divList.map(b => b.htmlStr).join('')
+      let htmlStr = playerInitData.htmlStr + blocksHtmlStr
+      return htmlStr
+    }
+
+    const drawGameDoms = (sceneInitData) => {
+      appendStyleSheets(sceneInitData)
+
+      // insert html
+      gameSceneDom = document.querySelector('.game-scene')
+      gameSceneDom.style = `background-image:${GAME_SENCE_BACKGROUND_IMAGE};background-repeat:no-repeat;`
+      gameSceneDom.innerHTML = getHtmlFromSceneData(sceneInitData)
+      playerDom = document.querySelector('#player')
+      blockDoms = Array.apply(null, document.querySelectorAll('.block-default'))
+      coinsDoms = Array.apply(null, document.querySelectorAll(`.${COIN_DEFAULT_CLASS_KEY}`))
+    }
+
+    const initGame = () => {
+      const sceneInitData = createScene()
+      drawGameDoms(sceneInitData)
+    }
+
+    //#endregion ------------------
+
+  </script>
+
+  <!-- 游戏操控 -->
+  <script>
+    //#region ------公共函数------
+
+    /**
+     * TODO:（暂未使用）自由落体运动位移计算
+     * @param [time] 单位：秒
+     * @result 经过 time 之后的位移
+     * */
+    function calculateDisplacement(time) {
+      // 重力加速度
+      const g = 9.8
+      // 位移公式
+      const displacement = 0.01 * g * Math.pow(time, 2)
+      return Math.round(displacement)
+    }
+
+    //#endregion -----------------
+
+    // 玩家跑步运动控制（通过background-position控制雪碧图裁剪区域实现）
+    let playerRunActionInterval = null
+    const startPlayerRunActionAnimation = ({ startX, endX, stepLen }) => {
+      if (playerRunActionInterval) return
+      playerRunActionInterval = setInterval(() => {
+        // 雪碧图切换
+        const [px, py] = playerSpritesBackgrundPositionProxy.value
+        const apx = px >= endX ? (startX + stepLen) : (px + stepLen)
+        const newPosition = [apx, py]
+        playerSpritesBackgrundPositionProxy.value = newPosition
+      }, 100)
+    }
+    // 停止玩家跑步运动
+    const stopPlayerRunActionAnimation = () => {
+      playerRunActionInterval && clearInterval(playerRunActionInterval)
+      playerRunActionInterval = null
+      playerSpritesBackgrundPositionProxy.value = PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
+    }
+
+    // 玩家自由落体模拟
+    const playerFreeFell = () => {
+      if (playerSpeed[1] !== 0 && playerSpeed[1] < Math.round(Y_FREE_FALL_STEP_SPEED * 2.5)) {
+        playerSpeed[1] += Y_FREE_FALL_STEP_SPEED
+      }
+    }
+
+    // 玩家跳跃模拟
+    const playerJump = () => {
+      // 跳跃时的速度会递减
+      playerSpeed[1] += 1
+      // 若跳跃速度减小为0，则转为下落
+      if (playerSpeed[1] === 0) {
+        playerSpeed[1] = 1
+      }
+    }
+
+    // 碰撞检测（这里不做 dom 修改，只是预计算下一步 dom 修改需要的数据）
+    // borderOffset = 1 标识 div 碰撞 的边缘偏移量
+    const checkCollision = ({ playerSize, playerSpeed, playerPosition, blocksData, borderOffset = 1 }) => {
+      const { clientWidth: gsW, clientHeight: gsH } = gameSceneDom
+      const [pw, ph] = playerSize
+      const [psX, psY] = playerSpeed
+      const [px, py] = playerPosition
+      const [pEndx, pEndy] = [px + pw, py + ph]
+      let collisionBlocks = [] // player div 进入 block div 的碰撞情况时收集的 block div 集合
+      let blockToPlayerCollisionBlocks = [] // block div 进入 player div 的碰撞情况时收集的 block div 集合
+      // 预计算下一步 player div 的位置
+      let prePlayerPosition = [px + psX, py + psY]
+      const [ppx, ppy] = prePlayerPosition
+      const [ppEndx, ppEndy] = [ppx + pw, ppy + ph]
+
+      // 边界处理
+      if (ppx <= 0) prePlayerPosition[0] = 0
+      if (ppEndx >= gsW) prePlayerPosition[0] = gsW - pw
+      // 落下到超出游戏场景范围之外的规则
+      if (ppEndy > gsH) {
+        prePlayerPosition[0] = 250
+        prePlayerPosition[1] = 0
+        playerSpeed[1] = 1
+        // TODO: 超出场景底部边界，暂定游戏结束
+        reloadGame()
+        return { prePlayerPosition }
+      }
+
+      // *** player div 进入 block div 的情况： 砖块碰撞处理(预计算下一步 dom 即将修改的数据) ***
+      // 找出所有与 player div 有碰撞的 block div
+      collisionBlocks = blocksData.filter(blockData => {
+        const [bx, by] = blockData.position
+        const [bw, bh] = blockData.size
+        const [bEndx, bEndy] = [bx + bw, by + bh]
+
+        const leftTopInBlock = (ppx >= bx && ppx <= bEndx) && (ppy >= by && ppy <= bEndy)
+        const rightTopInBlock = (ppEndx >= bx && ppEndx <= bEndx) && (ppy >= by && ppy <= bEndy)
+        const leftBottomInBlock = (ppx >= bx && ppx <= bEndx) && (ppEndy >= by && ppEndy <= bEndy)
+        const rightBottomInBlock = (ppEndx >= bx && ppEndx <= bEndx) && (ppEndy >= by && ppEndy <= bEndy)
+
+        return (leftTopInBlock || rightTopInBlock || leftBottomInBlock || rightBottomInBlock)
+      })
+
+      // 跳跃过程中的碰撞判定：若跳跃过程中预计算出下一步会遇到碰撞物，则再判断当前 player div 的Y坐标是否位于碰撞物的下方，若是，则认定为顶部碰撞，那么把截断跳跃，转为启动落体运动
+      let isJumpUnder = null
+      if (psY < 0) {
+        const jumpCollisitonBlocks = blocksData.filter(blockData => {
+          const [bx, by] = blockData.position
+          const [bw, bh] = blockData.size
+
+          const leftTopInBlock = (ppx >= bx && ppx <= bx + bw) && (ppy >= by && ppy <= by + bh)
+          const rightTopInBlock = (ppEndx >= bx && ppEndx <= bx + bw) && (ppy >= by && ppy <= by + bh)
+          const leftBottomInBlock = (ppx >= bx && ppx <= bx + bw) && (ppEndy >= by && ppEndy <= by + bh)
+          const rightBottomInBlock = (ppEndx >= bx && ppEndx <= bx + bw) && (ppEndy >= by && ppEndy <= by + bh)
+
+          return (leftTopInBlock || rightTopInBlock || leftBottomInBlock || rightBottomInBlock)
+        })
+        const jumpCollisitonSortBlocks = jumpCollisitonBlocks.sort((a, b) => a.position[1] - b.position[1])
+        isJumpUnder = false
+        // 若跳跃过程下一步会碰撞的物体中，有任何一个的Y坐标比当前 player div 的y 坐标高，则认定为顶部碰撞，那么将跳跃直接转为落体运动
+        for (const jcBlock of jumpCollisitonSortBlocks) {
+          const [bx, by] = jcBlock.position
+          const [bw, bh] = jcBlock.size
+          if (py >= by) {
+            isJumpUnder = true
+            break
+          }
+        }
+        if (isJumpUnder) {
+          playerSpeed[1] = 1
+        }
+      }
+
+      // 从碰撞的 block div 集合中分别找出 y 坐标位置 最低 和 最高 的一个
+      let lowerBlockData = null
+      if (collisionBlocks.length > 0) {
+        const sortBlocks = collisionBlocks.sort((a, b) => b.position[1] - a.position[1])
+        const len = sortBlocks.length
+        if (len > 0) {
+          lowerBlockData = sortBlocks[0]
+        }
+      }
+
+      // 若最低的 block div 位于 player div 的 下方
+      if (lowerBlockData &&
+        (ppEndy >= lowerBlockData.position[1] && ppEndy <= lowerBlockData.position[1] + lowerBlockData.size[1])) {
+        // 那么将 player div 的 y 坐标设置为该 block div 的 上方
+        prePlayerPosition[1] = lowerBlockData.position[1] - ph - borderOffset
+        playerSpeed[1] = 0
+      }
+
+      // 若 player div 在最低的 block div 的 左侧
+      else if (lowerBlockData &&
+        (ppEndx >= lowerBlockData.position[0] && ppEndx <= lowerBlockData.position[0] + lowerBlockData.size[0])) {
+        // 那么将 player div 的 x 坐标设置为该 block div 的 左侧
+        if (!isJumpUnder) prePlayerPosition[0] = lowerBlockData.position[0] - pw - borderOffset
+        if (!isJumpUnder && psX > 0) playerSpeed[0] = 0
+      }
+
+      // 若 player div 在最低的 block div 的 右侧
+      else if (lowerBlockData &&
+        (ppx >= lowerBlockData.position[0] && ppx <= lowerBlockData.position[0] + lowerBlockData.size[0])) {
+        // 那么将 player div 的 x 坐标设置为该 block div 的 右侧
+        if (!isJumpUnder) prePlayerPosition[0] = lowerBlockData.position[0] + lowerBlockData.size[0] + borderOffset
+        if (!isJumpUnder && psX < 0) playerSpeed[0] = 0
+      }
+
+      // 因为落地时会把 player div 设定为地面 block div 间距为 1px，所以每次平移过程中都去判断 player div 间距 2px 的下方是否存在任何 block div，若没有则启动落体运动
+      if (psX !== 0 && psY === 0) {
+        const ppEndExY = ppEndy + (borderOffset + 1) // 判断 player div 间距 2px 的下方是否存在任何div
+        const preBelowCollisitonBlocks = blocksData.filter(blockData => {
+          const [bx, by] = blockData.position
+          const [bw, bh] = blockData.size
+
+          const leftTopInBlock = (ppx >= bx && ppx <= bx + bw) && (ppy >= by && ppy <= by + bh)
+          const rightTopInBlock = (ppEndx >= bx && ppEndx <= bx + bw) && (ppy >= by && ppy <= by + bh)
+          const leftBottomInBlock = (ppx >= bx && ppx <= bx + bw) && (ppEndExY >= by && ppEndExY <= by + bh)
+          const rightBottomInBlock = (ppEndx >= bx && ppEndx <= bx + bw) && (ppEndExY >= by && ppEndExY <= by + bh)
+
+          return (leftTopInBlock || rightTopInBlock || leftBottomInBlock || rightBottomInBlock)
+        })
+        // 若下方没有任何 block div， 则启动落体运动
+        if (preBelowCollisitonBlocks.length === 0) {
+          playerSpeed[1] = 1
+        }
+      }
+
+      // ****************** 为上面的逻辑做弥补 ***************************
+      // *** block div 比 player div 小的情况：此时可能出现玩家的四个角的坐标点都没有进入 block div，而是 block div 的某个角的坐标点进入 player div 中 ***
+      blockToPlayerCollisionBlocks = blocksData.filter(blockData => {
+        const [bx, by] = blockData.position
+        const [bw, bh] = blockData.size
+        const [bEndx, bEndy] = [bx + bw, by + bh]
+
+        const leftTopInPlayer = (bx >= ppx && bx <= ppEndx) && (by >= ppy && by <= ppEndy)
+        const rightTopInPlayer = (bEndx >= ppx && bEndx <= ppEndx) && (by >= ppy && by <= ppEndy)
+        const leftBottomInPlayer = (bx >= ppx && bx <= ppEndx) && (bEndy >= ppy && bEndy <= ppEndy)
+        const rightBottomInPlayer = (bEndx >= ppx && bEndx <= ppEndx) && (bEndy >= ppy && bEndy <= ppEndy)
+
+        return (leftTopInPlayer || rightTopInPlayer || leftBottomInPlayer || rightBottomInPlayer)
+      })
+
+      if (blockToPlayerCollisionBlocks.length > 0) {
+        // 按照 y 坐标 升序排序
+        const btpCollisitonSortBlocks = blockToPlayerCollisionBlocks.sort((a, b) => a.position[1] - b.position[1])
+        // 找出 y 坐标最高的 block div
+        const btpHeigherBlock = btpCollisitonSortBlocks[0]
+
+        // 若最低的 block div 位于 player div 的 下方
+        if (btpHeigherBlock &&
+          (ppEndy >= btpHeigherBlock.position[1] && ppEndy <= btpHeigherBlock.position[1] + btpHeigherBlock.size[1])) {
+          // 那么将 player div 的 y 坐标设置为该 block div 的 上方
+          prePlayerPosition[1] = btpHeigherBlock.position[1] - ph - borderOffset
+          playerSpeed[1] = 0
+        }
+
+        // 若 player div 在最低的 block div 的 左侧
+        else if (btpHeigherBlock &&
+          (ppEndx >= btpHeigherBlock.position[0] && ppEndx <= btpHeigherBlock.position[0] + btpHeigherBlock.size[0])) {
+          // 那么将 player div 的 x 坐标设置为该 block div 的 左侧
+          if (!isJumpUnder) prePlayerPosition[0] = btpHeigherBlock.position[0] - pw - borderOffset
+          if (!isJumpUnder && psX > 0) playerSpeed[0] = 0
+        }
+
+        // 若 player div 在最低的 block div 的 右侧
+        else if (btpHeigherBlock &&
+          (ppx >= btpHeigherBlock.position[0] && ppx <= btpHeigherBlock.position[0] + btpHeigherBlock.size[0])) {
+          // 那么将 player div 的 x 坐标设置为该 block div 的 右侧
+          if (!isJumpUnder) prePlayerPosition[0] = btpHeigherBlock.position[0] + btpHeigherBlock.size[0] + borderOffset
+          if (!isJumpUnder && psX < 0) playerSpeed[0] = 0
+        }
+      }
+
+      return {
+        prePlayerPosition
+      }
+    }
+
+    // 玩家与金币碰撞物的碰撞检测（这里不做 dom 修改，只是预计算下一步 dom 修改需要的数据）
+    const checkCoinsCollision = ({ playerSize, playerSpeed, playerPosition, coinsData }) => {
+      const [pw, ph] = playerSize
+      const [psX, psY] = playerSpeed
+      const [px, py] = playerPosition
+      const [pEndx, pEndy] = [px + pw, py + ph]
+      let collisionBlocks = [] // player div 进入 coin div 的碰撞情况时收集的 coin div 集合
+      let blockToPlayerCollisionBlocks = [] // coin div 进入 player div 的碰撞情况时收集的 coin div 集合
+      // 预计算下一步 player div 的位置
+      let prePlayerPosition = [px + psX, py + psY]
+      const [ppx, ppy] = prePlayerPosition
+      const [ppEndx, ppEndy] = [ppx + pw, ppy + ph]
+
+      // *** player div 进入 coin div 的情况： 砖块碰撞处理(预计算下一步 dom 即将修改的数据) ***
+      // 找出所有与 player div 有碰撞的 coin div
+      collisionBlocks = coinsData.filter(blockData => {
+        const [bxSource, by] = blockData.position
+        const bx = bxSource + COIN_COLLISION_OFFSET
+        const [bw, bh] = blockData.size
+        const [bEndx, bEndy] = [bxSource + bw - COIN_COLLISION_OFFSET, by + bh]
+
+        const leftTopInBlock = (ppx >= bx && ppx <= bEndx) && (ppy >= by && ppy <= bEndy)
+        const rightTopInBlock = (ppEndx >= bx && ppEndx <= bEndx) && (ppy >= by && ppy <= bEndy)
+        const leftBottomInBlock = (ppx >= bx && ppx <= bEndx) && (ppEndy >= by && ppEndy <= bEndy)
+        const rightBottomInBlock = (ppEndx >= bx && ppEndx <= bEndx) && (ppEndy >= by && ppEndy <= bEndy)
+
+        return (leftTopInBlock || rightTopInBlock || leftBottomInBlock || rightBottomInBlock)
+      })
+
+
+      // ****************** 为上面的逻辑做弥补 ***************************
+      // *** coin div 比 player div 小的情况：此时可能出现玩家的四个角的坐标点都没有进入 coin div，而是 coin div 的某个角的坐标点进入 player div 中 ***
+      blockToPlayerCollisionBlocks = coinsData.filter(blockData => {
+        const [bxSource, by] = blockData.position
+        const bx = bxSource + COIN_COLLISION_OFFSET
+        const [bw, bh] = blockData.size
+        const [bEndx, bEndy] = [bxSource + bw - COIN_COLLISION_OFFSET, by + bh]
+
+        const leftTopInPlayer = (bx >= ppx && bx <= ppEndx) && (by >= ppy && by <= ppEndy)
+        const rightTopInPlayer = (bEndx >= ppx && bEndx <= ppEndx) && (by >= ppy && by <= ppEndy)
+        const leftBottomInPlayer = (bx >= ppx && bx <= ppEndx) && (bEndy >= ppy && bEndy <= ppEndy)
+        const rightBottomInPlayer = (bEndx >= ppx && bEndx <= ppEndx) && (bEndy >= ppy && bEndy <= ppEndy)
+
+        return (leftTopInPlayer || rightTopInPlayer || leftBottomInPlayer || rightBottomInPlayer)
+      })
+
+      // collisionBlocks 和 blockToPlayerCollisionBlocks 去重合并
+      const preRemoveCollisionCoins = [...collisionBlocks]
+      for (const patchItem of blockToPlayerCollisionBlocks) {
+        if (preRemoveCollisionCoins.findIndex(c => c.coinId === patchItem.coinId) === -1) {
+          preRemoveCollisionCoins.push(patchItem)
+        }
+      }
+      return {
+        preRemoveCollisionCoins
+      }
+    }
+
+
+    // 玩家Dom更新
+    const updatePlayerDom = ({ prePlayerPosition }) => {
+      playerPositionProxy.value = prePlayerPosition
+
+      if (playerSpeed[0] < 0) {
+        playerBgImgHorizontalDirectionProxy.right = false
+      } else if (playerSpeed[0] > 0) {
+        playerBgImgHorizontalDirectionProxy.right = true
+      }
+
+    }
+
+    // 金币Dom更新
+    const updateCoinsDom = ({ preRemoveCollisionCoins }) => {
+      if (preRemoveCollisionCoins.length > 0) {
+        for (const rmCoin of preRemoveCollisionCoins) {
+          playerScoreProxy.append = rmCoin.score // 得分更新
+          coinsDataProxy.removeCoinId = rmCoin.coinId
+        }
+      }
+    }
+
+    const gameUpdate = () => {
+      if (gameEngineStop) return
+
+      if (playerSpeed[1] > 0) playerFreeFell()
+      if (playerSpeed[1] < 0) playerJump()
+      const collisionOption = checkCollision({ playerSize, playerSpeed, playerPosition: playerPositionProxy.value, blocksData })
+      const coinsCollisionOption = checkCoinsCollision({ playerSize, playerSpeed, playerPosition: playerPositionProxy.value, coinsData: coinsDataProxy.value })
+      updatePlayerDom(collisionOption)
+      updateCoinsDom(coinsCollisionOption)
+
+      requestAnimationFrame(gameUpdate)
+    }
+
+    const startGameEngine = () => {
+      gameEngineStop = false
+      requestAnimationFrame(gameUpdate)
+    }
+
+    const stopGameEngine = () => {
+      gameEngineStop = true
+    }
+
+  </script>
+
+  <!-- 事件注册 -->
+  <script>
+    // 重新开始按钮事件
+    const reloadGame = () => {
+      window.location.reload()
+    }
+
+    // 有效的操控按键
+    const CONTROLLER_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp']
+    // 判断当前按键是否属于游戏的可操控按键
+    const isControllerKeys = (eventKey) => !gameEngineStop && CONTROLLER_KEYS.includes(eventKey)
+
+    document.addEventListener('keydown', (event) => {
+      if (!isControllerKeys(event.key)) return
+
+      const eventKey = event.key
+
+      if (eventKey === 'ArrowLeft' && !downKeys[event.key]) {
+        if (playerSpeed[0] >= 0) playerSpeed[0] = -X_START_SPEED
+        startPlayerRunActionAnimation(playerSpritesRunActionAnimationOptions)
+      }
+      if (eventKey === 'ArrowRight' && !downKeys[event.key]) {
+        if (playerSpeed[0] <= 0) playerSpeed[0] = X_START_SPEED
+        startPlayerRunActionAnimation(playerSpritesRunActionAnimationOptions)
+      }
+      if (eventKey === 'ArrowUp' && !downKeys[event.key] && playerSpeed[1] === 0) {
+        playerSpeed[1] = -Y_JUMP_START_SPEED
+      }
+      // 记录当前按键状态
+      downKeys[event.key] = true
+    })
+
+    document.addEventListener('keyup', (event) => {
+      if (!isControllerKeys(event.key)) return
+
+      // 记录当前按键状态
+      downKeys[event.key] = false
+
+      if (!downKeys['ArrowLeft'] && !downKeys['ArrowRight']) {
+        // 左右键都抬起时，停止移动
+        playerSpeed[0] = 0
+        stopPlayerRunActionAnimation()
+      } else if (downKeys['ArrowLeft'] && !downKeys['ArrowRight']) {
+        // 左键没抬起时，仍然在向左移动
+        if (playerSpeed[0] > 0) playerSpeed[0] = -X_START_SPEED
+      } else if (!downKeys['ArrowLeft'] && downKeys['ArrowRight']) {
+        // 右键没抬起时，仍然在向右移动
+        if (playerSpeed[0] < 0) playerSpeed[0] = X_START_SPEED
+      }
+      // if (downKeys['ArrowUp']) {}
+    })
+
+    window.addEventListener('load', () => {
+      console.log('------onload')
+
+      initGame()
+
+      playerSpeed[1] = 1
+      startGameEngine()
+
+      // playerActionAnimation()
+
+      // setFrameInterval(() => {
+      //   console.log('-setFrameInterval--')
+      // }, 2000)
+
+      // playerScoreProxy.append = 5
+      // playerScoreProxy.append = 5
+
+      // coinsDataProxy.removeCoinId = 'coin-1'
+      // console.log('** after remove = ', coinsDataProxy.value)
+      // console.log('** after remove doms = ', coinsDoms)
+
+
+
+      // setTimeout(()=>{
+      //   playerDom.style.transform = `${playerDom.style.transform} scaleX(1)`
+      //   const styleTrans = playerDom.style.transform
+      //   const transStr = styleTrans.replace(styleTrans.match(/translate(.*?) scaleX/i)[1], '(111px, 367px)')
+      //   console.log(transStr)
+      //   setTimeout(()=>{
+
+      //   },1000)
+      // },1000)
+
+
+      // setTimeout(() => {
+      //   stopGameEngine()
+      // }, 11250)
+    })
+  </script>
+</body>
+
+</html>
