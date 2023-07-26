@@ -242,6 +242,7 @@
       width: 100%;
       height: 500px;
       border: 1px dashed gray;
+      background-image: url('./cat-sprites.jpg');
     }
   </style>
 </head>
@@ -986,13 +987,18 @@
     // 在游戏绘制区域创建 canvas 并获取其context
     gameSenceDom = document.querySelector('.game-sence')
     const canvas = document.createElement('canvas', { id: 'game-sence-canvas' })
+    // 这个用于解决canvas清晰度的问题，待研究
+    // Set actual size in memory (scaled to account for extra pixel density).
+    // const scale = window.devicePixelRatio // Change to 1 on retina screens to see blurry canvas.
+    // canvas.setAttribute('width', gameSenceDom.clientWidth * scale)
+    // canvas.setAttribute('height', gameSenceDom.clientHeight * scale)
     canvas.setAttribute('width', gameSenceDom.clientWidth)
     canvas.setAttribute('height', gameSenceDom.clientHeight)
 
     gameSenceDom.appendChild(canvas)
     canvasContext = canvas.getContext("2d")
-    canvasContext.fillStyle = "green"
-    canvasContext.fillRect(0, 0, canvas.width, canvas.height)
+    // canvasContext.fillStyle = "rgba(145,145,145,0.5)"
+    // canvasContext.fillRect(0, 0, canvas.width, canvas.height)
     drawSvgOnCanvas(canvasContext)
   }
 
@@ -1012,10 +1018,17 @@
       // canvas 一定要等图像加载完成后才可以绘制
       context.drawImage(img, 0, 0)
 
-      // setTimeout(() => {
-      //   context.clearRect(0, 0, 32, 32)
-      //   context.drawImage(img, 110, 110)
-      // }, 3000)
+      setTimeout(() => {
+        context.save()
+
+        // 移动坐标系原点
+        context.translate(110, 110)
+        // context.clearRect(0, 0, 32, 32)
+        context.drawImage(img, 0, 0)
+
+        context.restore()
+        // img.moveto
+      }, 3000)
     }
     // svg 需要转成 base64 才可解析（btoa() 是 js 用于转换 base64 函数）
     img.src = 'data:image/svg+xml;base64,' + btoa(svgDomStr)
@@ -1023,13 +1036,26 @@
   }
 
   const drawCanvasUpdate = () => {
-    if(JSON.stringify(mousePosition) !== '[null,null]') {
+    // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
+    if (JSON.stringify(mousePosition) !== '[null,null]') {
+
+      canvasContext.save()
+
       const offsetY = 100
       const [px, py] = mousePosition
       const imgW = blockImage.width
       const imgH = blockImage.height
 
-      canvasContext.drawImage(blockImage, ...[px-Math.round(imgW/2), py-offsetY-Math.round(imgH/2)])
+      // canvasContext.moveto()
+
+      // canvasContext.drawImage(blockImage, ...[px-Math.round(imgW/2), py-offsetY-Math.round(imgH/2)])
+
+      // blockImage 跟谁鼠标坐标 mousePosition 移动
+
+      canvasContext.restore()
+
+
+
     }
     requestAnimationFrame(drawCanvasUpdate)
   }
