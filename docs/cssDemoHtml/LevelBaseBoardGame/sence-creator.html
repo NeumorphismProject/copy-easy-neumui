@@ -146,6 +146,7 @@
     /* ---物体选择下拉框菜单面板悬浮窗体--- */
     .blocks-selection-pannel {
       position: fixed;
+      top: 100px;
       left: 246px;
       display: flex;
       gap: 8px;
@@ -153,11 +154,9 @@
       width: auto;
       max-width: 132px;
       padding: 8px;
-      margin-top: 4px;
       border: 1px dotted rgb(5, 156, 138);
       box-shadow: -2px 2px 8px rgb(2, 114, 101);
       border-radius: 4px;
-      opacity: 0;
       transition: opacity 100ms linear;
     }
 
@@ -195,17 +194,16 @@
     /* ---物体参数调节面板悬浮窗体--- */
     .setting-pannel {
       position: fixed;
+      top: 100px;
       right: 8px;
       display: flex;
       gap: 8px;
       background-color: aliceblue;
       width: auto;
       padding: 8px;
-      margin-top: 4px;
       border: 1px dotted rgb(5, 156, 138);
       box-shadow: -2px 2px 8px rgb(2, 114, 101);
       border-radius: 4px;
-      opacity: 0;
       transition: opacity 100ms linear;
     }
 
@@ -240,7 +238,11 @@
 
     /* ------------------------游戏场景---------------------- */
 
-    .game-scene {}
+    .game-sence {
+      width: 100%;
+      height: 500px;
+      border: 1px dashed gray;
+    }
   </style>
 </head>
 
@@ -830,10 +832,12 @@
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
       </div>
     </div>
-    <div class="game-scene"></div>
+
+    <!-- 游戏绘制区域 -->
+    <div class="game-sence"></div>
 
     <!-- 物体选择下拉框菜单 -->
-    <div class="blocks-selection-pannel">
+    <div class="blocks-selection-pannel" style="opacity: 0;">
       <div class="item">
         <div class="icon">
           <svg t="1690328792051" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
@@ -928,7 +932,7 @@
     </div>
 
     <!-- 参数设置悬浮窗体 -->
-    <div class="setting-pannel">
+    <div class="setting-pannel" style="opacity: 0;">
       <!-- 基础属性 -->
       <div class="group">
         <label class="group-label">基础属性</label>
@@ -952,8 +956,11 @@
 </body>
 <!-- 通用变量 -->
 <script>
+  let gameSenceDom = undefined
+  let canvasContext = undefined
   let blocksSelectionPannelDom = undefined
   let settingPannelDom = undefined
+  let mousePosition = [null, null]
 </script>
 
 <!-- 通用函数 -->
@@ -969,6 +976,62 @@
       dom.style.display = ''
       dom.style.opacity = '1'
     }
+  }
+</script>
+
+<!-- 游戏绘制区域控制 -->
+<script>
+
+  const loadCanvas = () => {
+    // 在游戏绘制区域创建 canvas 并获取其context
+    gameSenceDom = document.querySelector('.game-sence')
+    const canvas = document.createElement('canvas', { id: 'game-sence-canvas' })
+    canvas.setAttribute('width', gameSenceDom.clientWidth)
+    canvas.setAttribute('height', gameSenceDom.clientHeight)
+
+    gameSenceDom.appendChild(canvas)
+    canvasContext = canvas.getContext("2d")
+    canvasContext.fillStyle = "green"
+    canvasContext.fillRect(0, 0, canvas.width, canvas.height)
+    drawSvgOnCanvas(canvasContext)
+  }
+
+  // 将 svg 绘制到 canvas 上
+  let blockImage = undefined
+  const drawSvgOnCanvas = (context) => {
+    const svgDom = document.querySelector('.blocks-selection-pannel > div:nth-child(1) > .icon > svg')
+    svgDom.setAttribute('width', 32)
+    svgDom.setAttribute('height', 32)
+    // 将 svg 元素对象序列化成字符串，这样交给 canvas 去解析绘制
+    const svgDomStr = (new XMLSerializer()).serializeToString(svgDom)
+
+    // 创建 Image 对象并交给 canvas 绘制图像
+    const img = new Image()
+    img.onload = () => {
+      blockImage = img
+      // canvas 一定要等图像加载完成后才可以绘制
+      context.drawImage(img, 0, 0)
+
+      // setTimeout(() => {
+      //   context.clearRect(0, 0, 32, 32)
+      //   context.drawImage(img, 110, 110)
+      // }, 3000)
+    }
+    // svg 需要转成 base64 才可解析（btoa() 是 js 用于转换 base64 函数）
+    img.src = 'data:image/svg+xml;base64,' + btoa(svgDomStr)
+    // img.src = 'cat-sprites.jpg'
+  }
+
+  const drawCanvasUpdate = () => {
+    if(JSON.stringify(mousePosition) !== '[null,null]') {
+      const offsetY = 100
+      const [px, py] = mousePosition
+      const imgW = blockImage.width
+      const imgH = blockImage.height
+
+      canvasContext.drawImage(blockImage, ...[px-Math.round(imgW/2), py-offsetY-Math.round(imgH/2)])
+    }
+    requestAnimationFrame(drawCanvasUpdate)
   }
 </script>
 
@@ -993,10 +1056,85 @@
   const initOptions = () => {
   }
 
+  // #region ---------- touch/click action ------------
+
+  /**
+  * move start
+  * @param clientPosition the position whitch is current mouse or touch poition. As [clientX, clientY]. Example: [0,0]
+  */
+  const onMoveStart = (clientPosition, targetDom) => {
+    mousePosition = clientPosition
+  }
+  /**
+   * moving
+   * @param clientPosition the position whitch is current mouse or touch poition. As [clientX, clientY]. Example: [0,0]
+   */
+  const onMoving = (clientPosition, targetDom) => {
+    mousePosition = clientPosition
+  }
+  /**
+   * move end
+   * @param clientPosition the position whitch is current mouse or touch poition. As [clientX, clientY]. Example: [0,0]
+   */
+  const onMoveEnd = (targetDom) => {
+    mousePosition = [null, null]
+  }
+
+  // #endregion ------------------------
+
+
+  // #region ----- mouse listener handle ----
+
+  const handleMouseDown = (ev) => {
+    const clientPosition = [ev.clientX, ev.clientY]
+    onMoveStart(clientPosition, ev.target)
+  }
+
+  const handleMouseMove = (ev) => {
+    const clientPosition = [ev.clientX, ev.clientY]
+    onMoving(clientPosition, ev.target)
+  }
+
+  const handleMouseUp = (ev) => {
+    onMoveEnd(ev.target)
+  }
+
+  // #endregion
+
+  // #region ----- touch listener handle ----
+
+  const handleTouchStart = (ev) => {
+    const clientPosition = [ev.touches[0].clientX, ev.touches[0].clientY]
+    onMoveStart(clientPosition, ev.target)
+  }
+
+  const handleTouchMove = (ev) => {
+    const clientPosition = [ev.touches[0].clientX, ev.touches[0].clientY]
+    onMoving(clientPosition, ev.target)
+  }
+
+  const handleTouchEnd = (ev) => {
+    onMoveEnd(ev.target)
+  }
+
+  // #endregion
+
+  // mouse listener
+  window.addEventListener('mousedown', handleMouseDown)
+  window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('mouseup', handleMouseUp)
+
+  // touch listener
+  window.addEventListener('touchstart', handleTouchStart)
+  window.addEventListener('touchmove', handleTouchMove)
+  window.addEventListener('touchend', handleTouchEnd)
+
   window.addEventListener('load', () => {
     console.log('--- load ---')
     initDoms()
     initOptions()
+    loadCanvas()
+    requestAnimationFrame(drawCanvasUpdate)
   })
 </script>
 
