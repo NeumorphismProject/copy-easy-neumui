@@ -955,13 +955,51 @@
     </div>
   </div>
 </body>
-<!-- 通用变量 -->
+<!-- 全局变量 -->
 <script>
   let gameSenceDom = undefined
   let canvasContext = undefined
   let blocksSelectionPannelDom = undefined
   let settingPannelDom = undefined
   let mousePosition = [null, null]
+
+  // --- 游戏关键数据 ---
+  // 其中的数据属性会与 start-game-data-vars.js 中保持一致，这样便于后续生产一个新的 start-game-data-vars.js 文件，从而打包出新的游戏关卡
+  let gameSenceData = {
+    // 游戏场景数据
+    global: {
+      GAME_SENCE_BACKGROUND_IMAGE: ''
+    },
+    // 玩家数据
+    player: {
+      X_START_SPEED: '',
+      Y_FREE_FALL_STEP_SPEED: '',
+      Y_JUMP_START_SPEED: '',
+      PLAYER_BORTH_POSITION: '',
+      PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: '',
+      playerScore: {
+        value: 0, // 当前得分
+        append: 0 // 追加得分属性
+      },
+      playerSpeed: [0, 0],
+      playerSize: [54, 32],
+      playerSpritesBackgrundImageUrl: 'url("./cat-sprites.jpg")',
+      playerSpritesRunActionAnimationOptions: {
+        startX: PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
+        endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
+        stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
+      },
+    },
+    // 普通砖块数据
+    block: {
+      blocksData: []
+    },
+    // 金币数据
+    coin: {
+      COIN_COLLISION_OFFSET: '',
+      coinsData: []
+    }
+  }
 </script>
 
 <!-- 通用函数 -->
