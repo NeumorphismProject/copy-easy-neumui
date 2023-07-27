@@ -1066,7 +1066,7 @@
           drawCanvasImage(options.ctx, options)
           // 记录到总数据中
           let findIndex = null
-          if (newVal.id && (findIndex=target.value.findIndex(g => g.id === newVal.id)) !== -1) {
+          if (newVal.id && (findIndex = target.value.findIndex(g => g.id === newVal.id)) !== -1) {
             // 移除原来的数据
             target.value.splice(findIndex, 1)
             // 再追加
@@ -1108,6 +1108,20 @@
 <script>
 
   // -------- canvas 通用函数 -----------
+
+  // 检查一个坐标点是否在一个方框区域内
+  function checkPointInRect(position, targetRect) {
+    const { position: targetPosition, size } = targetRect
+
+    const [px, py] = position
+    const [tx, ty] = targetPosition
+    const [tw, th] = size
+    const [tEndx, tEndy] = [tx + tw, ty + th]
+
+    const inRect = (px >= tx && px <= tEndx) && (py >= ty && py <= tEndy)
+
+    return inRect
+  }
 
   function drawCanvasImageAction(ctx, img, { position, size }) {
     ctx.save()
@@ -1180,23 +1194,17 @@
     canvasContext = canvas.getContext("2d")
     // canvasContext.fillStyle = "rgba(145,145,145,0.5)"
     // canvasContext.fillRect(0, 0, canvas.width, canvas.height)
-    // drawSvgOnCanvas(canvasContext)
   }
 
-  // // 将 svg 绘制到 canvas 上
-  // let blockImage = undefined
-  // const drawSvgOnCanvas = (ctx) => {
-  //   const svgDom = document.querySelector('.blocks-selection-pannel > div:nth-child(1) > .icon > svg')
-  //   svgDom.setAttribute('width', 32)
-  //   svgDom.setAttribute('height', 32)
-
-  //   const prs = [
-  //     drawCanvasImage(ctx, { svgDom }),
-  //     drawCanvasImage(ctx, { imgSrc: './imgs/selected-frame.png', position: [100, 100] }),
-  //   ]
-
-  //   Promise.all(prs)
-  // }
+  const appendNewBlockToCanvas = (type) => {
+    canvasGraphicsPositionsProxy.append = {
+      type,
+      ctx: canvasContext,
+      imgSrc: gameBoxDefaultParams[type].backgroundImage,
+      position: gameBoxDefaultParams[type].position,
+      size: gameBoxDefaultParams[type].size
+    }
+  }
 
   let movImg = undefined
   const drawMoveImgTo = async (canvas, ctx, position) => {
@@ -1219,7 +1227,17 @@
   const drawCanvasUpdate = () => {
     // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
     if (JSON.stringify(mousePosition) !== '[null,null]') {
+      const mp = [mousePosition[0], mousePosition[1] - 100]
       // drawMoveImgTo(canvasDom, canvasContext, [mousePosition[0], mousePosition[1] - 100])
+
+      const rects = canvasGraphicsPositionsProxy.value.filter(g => checkPointInRect(mp, { position: g.position, size: g.size }))
+      if(rects.length > 0) {
+        // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
+        rects.sort((a,b)=>b.zIndex - a.zIndex)
+        const targetRect = rects[0]
+        // TODO:  后续将处理这个目标图形，实现鼠标选中和拖拽
+        console.log(targetRect)
+      }
     }
     requestAnimationFrame(drawCanvasUpdate)
   }
@@ -1245,14 +1263,8 @@
 
   // 添加物品面板悬浮窗体的 选项 点击事件
   const onBlockSelectionClick = (type) => {
-    // 讲选择的物体绘制到 canvas 上
-    canvasGraphicsPositionsProxy.append = {
-      type,
-      ctx: canvasContext,
-      imgSrc: gameBoxDefaultParams[type].backgroundImage,
-      position: gameBoxDefaultParams[type].position,
-      size: gameBoxDefaultParams[type].size
-    }
+    // 把选择的物体绘制到 canvas 上
+    appendNewBlockToCanvas(type)
   }
 
   const initOptions = () => {
