@@ -1058,8 +1058,65 @@
   let canvasGraphicsPositions = {
     value: [],
     append: undefined, // { type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size, ...others } --> 这里的 ...others 表示添加图形时允许根据需要添加一些可选属性数据，也会同时存入数据中
-    remove: undefined // { ctx, id } 传递图形id，删除对应的图形和数据
+    update: undefined, // { type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size, ...others } --> 这里的 ...others 表示添加图形时允许根据需要添加一些可选属性数据，也会同时存入数据中
+    remove: undefined // { ctx, id, notRemoveData:true } 传递图形id，删除对应的图形和数据
   }
+  let canvasGraphicsPositionsUpdateProxy = new Proxy(canvasGraphicsPositions, {
+    get: function (target, _value) {
+      return target.value
+    },
+    set: function (target, key, value) {
+      const errorHint = 'set canvasGraphicsPositions Error: '
+      try {
+        if (key === 'update') {
+          const { type } = value
+          if (!type) {
+            throw new Error(`${errorHint}append 中的参数 type 是必传的`)
+          }
+          if (Object.hasOwnProperty.call(value, 'id') && typeof value.id !== 'string') {
+            throw new Error(`${errorHint}append 中的参数 type 是必传的`)
+          }
+          if (!BLOCK_TYPES.includes(type)) {
+            throw new Error(`${errorHint}type 值仅支持 player/block/coin`)
+          }
+          const updateVal = { ...value }
+          // 记录到总数据中
+          let findIndex = null
+          if (updateVal.id && (findIndex = target.value.findIndex(g => g.id === updateVal.id)) !== -1) {
+            // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
+            const options = updateVal // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
+            redrawCanvasImage(options.ctx, options)
+            const updateData = { ...target.value[findIndex], position: options.position, zIndex: target.value.length + 2 }
+            // 移除原来的数据
+            target.value.splice(findIndex, 1)
+            // 再追加
+            target.value.push(updateVal)
+          } else {
+            throw new Error(`${errorHint} 未找到 id=${updateVal.id} 的数据`)
+          }
+          return true
+        } else if (key === 'remove') {
+          // 删除对应的图形和数据
+          const { ctx, id: rmId, notRemoveData } = value
+          const findIndex = target.value.findIndex(g => g.id === rmId)
+          if (findIndex === -1) {
+            throw new Error(`${errorHint}通过 id=${rmId} 未找到相应的图形数据`)
+          }
+          // 筛选出排除目标数据的所有其他数据
+          const othersData = target.value.filter(g => g.id !== rmId)
+          // 把其他数据进行全局重新绘制
+          for (const d of othersData) {
+            redrawCanvasImage(ctx, d)
+          }
+          // 移除数据
+          if (!notRemoveData) target.value.splice(findIndex, 1)
+          return true
+        }
+      } catch (err) {
+        throw new Error(`${errorHint}${err}`)
+      }
+    }
+  })
   let canvasGraphicsPositionsProxy = new Proxy(canvasGraphicsPositions, {
     get: function (target, _value) {
       return target.value
@@ -1094,22 +1151,6 @@
             const newId = `${type}-${target.value.filter(t => t.type === type).length + 1}`
             target.value.push({ ...newVal, imgInstance, id: newId, zIndex: target.value.length + 1 })
           }
-          return true
-        } else if (key === 'remove') {
-          // 删除对应的图形和数据
-          const { ctx, id: rmId } = value
-          const findIndex = target.value.findIndex(g => g.id === rmId)
-          if (findIndex === -1) {
-            throw new Error(`${errorHint}通过 id=${rmId} 未找到相应的图形数据`)
-          }
-          // 筛选出排除目标数据的所有其他数据
-          const othersData = target.value.filter(g => g.id !== rmId)
-          // 把其他数据进行全局重新绘制
-          for (const d of othersData) {
-            drawCanvasImage(ctx, d)
-          }
-          // 移除数据
-          target.value.splice(findIndex, 1)
           return true
         }
         throw new Error(`${errorHint}canvasGraphicsPositionsProxy.${key}不存在或不可访问`)
@@ -1203,6 +1244,14 @@
         reject(err)
       }
     })
+  }
+
+  function redrawCanvasImage(ctx, { imgInstance, position, size }) {
+    let img = imgInstance
+    if (!img) {
+      throw new Error('[function] redrawCanvasImage Error: imgInstance 参数不存在，是必传的')
+    }
+    drawCanvasImageAction(ctx, img, { position, size })
   }
 
   /**
@@ -1309,11 +1358,11 @@
   // }
 
   const drawOtherRects = (ctx, { targetRect }) => {
-    canvasGraphicsPositionsProxy.remove = { ctx, id: targetRect.id }
+    canvasGraphicsPositionsUpdateProxy.remove = { ctx, id: targetRect.id, notRemoveData: true }
   }
 
   const redrawTargetRect = (canvas, ctx, targetRect) => {
-    canvasGraphicsPositionsProxy.append = targetRect
+    canvasGraphicsPositionsUpdateProxy.update = targetRect
   }
 
   const drawMoveSelectedRect = (canvas, ctx, { targetRect, position }) => {
@@ -1330,7 +1379,8 @@
     drawGraphicsSelectedFrame(ctx, { ...targetRect, position })
   }
 
-  const drawCanvasUpdate = () => {
+  // 拖拽 canvas 上的图形
+  const dropCanvasRect = () => {
     // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
     if (JSON.stringify(mouseStartPosition) !== '[null,null]' && JSON.stringify(mousePosition) !== '[null,null]') {
       // 鼠标坐标是相对于视口定位的，[0,0]坐标位于视口的左上角，所以要想以canvas的左上角为[0,0]远点，则y坐标需要减去上部分的工具栏高度值，后面的 -2 是boder边框宽度
@@ -1355,7 +1405,34 @@
         drawMoveSelectedRect(canvasDom, ctx, { targetRect, position: cPosition })
       }
     }
-    return requestAnimationFrame(drawCanvasUpdate)
+  }
+
+  const drawCanvasUpdate = () => {
+    // // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
+    // if (JSON.stringify(mouseStartPosition) !== '[null,null]' && JSON.stringify(mousePosition) !== '[null,null]') {
+    //   // 鼠标坐标是相对于视口定位的，[0,0]坐标位于视口的左上角，所以要想以canvas的左上角为[0,0]远点，则y坐标需要减去上部分的工具栏高度值，后面的 -2 是boder边框宽度
+    //   const pOffset = toolsWrapperHeight + 2
+    //   const startMp = [mouseStartPosition[0], mouseStartPosition[1] - pOffset]
+    //   const curMousePosition = [mousePosition[0], mousePosition[1] - pOffset]
+    //   // drawMoveImgTo(canvasDom, canvasContext, [mousePosition[0], mousePosition[1] - 100])
+
+    //   // 根据鼠标按下的坐标点，判断是否当前坐标下是否存在图形
+    //   const rects = canvasGraphicsPositionsProxy.value.filter(g => checkPointInRect(startMp, { position: g.position, size: g.size }))
+    //   // 点击区域存在图形的话，取出最上层的图形，设为选中图形
+    //   if (rects.length > 0) {
+    //     // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
+    //     rects.sort((a, b) => b.zIndex - a.zIndex)
+    //     const targetRect = rects[0]
+    //     // TODO:  后续将处理这个目标图形，实现鼠标选中和拖拽
+    //     canvasRectSelected = targetRect
+
+    //     // 拖拽移动鼠标点击选中的图形
+    //     const ctx = canvasContext
+    //     const cPosition = [curMousePosition[0] - Math.round(targetRect.size[0] / 2), curMousePosition[1] - Math.round(targetRect.size[1] / 2)]
+    //     drawMoveSelectedRect(canvasDom, ctx, { targetRect, position: cPosition })
+    //   }
+    // }
+    // return requestAnimationFrame(drawCanvasUpdate)
   }
 </script>
 
@@ -1404,6 +1481,8 @@
    */
   const onMoving = (clientPosition, targetDom) => {
     mousePosition = clientPosition
+    // 拖拽移动canvas上的图形
+    dropCanvasRect()
   }
   /**
    * move end
@@ -1473,7 +1552,7 @@
     initDoms()
     initOptions()
     loadCanvas()
-    requestAnimationFrame(drawCanvasUpdate)
+    // requestAnimationFrame(drawCanvasUpdate)
   })
 </script>
 
