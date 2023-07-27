@@ -143,6 +143,7 @@
       justify-content: center;
       gap: 4px;
     }
+
     .setting-pannel-switch button {
       height: 50px;
     }
@@ -1044,7 +1045,7 @@
   // TODO: 做导出数据功能的时候，会把这里的数据抽离到 gameSenceData 相应的数据中
   let canvasGraphicsPositions = {
     value: [],
-    append: undefined // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
+    append: undefined // { type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
   }
   let canvasGraphicsPositionsProxy = new Proxy(canvasGraphicsPositions, {
     get: function (target, _value) {
@@ -1053,24 +1054,27 @@
     set: function (target, key, value) {
       try {
         if (key === 'append') {
-          const { id, type } = value
-          if (!id || !type) {
-            throw new Error('set canvasGraphicsPositions Error: append 中的参数 id 和 type 是必传的')
+          const { type } = value
+          if (!type) {
+            throw new Error('set canvasGraphicsPositions Error: append 中的参数 type 是必传的')
           }
           if (!BLOCK_TYPES.includes(type)) {
             throw new Error('set canvasGraphicsPositions Error: type 值仅支持 player/block/coin')
           }
-          const options = value // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
+          const newVal = { ...value }
+          const options = newVal // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
           drawCanvasImage(options.ctx, options)
           // 记录到总数据中
-          const findIndex = target.value.findIndex(g => g.id === id)
-          if (findIndex !== -1) {
+          let findIndex = null
+          if (newVal.id && (findIndex=target.value.findIndex(g => g.id === newVal.id)) !== -1) {
             // 移除原来的数据
             target.value.splice(findIndex, 1)
             // 再追加
-            target.value.push({...value, zIndex: target.value.length + 1})
+            target.value.push({ ...newVal, zIndex: target.value.length + 1 })
           } else {
-            target.value.push({...value, zIndex: target.value.length + 1})
+            // 新增则需要新建id
+            const newId = `${type}-${target.value.filter(t => t.type === type).length + 1}`
+            target.value.push({ ...newVal, id: newId, zIndex: target.value.length + 1 })
           }
           return true
         }
@@ -1242,10 +1246,7 @@
   // 添加物品面板悬浮窗体的 选项 点击事件
   const onBlockSelectionClick = (type) => {
     // 讲选择的物体绘制到 canvas 上
-    const idx = canvasGraphicsPositionsProxy.value.filter(t => t.type === type).length + 1
-    const id = `${type}-${idx}`
     canvasGraphicsPositionsProxy.append = {
-      id,
       type,
       ctx: canvasContext,
       imgSrc: gameBoxDefaultParams[type].backgroundImage,
