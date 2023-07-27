@@ -141,6 +141,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 4px;
+    }
+    .setting-pannel-switch button {
+      height: 50px;
     }
 
     /* ---物体选择下拉框菜单面板悬浮窗体--- */
@@ -240,9 +244,9 @@
 
     .game-sence {
       width: 100%;
-      height: 500px;
+      height: 600px;
       border: 1px dashed gray;
-      background-image: url('./cat-sprites.jpg');
+      background-repeat: no-repeat;
     }
   </style>
 </head>
@@ -831,6 +835,7 @@
       </div>
       <div class="setting-pannel-switch">
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
+        <button>导出游戏</button>
       </div>
     </div>
 
@@ -839,7 +844,7 @@
 
     <!-- 物体选择下拉框菜单 -->
     <div class="blocks-selection-pannel" style="opacity: 0;">
-      <div class="item">
+      <div class="item" onclick="onBlockSelectionClick('block')">
         <div class="icon">
           <svg t="1690328792051" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
             p-id="28093" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64">
@@ -852,7 +857,7 @@
           砖块
         </div>
       </div>
-      <div class="item">
+      <div class="item" onclick="onBlockSelectionClick('coin')">
         <div class="icon">
           <svg t="1690350253199" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
             p-id="18454" xmlns:xlink="http://www.w3.org/1999/xlink" width="32" height="32">
@@ -958,48 +963,125 @@
 <!-- 全局变量 -->
 <script>
   let gameSenceDom = undefined
+  let canvasDom = undefined
   let canvasContext = undefined
   let blocksSelectionPannelDom = undefined
   let settingPannelDom = undefined
+  let blockSelectedFrameDom = undefined
+
   let mousePosition = [null, null]
+
+  const BLOCK_TYPES = ['player', 'block', 'coin']
+
+  // 玩家的默认参数
+  const playerDefault = {
+    X_START_SPEED: 4,
+    Y_FREE_FALL_STEP_SPEED: 8,
+    Y_JUMP_START_SPEED: 20,
+    PLAYER_BORTH_POSITION: [250, 0],
+    PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: [5.5, 7],
+    playerScore: {
+      value: 0, // 当前得分
+      append: 0 // 追加得分属性
+    },
+    playerSpeed: [0, 0],
+    playerSize: [54, 32],
+    playerSpritesBackgrundImageUrl: 'url("./imgs/cat-sprites.jpg")',
+    playerSpritesRunActionAnimationOptions: {
+      startX: 5.5, // gameSenceData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
+      endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
+      stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
+    },
+  }
+
+  // 一个砖块物体的默认参数
+  const blockDefault = {
+    blockIndex: 0,
+    blockId: 'block-0', // 唯一id
+    size: [50, 50],
+    position: [0, 0],
+    backgroundImage: './imgs/block.png'
+  }
+
+  // 一个金币物体的默认参数
+  const coinDefault = {
+    coinIndex: 0,
+    coinId: 'coin-0', // 唯一id
+    size: [50, 50],
+    position: [0, 0],
+    score: 1, // 金币代表的分数值
+    backgroundImage: './imgs/coin.png' // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
+  }
+
+  // 默认参数统一这里到该对象中，方便部分函数中直接根据key进行取用
+  const gameBoxDefaultParams = {
+    player: playerDefault,
+    block: blockDefault,
+    coin: coinDefault
+  }
 
   // --- 游戏关键数据 ---
   // 其中的数据属性会与 start-game-data-vars.js 中保持一致，这样便于后续生产一个新的 start-game-data-vars.js 文件，从而打包出新的游戏关卡
   let gameSenceData = {
     // 游戏场景数据
     global: {
-      GAME_SENCE_BACKGROUND_IMAGE: ''
+      GAME_SENCE_BACKGROUND_IMAGE: './imgs/game-bg.jpg'
     },
     // 玩家数据
-    player: {
-      X_START_SPEED: '',
-      Y_FREE_FALL_STEP_SPEED: '',
-      Y_JUMP_START_SPEED: '',
-      PLAYER_BORTH_POSITION: '',
-      PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: '',
-      playerScore: {
-        value: 0, // 当前得分
-        append: 0 // 追加得分属性
-      },
-      playerSpeed: [0, 0],
-      playerSize: [54, 32],
-      playerSpritesBackgrundImageUrl: 'url("./cat-sprites.jpg")',
-      playerSpritesRunActionAnimationOptions: {
-        startX: PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
-        endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
-        stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
-      },
-    },
+    player: playerDefault,
     // 普通砖块数据
     block: {
       blocksData: []
     },
     // 金币数据
     coin: {
-      COIN_COLLISION_OFFSET: '',
+      COIN_COLLISION_OFFSET: 10,
       coinsData: []
     }
   }
+
+  // 每次在 canvas 上绘制的图像信息都会记录在这里
+  // TODO: 做导出数据功能的时候，会把这里的数据抽离到 gameSenceData 相应的数据中
+  let canvasGraphicsPositions = {
+    value: [],
+    append: undefined // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
+  }
+  let canvasGraphicsPositionsProxy = new Proxy(canvasGraphicsPositions, {
+    get: function (target, _value) {
+      return target.value
+    },
+    set: function (target, key, value) {
+      try {
+        if (key === 'append') {
+          const { id, type } = value
+          if (!id || !type) {
+            throw new Error('set canvasGraphicsPositions Error: append 中的参数 id 和 type 是必传的')
+          }
+          if (!BLOCK_TYPES.includes(type)) {
+            throw new Error('set canvasGraphicsPositions Error: type 值仅支持 player/block/coin')
+          }
+          const options = value // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
+          drawCanvasImage(options.ctx, options)
+          // 记录到总数据中
+          const findIndex = target.value.findIndex(g => g.id === id)
+          if (findIndex !== -1) {
+            // 移除原来的数据
+            target.value.splice(findIndex, 1)
+            // 再追加
+            target.value.push({...value, zIndex: target.value.length + 1})
+          } else {
+            target.value.push({...value, zIndex: target.value.length + 1})
+          }
+          return true
+        }
+        throw new Error(`set canvasGraphicsPositions Error : canvasGraphicsPositionsProxy.${key}不存在或不可访问`)
+      } catch (err) {
+        throw new Error(`set canvasGraphicsPositions Error : ${err}`)
+      }
+    }
+  })
+
+
 </script>
 
 <!-- 通用函数 -->
@@ -1021,10 +1103,67 @@
 <!-- 游戏绘制区域控制 -->
 <script>
 
+  // -------- canvas 通用函数 -----------
+
+  function drawCanvasImageAction(ctx, img, { position, size }) {
+    ctx.save()
+    const p = Array.isArray(position) && position.length > 1 ? position : [0, 0]
+    const s = Array.isArray(size) && size.length > 1 ? size : []
+    ctx.translate(...p)
+    ctx.drawImage(img, 0, 0, ...s)
+    ctx.restore()
+  }
+
+  /**
+   * 绘制图片到canvas上
+   * @params ctx: 画布上下文
+   * @params options: { customDraw, imgInstance, imgSrc, svgDom, position size }
+   * customDraw=是否自己把img实例绘制到canvas上；
+   * imgInstance=如果不传递的话，就会自动 new Image() 实例；
+   * imgSrc和svgDom 传其中一个，表示你想绘制的图像原始类型，即你想把svg还是普通图片绘制到canvas上
+   * position=图像在画布上绘制的坐标位置，是个数组，[numberX,numberY]
+   * size=图像的尺寸
+   *
+   * @return Promise
+   * */
+  function drawCanvasImage(ctx, { customDraw, imgInstance, imgSrc, svgDom, position, size }) {
+    return new Promise((resolve, reject) => {
+      try {
+        let img = imgInstance
+        if (!img) {
+          img = new Image()
+          img.onload = () => {
+            // canvas 一定要等图像加载完成后才可以绘制
+            if (!customDraw) drawCanvasImageAction(ctx, img, { position, size })
+            resolve({ cvsImg: img })
+          }
+          // svg 需要转成 base64 才可解析（btoa() 是 js 用于转换 base64 函数）
+          if (imgSrc) img.src = imgSrc
+          else if (svgDom) {
+            // 将 svg 元素对象序列化成字符串，这样交给 canvas 去解析绘制
+            const svgDomStr = (new XMLSerializer()).serializeToString(svgDom)
+            img.src = 'data:image/svg+xml;base64,' + btoa(svgDomStr)
+          }
+        } else {
+          if (!customDraw) drawCanvasImageAction(ctx, img, { position, size })
+          resolve({ cvsImg: img })
+        }
+      } catch (err) {
+        reject(err)
+      }
+    })
+  }
+
+  // ------------------------------------
+
   const loadCanvas = () => {
+
     // 在游戏绘制区域创建 canvas 并获取其context
+    blockSelectedFrameDom = document.getElementById('game-block-selected-frame')
     gameSenceDom = document.querySelector('.game-sence')
+    gameSenceDom.style.backgroundImage = `url("${gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE}")`
     const canvas = document.createElement('canvas', { id: 'game-sence-canvas' })
+    canvasDom = canvas
     // 这个用于解决canvas清晰度的问题，待研究
     // Set actual size in memory (scaled to account for extra pixel density).
     // const scale = window.devicePixelRatio // Change to 1 on retina screens to see blurry canvas.
@@ -1037,63 +1176,46 @@
     canvasContext = canvas.getContext("2d")
     // canvasContext.fillStyle = "rgba(145,145,145,0.5)"
     // canvasContext.fillRect(0, 0, canvas.width, canvas.height)
-    drawSvgOnCanvas(canvasContext)
+    // drawSvgOnCanvas(canvasContext)
   }
 
-  // 将 svg 绘制到 canvas 上
-  let blockImage = undefined
-  const drawSvgOnCanvas = (context) => {
-    const svgDom = document.querySelector('.blocks-selection-pannel > div:nth-child(1) > .icon > svg')
-    svgDom.setAttribute('width', 32)
-    svgDom.setAttribute('height', 32)
-    // 将 svg 元素对象序列化成字符串，这样交给 canvas 去解析绘制
-    const svgDomStr = (new XMLSerializer()).serializeToString(svgDom)
+  // // 将 svg 绘制到 canvas 上
+  // let blockImage = undefined
+  // const drawSvgOnCanvas = (ctx) => {
+  //   const svgDom = document.querySelector('.blocks-selection-pannel > div:nth-child(1) > .icon > svg')
+  //   svgDom.setAttribute('width', 32)
+  //   svgDom.setAttribute('height', 32)
 
-    // 创建 Image 对象并交给 canvas 绘制图像
-    const img = new Image()
-    img.onload = () => {
-      blockImage = img
-      // canvas 一定要等图像加载完成后才可以绘制
-      context.drawImage(img, 0, 0)
+  //   const prs = [
+  //     drawCanvasImage(ctx, { svgDom }),
+  //     drawCanvasImage(ctx, { imgSrc: './imgs/selected-frame.png', position: [100, 100] }),
+  //   ]
 
-      setTimeout(() => {
-        context.save()
+  //   Promise.all(prs)
+  // }
 
-        // 移动坐标系原点
-        context.translate(110, 110)
-        // context.clearRect(0, 0, 32, 32)
-        context.drawImage(img, 0, 0)
+  let movImg = undefined
+  const drawMoveImgTo = async (canvas, ctx, position) => {
+    // 清屏
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-        context.restore()
-        // img.moveto
-      }, 3000)
+    // 先重新绘制排除目标图像后的所有图像
+
+    // 再绘制目标图像
+    let svgDom = undefined
+    if (!movImg) {
+      svgDom = document.querySelector('.blocks-selection-pannel > div:nth-child(1) > .icon > svg')
+      svgDom.setAttribute('width', 32)
+      svgDom.setAttribute('height', 32)
     }
-    // svg 需要转成 base64 才可解析（btoa() 是 js 用于转换 base64 函数）
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgDomStr)
-    // img.src = 'cat-sprites.jpg'
+    const { cvsImg } = await drawCanvasImage(ctx, { imgInstance: movImg, svgDom, position, size: [100, 100] })
+    movImg = cvsImg
   }
 
   const drawCanvasUpdate = () => {
     // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
     if (JSON.stringify(mousePosition) !== '[null,null]') {
-
-      canvasContext.save()
-
-      const offsetY = 100
-      const [px, py] = mousePosition
-      const imgW = blockImage.width
-      const imgH = blockImage.height
-
-      // canvasContext.moveto()
-
-      // canvasContext.drawImage(blockImage, ...[px-Math.round(imgW/2), py-offsetY-Math.round(imgH/2)])
-
-      // blockImage 跟谁鼠标坐标 mousePosition 移动
-
-      canvasContext.restore()
-
-
-
+      // drawMoveImgTo(canvasDom, canvasContext, [mousePosition[0], mousePosition[1] - 100])
     }
     requestAnimationFrame(drawCanvasUpdate)
   }
@@ -1115,6 +1237,21 @@
   const onSettingSwitchClick = () => {
     // 显示/隐藏 物体参数调节面板 悬浮窗体
     displayOrHiddenPannel(settingPannelDom)
+  }
+
+  // 添加物品面板悬浮窗体的 选项 点击事件
+  const onBlockSelectionClick = (type) => {
+    // 讲选择的物体绘制到 canvas 上
+    const idx = canvasGraphicsPositionsProxy.value.filter(t => t.type === type).length + 1
+    const id = `${type}-${idx}`
+    canvasGraphicsPositionsProxy.append = {
+      id,
+      type,
+      ctx: canvasContext,
+      imgSrc: gameBoxDefaultParams[type].backgroundImage,
+      position: gameBoxDefaultParams[type].position,
+      size: gameBoxDefaultParams[type].size
+    }
   }
 
   const initOptions = () => {
@@ -1149,17 +1286,22 @@
 
   // #region ----- mouse listener handle ----
 
+  let isMouseMovingStart = false
   const handleMouseDown = (ev) => {
+    isMouseMovingStart = true
     const clientPosition = [ev.clientX, ev.clientY]
     onMoveStart(clientPosition, ev.target)
   }
 
   const handleMouseMove = (ev) => {
-    const clientPosition = [ev.clientX, ev.clientY]
-    onMoving(clientPosition, ev.target)
+    if (isMouseMovingStart) {
+      const clientPosition = [ev.clientX, ev.clientY]
+      onMoving(clientPosition, ev.target)
+    }
   }
 
   const handleMouseUp = (ev) => {
+    isMouseMovingStart = false
     onMoveEnd(ev.target)
   }
 
@@ -1167,19 +1309,19 @@
 
   // #region ----- touch listener handle ----
 
-  const handleTouchStart = (ev) => {
-    const clientPosition = [ev.touches[0].clientX, ev.touches[0].clientY]
-    onMoveStart(clientPosition, ev.target)
-  }
+  // const handleTouchStart = (ev) => {
+  //   const clientPosition = [ev.touches[0].clientX, ev.touches[0].clientY]
+  //   onMoveStart(clientPosition, ev.target)
+  // }
 
-  const handleTouchMove = (ev) => {
-    const clientPosition = [ev.touches[0].clientX, ev.touches[0].clientY]
-    onMoving(clientPosition, ev.target)
-  }
+  // const handleTouchMove = (ev) => {
+  //   const clientPosition = [ev.touches[0].clientX, ev.touches[0].clientY]
+  //   onMoving(clientPosition, ev.target)
+  // }
 
-  const handleTouchEnd = (ev) => {
-    onMoveEnd(ev.target)
-  }
+  // const handleTouchEnd = (ev) => {
+  //   onMoveEnd(ev.target)
+  // }
 
   // #endregion
 
@@ -1188,10 +1330,10 @@
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('mouseup', handleMouseUp)
 
-  // touch listener
-  window.addEventListener('touchstart', handleTouchStart)
-  window.addEventListener('touchmove', handleTouchMove)
-  window.addEventListener('touchend', handleTouchEnd)
+  // // touch listener
+  // window.addEventListener('touchstart', handleTouchStart)
+  // window.addEventListener('touchmove', handleTouchMove)
+  // window.addEventListener('touchend', handleTouchEnd)
 
   window.addEventListener('load', () => {
     console.log('--- load ---')

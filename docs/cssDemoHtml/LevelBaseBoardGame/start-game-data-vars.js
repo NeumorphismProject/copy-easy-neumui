@@ -19,7 +19,7 @@ let playerSpeed = [0, 0]
 // 玩家尺寸
 let playerSize = [54, 32]
 // 玩家角色图片
-let playerSpritesBackgrundImageUrl = 'url("./cat-sprites.jpg")'
+let playerSpritesBackgrundImageUrl = 'url("./imgs/cat-sprites.jpg")'
 // 用于播放玩家跑步运动时，雪碧图不断切换的一些参数（目前仅支持 x 轴，即仅支持行上的动作切换）(这里的属性都是百分比值，即使用在 background-position:0% 0% 中)
 let playerSpritesRunActionAnimationOptions = {
   startX: PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
