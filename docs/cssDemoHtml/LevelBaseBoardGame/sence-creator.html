@@ -1382,26 +1382,37 @@
   // 拖拽 canvas 上的图形
   const dropCanvasRect = () => {
     // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
-    if (JSON.stringify(mouseStartPosition) !== '[null,null]' && JSON.stringify(mousePosition) !== '[null,null]') {
+    if (JSON.stringify(mouseStartPosition) !== '[null,null]') {
       // 鼠标坐标是相对于视口定位的，[0,0]坐标位于视口的左上角，所以要想以canvas的左上角为[0,0]远点，则y坐标需要减去上部分的工具栏高度值，后面的 -2 是boder边框宽度
       const pOffset = toolsWrapperHeight + 2
       const startMp = [mouseStartPosition[0], mouseStartPosition[1] - pOffset]
       const curMousePosition = [mousePosition[0], mousePosition[1] - pOffset]
       // drawMoveImgTo(canvasDom, canvasContext, [mousePosition[0], mousePosition[1] - 100])
 
-      // 根据鼠标按下的坐标点，判断是否当前坐标下是否存在图形
-      const rects = canvasGraphicsPositionsProxy.value.filter(g => checkPointInRect(startMp, { position: g.position, size: g.size }))
-      // 点击区域存在图形的话，取出最上层的图形，设为选中图形
-      if (rects.length > 0) {
-        // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
-        rects.sort((a, b) => b.zIndex - a.zIndex)
-        const targetRect = rects[0]
-        // TODO:  后续将处理这个目标图形，实现鼠标选中和拖拽
-        canvasRectSelected = targetRect
+      console.log( JSON.stringify(mouseStartPosition) )
 
+      let mvPosition = JSON.stringify(mousePosition) === '[null,null]' ? startMp : curMousePosition
+      let targetRect = undefined
+
+      if (JSON.stringify(mousePosition) === '[null,null]') {
+        // 根据鼠标按下的坐标点，判断是否当前坐标下是否存在图形
+        const rects = canvasGraphicsPositionsProxy.value.filter(g => checkPointInRect(startMp, { position: g.position, size: g.size }))
+        // 点击区域存在图形的话，取出最上层的图形，设为选中图形
+        if (rects.length > 0) {
+          // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
+          rects.sort((a, b) => b.zIndex - a.zIndex)
+          const targetRect = rects[0]
+          // TODO:  后续将处理这个目标图形，实现鼠标选中和拖拽
+          canvasRectSelected = targetRect
+        }
+      } else {
+        targetRect = canvasRectSelected
+      }
+
+      if (targetRect) {
         // 拖拽移动鼠标点击选中的图形
         const ctx = canvasContext
-        const cPosition = [curMousePosition[0] - Math.round(targetRect.size[0] / 2), curMousePosition[1] - Math.round(targetRect.size[1] / 2)]
+        const cPosition = [mvPosition[0] - Math.round(targetRect.size[0] / 2), mvPosition[1] - Math.round(targetRect.size[1] / 2)]
         drawMoveSelectedRect(canvasDom, ctx, { targetRect, position: cPosition })
       }
     }
@@ -1473,7 +1484,6 @@
   */
   const onMoveStart = (clientPosition, targetDom) => {
     mouseStartPosition = clientPosition
-    mousePosition = clientPosition
   }
   /**
    * moving
