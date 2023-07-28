@@ -1402,9 +1402,6 @@
       const ctx = canvasContext
       const position = [px - Math.round(tw / 2), py - Math.round(th / 2)]
       const newTargetRect = { ...targetRect, position }
-      console.log('-------start-------')
-      console.log('targetRect = ', targetRect.position)
-      console.log('newTargetRect = ', newTargetRect.position)
       drawMoveSelectedRect(canvasDom, ctx, { targetRect: newTargetRect })
     } else {
       if (canvasRectSelected) {
@@ -1427,9 +1424,6 @@
     const ctx = canvasContext
     const position = [px - Math.round(tw / 2), py - Math.round(th / 2)]
     const newTargetRect = { ...targetRect, position }
-    console.log('-------moving-------')
-    console.log('targetRect = ', targetRect.position)
-    console.log('newTargetRect = ', newTargetRect.position)
     drawMoveSelectedRect(canvasDom, ctx, { targetRect: newTargetRect })
     canvasRectSelected = newTargetRect
   }
