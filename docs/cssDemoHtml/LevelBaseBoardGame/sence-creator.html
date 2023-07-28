@@ -168,7 +168,7 @@
 
     .action-buttons-wrapper .group {
       display: flex;
-      gap:2px;
+      gap: 2px;
       flex-wrap: wrap;
       width: 80px;
     }
@@ -176,6 +176,7 @@
     .action-buttons-wrapper .group button {
       height: 30px;
     }
+
     .action-buttons-wrapper .group button:nth-child(3) {
       flex: 1;
     }
@@ -1215,7 +1216,7 @@
     } else {
       dom.style.display = 'flex'
       requestAnimationFrame(() => {
-        if(left) dom.style.left = left
+        if (left) dom.style.left = left
         dom.style.opacity = '1'
       })
     }
@@ -1506,15 +1507,13 @@
       // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
       rects.sort((a, b) => b.zIndex - a.zIndex)
       const targetRect = rects[0]
-      // 记录选中图形数据
-      canvasRectSelectedProxy.value = targetRect
+      // 记录选中图形数据(选中图形时，把当前位置记录到一个额外的属性中 moveStartposition ，这个属性用于拖拽图形时计算移动位置，当拖拽完成后会移除该属性)
+      canvasRectSelectedProxy.value = { ...targetRect, moveStartposition: targetRect.position }
       const [px, py] = mp
       const [tw, th] = targetRect.size
       // 为选中图形绘制边框(需要清除其他选中的边框)
       const ctx = canvasContext
-      const position = [px - Math.round(tw / 2), py - Math.round(th / 2)]
-      const newTargetRect = { ...targetRect, position }
-      drawMoveSelectedRect(canvasDom, ctx, { targetRect: newTargetRect })
+      drawMoveSelectedRect(canvasDom, ctx, { targetRect })
     } else {
       if (canvasRectSelected) {
         // 若鼠标点击区域没有任何图形，则去除当前图形的选中框
@@ -1525,16 +1524,32 @@
     }
   }
 
+  // 获取拖拽移动图形时，图形移动的坐标
+  const getCanvasRectDropMovePosition = (targetRect) => {
+    const mpStart = getMousePositionInCanvas(mouseStartPosition)
+    const mp = getMousePositionInCanvas(mousePosition)
+    const [psx, psy] = mpStart
+    const [px, py] = mp
+    const [tx, ty] = targetRect.moveStartposition
+    const [tw, th] = targetRect.size
+
+    // 为选中图形绘制边框(需要清除其他选中的边框)
+    const ctx = canvasContext
+    // TODO:图形移动的位置，会根据 鼠标的开始坐标 和 当前坐标的 偏移量进行计算
+    const position = [tx + px - psx, ty + py - psy]
+    return position
+  }
+
   // 拖拽 canvas 上的图形
   const dropCanvasRect = (mousePosition) => {
     if (!canvasRectSelected) return
-    // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
+    // Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
     const [px, py] = getMousePositionInCanvas(mousePosition)
     const targetRect = canvasRectSelected
     const [tw, th] = targetRect.size
     // 拖拽移动鼠标点击选中的图形
     const ctx = canvasContext
-    const position = [px - Math.round(tw / 2), py - Math.round(th / 2)]
+    const position = getCanvasRectDropMovePosition(canvasRectSelected)
     const newTargetRect = { ...targetRect, position }
     drawMoveSelectedRect(canvasDom, ctx, { targetRect: newTargetRect })
     canvasRectSelectedProxy.value = newTargetRect
@@ -1695,7 +1710,7 @@
       // 更新当前选中图形的数据
       canvasRectSelected.size = getAdjustRectSize(mousePosition)
     }
-
+    delete canvasRectSelected.moveStartposition
     mouseStartPosition = [null, null]
     mousePosition = [null, null]
     currentMouseActionStatus = MouseActionStatusType.default
