@@ -187,17 +187,15 @@
 
     .action-buttons-wrapper .group {
       display: flex;
+      flex-direction: column;
       gap: 2px;
       flex-wrap: wrap;
       width: 80px;
     }
 
     .action-buttons-wrapper .group button {
-      height: 30px;
-    }
-
-    .action-buttons-wrapper .group button:nth-child(3) {
       flex: 1;
+      height: 30px;
     }
 
     /* ---物体选择下拉框菜单面板悬浮窗体--- */
@@ -926,9 +924,8 @@
         <button id="btn-remove-rect" class="btn-delete" disabled onclick="onRemoveSelecteBlockClick()">移除物体</button>
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
         <div class="group">
-          <button>读取</button>
           <button>保存</button>
-          <button>开始游戏</button>
+          <button>进入游戏</button>
         </div>
       </div>
     </div>
@@ -1038,6 +1035,24 @@
         <button>重置</button>
       </div>
       <div class="contents">
+        <!-- 画布设置 -->
+        <div class="group">
+          <label class="group-label">画布设置</label>
+          <div class="row">
+            <label>宽：</label>
+            <div class="input-wrapper">
+              <input type="text" value="">
+              <span>px</span>
+            </div>
+          </div>
+          <div class="row">
+            <label>高：</label>
+            <div class="input-wrapper">
+              <input type="text" value="">
+              <span>px</span>
+            </div>
+          </div>
+        </div>
         <!-- 基础设置 -->
         <div class="group">
           <label class="group-label">基础设置</label>
