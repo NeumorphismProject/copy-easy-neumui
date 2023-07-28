@@ -855,7 +855,9 @@
       <div class="setting-pannel-switch">
         <button id="btn-remove-rect" class="btn-delete" disabled onclick="onRemoveSelecteBlockClick()">移除物体</button>
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
-        <button>导出游戏</button>
+        <div>
+          <button>游戏</button>
+        </div>
       </div>
     </div>
 
@@ -1108,14 +1110,6 @@
       for (const d of othersData) {
         redrawCanvasImage(ctx, d)
       }
-      // if (othersData.length < 1) {
-      //   // 若排除后，其他数据为空，则说明画面上仅有一个图形，那么清空画布即可
-      //   ctx.clearRect(0, 0, value.canvas.width, value.canvas.height)
-      // } else {
-      //   // 清屏
-      //   ctx.clearRect(0, 0, value.canvas.width, value.canvas.height)
-
-      // }
 
       // 移除数据
       if (!notRemoveData) target.value.splice(findIndex, 1)
@@ -1146,9 +1140,11 @@
         // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
         const options = updateVal // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
         redrawCanvasImage(options.ctx, options)
+        const targetVal = target.value[findIndex]
         // 找出最大的 zIndex 并加1得到最新的zIndex
         const zIndex = [...target.value].sort((a, b) => b.zIndex - a.zIndex)[0].zIndex + 1
-        const updateData = { ...target.value[findIndex], position: options.position, zIndex }
+        const updateSize = Array.isArray(size) && size.length > 1 ? size : targetVal.size
+        const updateData = { ...targetVal, position: options.position, size: updateSize, zIndex }
         // 移除原来的数据
         target.value.splice(findIndex, 1)
         // 再追加
@@ -1502,7 +1498,7 @@
       drawMoveSelectedRect(canvasDom, ctx, { targetRect: newTargetRect })
     } else {
       if (canvasRectSelected) {
-        // 若鼠标点击区域没有任何图形，则去除当前选中图形
+        // 若鼠标点击区域没有任何图形，则去除当前图形的选中框
         const ctx = canvasContext
         removeSelectedFrame(canvasDom, ctx, { targetRect: canvasRectSelected })
         canvasRectSelectedProxy.value = undefined
@@ -1525,9 +1521,8 @@
     canvasRectSelectedProxy.value = newTargetRect
   }
 
-  // 修改图形尺寸
-  const ajdustCanvasRectSize = (clientPosition) => {
-    if (!canvasRectSelected) return
+  // 根据鼠标移动距离计算图形尺寸
+  const getAdjustRectSize = (clientPosition) => {
     // 根据鼠标移动距离计算图形尺寸
     const [sx, sy] = mouseStartPosition
     const [cx, cy] = clientPosition
@@ -1540,6 +1535,18 @@
     const nw = tw + cx - sx
     const nh = th + cy - sy
     const size = [nw > 0 ? nw : 0, nh > 0 ? nh : 0]
+
+    return size
+  }
+
+  // 修改图形尺寸
+  const ajdustCanvasRectSize = (clientPosition) => {
+    if (!canvasRectSelected) return
+    const canvas = canvasDom
+    const ctx = canvasContext
+    const targetRect = canvasRectSelected
+    // 根据鼠标移动距离计算图形尺寸
+    const size = getAdjustRectSize(clientPosition)
     // 清屏
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     // 绘制除目标图形外的其他所有图形
@@ -1665,6 +1672,11 @@
    * @param clientPosition the position whitch is current mouse or touch poition. As [clientX, clientY]. Example: [0,0]
    */
   const onMoveEnd = (targetDom) => {
+    if (canvasRectSelected && currentMouseActionStatus === MouseActionStatusType.resize) {
+      // 更新当前选中图形的数据
+      canvasRectSelected.size = getAdjustRectSize(mousePosition)
+    }
+
     mouseStartPosition = [null, null]
     mousePosition = [null, null]
     currentMouseActionStatus = MouseActionStatusType.default
