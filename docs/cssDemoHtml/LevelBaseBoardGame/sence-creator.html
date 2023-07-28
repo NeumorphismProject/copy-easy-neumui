@@ -155,15 +155,29 @@
       color: rgb(131, 3, 105);
     }
 
-    .setting-pannel-switch {
+    .action-buttons-wrapper {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
     }
 
-    .setting-pannel-switch button {
+    .action-buttons-wrapper button {
       height: 50px;
+    }
+
+    .action-buttons-wrapper .group {
+      display: flex;
+      gap:2px;
+      flex-wrap: wrap;
+      width: 80px;
+    }
+
+    .action-buttons-wrapper .group button {
+      height: 30px;
+    }
+    .action-buttons-wrapper .group button:nth-child(3) {
+      flex: 1;
     }
 
     /* ---物体选择下拉框菜单面板悬浮窗体--- */
@@ -849,14 +863,16 @@
               </svg>
             </div>
           </div>
-          <button onclick="onBlocksSelectionClick()">选择</button>
+          <button onclick="onBlocksSelectionClick(event)">选择</button>
         </div>
       </div>
-      <div class="setting-pannel-switch">
+      <div class="action-buttons-wrapper">
         <button id="btn-remove-rect" class="btn-delete" disabled onclick="onRemoveSelecteBlockClick()">移除物体</button>
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
-        <div>
-          <button>游戏</button>
+        <div class="group">
+          <button>读取</button>
+          <button>保存</button>
+          <button>开始游戏</button>
         </div>
       </div>
     </div>
@@ -1189,16 +1205,19 @@
 
 <!-- 通用函数 -->
 <script>
-  function displayOrHiddenPannel(dom) {
+  function displayOrHiddenPannel(dom, left) {
     let styleOpacity = dom.style.opacity
     if (styleOpacity === '' || parseInt(styleOpacity) > 0) {
       dom.style.opacity = '0'
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         dom.style.display = 'none'
-      }, 300)
+      })
     } else {
-      dom.style.display = ''
-      dom.style.opacity = '1'
+      dom.style.display = 'flex'
+      requestAnimationFrame(() => {
+        if(left) dom.style.left = left
+        dom.style.opacity = '1'
+      })
     }
   }
 </script>
@@ -1597,9 +1616,10 @@
     btnRemoveRectDom = document.querySelector('#btn-remove-rect')
   }
 
-  const onBlocksSelectionClick = () => {
+  const onBlocksSelectionClick = (event) => {
+    console.log(event)
     // 显示/隐藏 物体选择面板 悬浮窗体
-    displayOrHiddenPannel(blocksSelectionPannelDom)
+    displayOrHiddenPannel(blocksSelectionPannelDom, `${event.target.parentNode.offsetLeft}px`)
   }
 
   const onSettingSwitchClick = () => {
