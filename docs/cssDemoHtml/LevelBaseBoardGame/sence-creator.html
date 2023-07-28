@@ -982,6 +982,9 @@
 </body>
 <!-- 全局变量 -->
 <script>
+  const CANVAS_CURSOR_DEFALUT = 'auto' // 鼠标在 canvas 上的默认光标
+  const CANVAS_CURSOR_NWSERESIZE = 'nwse-resize'
+
   let toolsWrapper = undefined
   let gameSenceDom = undefined
   let canvasDom = undefined
@@ -1280,6 +1283,31 @@
     drawCanvasImageAction(ctx, img, { position, size })
   }
 
+  // 根据目标图形的左上角坐标和尺寸，计算出绘制 图形右下角 尺寸调节三角标记的 绘制所需参数
+  // 鼠标悬浮时，可以根据这些参数判断是否进入调节尺寸区域
+  function getRectSizeAdjustTrangleParams({ position, size }) {
+    const [x, y] = position
+    const [w, h] = size
+    const tsP = [x + w + 4, y + h - 4] // 数值 4 是一定的偏移量，为了确保小三角在选中举行右下角的合适位置
+    const tw = 8 // 直角三角形边长
+
+    // 这是该直角三角形所在矩形的左上角坐标，这是为了扩大鼠标调节图形尺寸时的识别范围需要用到的
+    const rectStartPosition = [tsP[0] - tw, tsP[1]]
+    return {
+      rectStartPosition,
+      tsP,// 绘制直角三角形的起始点坐标（也就是根据给到的 position, size 所代表的矩形的右下角的坐标而计算得出的）
+      tw // 直角三角形的边长
+    }
+  }
+
+  // 检测一个坐标是否在选中图形的 尺寸调节 区域内
+  // 用于鼠标悬浮时判断是否进入图形尺寸可调节区域内
+  function checkInRectSizeAdjustRect({ position, selectedRect }) {
+    const { rectStartPosition, tw } = getRectSizeAdjustTrangleParams(selectedRect)
+    const adjustRect = { position: rectStartPosition, size: [tw, tw] }
+    return checkPointInRect(position, adjustRect)
+  }
+
   /**
    * 绘制图形选中的边框
    * @params ctx: canvas的上下文
@@ -1301,6 +1329,26 @@
     ctx.lineWidth = 3
     // 绘制矩形边框
     ctx.strokeRect(...position, ...size)
+
+    // 右下角画个小三角图标，鼠标点击这个区域可以对选中图形修改尺寸
+    const { tsP, tw } = getRectSizeAdjustTrangleParams({ position, size })
+    // 绘制三角标
+    const [t1, t2] = tsP // 绘制直角三角形的起始点坐标
+    ctx.beginPath()
+    ctx.moveTo(t1, t2)
+    ctx.lineTo(t1, t2 + tw)
+    ctx.lineTo(t1 - tw, t2 + tw)
+    ctx.lineTo(t1, t2)
+    ctx.closePath()//闭合路径
+    ctx.lineWidth = 2//线的边框为10像素
+    ctx.strokeStyle = '#00ff00'
+    // var grd = ctx.createLinearGradient(0, 0, 0, 190) //从上到下
+    // grd.addColorStop(0, "#4CE8B2") //起始颜色
+    // grd.addColorStop(1, "#EFD458") //终点颜色
+    // ctx.strokeStyle = grd
+    // ctx.stroke()
+    ctx.fillStyle = 'black'
+    ctx.fill()
 
     ctx.restore()
   }
@@ -1345,6 +1393,9 @@
     gameSenceDom.style.backgroundImage = `url("${gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE}")`
     const canvas = document.createElement('canvas', { id: 'game-sence-canvas' })
     canvasDom = canvas
+    // 设置默认样式
+    canvasDom.style.cursor = CANVAS_CURSOR_DEFALUT
+    // 事件注册
     registerCanvasEvents(canvas)
     // 这个用于解决canvas清晰度的问题，待研究
     // Set actual size in memory (scaled to account for extra pixel density).
@@ -1474,6 +1525,31 @@
     canvasRectSelectedProxy.value = newTargetRect
   }
 
+  // 修改图形尺寸
+  const ajdustCanvasRectSize = (clientPosition) => {
+    if (!canvasRectSelected) return
+    // 根据鼠标移动距离计算图形尺寸
+    const [sx, sy] = mouseStartPosition
+    const [cx, cy] = clientPosition
+
+    const canvas = canvasDom
+    const ctx = canvasContext
+    const targetRect = canvasRectSelected
+    const [tw, th] = targetRect.size
+
+    const nw = tw + cx - sx
+    const nh = th + cy - sy
+    const size = [nw > 0 ? nw : 0, nh > 0 ? nh : 0]
+    // 清屏
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    // 绘制除目标图形外的其他所有图形
+    drawOtherRects(ctx, { targetRect })
+    // 重新绘制上一步被排除的图形，从而实现拖拽图形效果
+    redrawTargetRect(canvas, ctx, { ...targetRect, size })
+    // 根据目标图形参数绘制边框，从而实现拖拽图形的同时，确保选中边框也跟随
+    drawGraphicsSelectedFrame(ctx, { position: targetRect.position, size })
+  }
+
   const drawCanvasUpdate = () => {
     // // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
     // if (JSON.stringify(mouseStartPosition) !== '[null,null]' && JSON.stringify(mousePosition) !== '[null,null]') {
@@ -1535,10 +1611,10 @@
     removeSelectedBlockInCanvas()
   }
 
-  const initOptions = () => {
-  }
-
   // #region ---------- touch/click action ------------
+
+  const MouseActionStatusType = { default: 'default', resize: 'resize' }
+  let currentMouseActionStatus = MouseActionStatusType.default // 'default' | 'resize'
 
   /**
   * move start
@@ -1546,16 +1622,43 @@
   */
   const onMoveStart = (clientPosition, targetDom) => {
     mouseStartPosition = clientPosition
-    selectCanvasRect(clientPosition)
+    const styleCursor = canvasDom.style.cursor
+    // 根据现在的光标类型，判断不同的行为
+    if (styleCursor === CANVAS_CURSOR_DEFALUT) {
+      selectCanvasRect(clientPosition)
+    } else if (styleCursor === CANVAS_CURSOR_NWSERESIZE) {
+      // 固定当前的行为状态为 尺寸调节，让其他操作失效
+      currentMouseActionStatus = MouseActionStatusType.resize
+    }
   }
+
+  // 鼠标在 canvas 移动时，检测是否移动到 图形的尺寸调节区域内，若进入了调节区域，则改变光标
+  const onCheckInRectAdjustRect = (clientPosition) => {
+    if (currentMouseActionStatus === MouseActionStatusType.resize) return
+    // 只有存在已选中的图形，才需要判断
+    if (canvasRectSelected) {
+      const valid = checkInRectSizeAdjustRect({ position: getMousePositionInCanvas(clientPosition), selectedRect: canvasRectSelected })
+      canvasDom.style.cursor = valid ? CANVAS_CURSOR_NWSERESIZE : CANVAS_CURSOR_DEFALUT
+    } else {
+      canvasDom.style.cursor = CANVAS_CURSOR_DEFALUT
+    }
+  }
+
   /**
    * moving
    * @param clientPosition the position whitch is current mouse or touch poition. As [clientX, clientY]. Example: [0,0]
    */
   const onMoving = (clientPosition, targetDom) => {
     mousePosition = clientPosition
-    // 拖拽移动canvas上的图形
-    dropCanvasRect(clientPosition)
+    const styleCursor = canvasDom.style.cursor
+    // 根据现在的光标类型，判断不同的行为
+    if (styleCursor === CANVAS_CURSOR_DEFALUT) {
+      // 拖拽移动canvas上的图形
+      dropCanvasRect(clientPosition)
+    } else if (styleCursor === CANVAS_CURSOR_NWSERESIZE) {
+      // 修改图形尺寸
+      ajdustCanvasRectSize(clientPosition)
+    }
   }
   /**
    * move end
@@ -1564,6 +1667,7 @@
   const onMoveEnd = (targetDom) => {
     mouseStartPosition = [null, null]
     mousePosition = [null, null]
+    currentMouseActionStatus = MouseActionStatusType.default
   }
 
   // #endregion ------------------------
@@ -1579,8 +1683,9 @@
   }
 
   const handleMouseMove = (ev) => {
+    const clientPosition = [ev.clientX, ev.clientY]
+    onCheckInRectAdjustRect(clientPosition)
     if (isMouseMovingStart) {
-      const clientPosition = [ev.clientX, ev.clientY]
       onMoving(clientPosition, ev.target)
     }
   }
@@ -1623,9 +1728,9 @@
   window.addEventListener('load', () => {
     console.log('--- load ---')
     initDoms()
-    initOptions()
     loadCanvas()
     // requestAnimationFrame(drawCanvasUpdate)
+    // canvasDom.style='cursor: nwse-resize;'
   })
 </script>
 
