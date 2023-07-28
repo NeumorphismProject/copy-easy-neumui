@@ -22,12 +22,31 @@
       padding: 4px;
     }
 
+    button:disabled {
+      cursor: not-allowed !important;
+      background-color: rgb(181, 180, 180) !important;
+      color: rgb(73, 70, 104) !important;
+    }
+
     button:hover {
       background-color: rgba(247, 215, 109, 0.8);
     }
 
     button:active {
       background-color: rgba(141, 141, 141, 0.8);
+    }
+
+    .btn-delete {
+      background-color: rgb(255, 94, 0);
+      color: rgb(255, 255, 255);
+    }
+
+    .btn-delete:hover {
+      background-color: rgba(245, 71, 71, 0.8);
+    }
+
+    .btn-delete:active {
+      background-color: rgba(134, 21, 6, 0.8);
     }
 
     /* --------------------顶部工具栏------------------------- */
@@ -114,12 +133,6 @@
       background-color: rgb(102, 251, 251);
       border: 1px dotted black;
       border-radius: 8px;
-    }
-
-    .tools-wrapper .tools-area .menu-selection button:disabled {
-      cursor: not-allowed;
-      background-color: rgb(181, 180, 180);
-      color: rgb(73, 70, 104);
     }
 
     .tools-wrapper .tools-area .menu-selection button:disabled:active {
@@ -840,6 +853,7 @@
         </div>
       </div>
       <div class="setting-pannel-switch">
+        <button id="btn-remove-rect" class="btn-delete" disabled onclick="onRemoveSelecteBlockClick()">移除物体</button>
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
         <button>导出游戏</button>
       </div>
@@ -975,12 +989,25 @@
   let blocksSelectionPannelDom = undefined
   let settingPannelDom = undefined
   let blockSelectedFrameDom = undefined
+  let btnRemoveRectDom = undefined
 
   // 加载画面时，记录顶部工具栏的高度，鼠标在画布中的Y坐标值需要减去整个偏差
   let toolsWrapperHeight = null
 
   // canvas 上被选中的图形
   let canvasRectSelected = undefined
+  let canvasRectSelectedProxy = new Proxy({ value: undefined }, {
+    get: function (target, value) {
+      return canvasRectSelected
+    },
+    set: function (target, key, value) {
+      if (!value) btnRemoveRectDom.setAttribute('disabled', 'true')
+      else btnRemoveRectDom.removeAttribute('disabled')
+      canvasRectSelected = value
+      return true
+    }
+  })
+
   let mouseStartPosition = [null, null]
   let mousePosition = [null, null]
 
@@ -1055,101 +1082,109 @@
 
   // 每次在 canvas 上绘制的图像信息都会记录在这里
   // TODO: 做导出数据功能的时候，会把这里的数据抽离到 gameSenceData 相应的数据中
-  let canvasGraphicsPositions = {
-    value: [],
-    append: undefined, // { type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size, ...others } --> 这里的 ...others 表示添加图形时允许根据需要添加一些可选属性数据，也会同时存入数据中
-    update: undefined, // { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size, ...others } --> 这里的 ...others 表示添加图形时允许根据需要添加一些可选属性数据，也会同时存入数据中
-    remove: undefined // { ctx, id, notRemoveData:true } 传递图形id，删除对应的图形和数据
+  let canvasGraphicsPositions = { value: [] }
+
+  // { canvas, ctx, id, notRemoveData:true } 传递图形id，删除对应的图形和数据
+  // 注意：该函数只会重新绘制排除需要 被移除图形 以外的其他图形，而目前使用的移除方案是需要先对 canvas 清空
+  // 所以要想清楚目标图形，调用此函数前一定要自己清空canvas先，这是为了性能考虑，避免和其他函数组合使用的时候，这里多做一次清空画布操作
+  const removeGraphicsInCanvas = (value) => {
+    const { canvas, ctx, id, notRemoveData = true } = value
+    const target = canvasGraphicsPositions
+    const errorHint = 'set canvasGraphicsPositions Error: '
+    try {
+      // 删除对应的图形和数据
+      const { ctx, id: rmId, notRemoveData } = value
+      const findIndex = target.value.findIndex(g => g.id === rmId)
+      // debugger
+      if (findIndex === -1) {
+        throw new Error(`${errorHint}通过 id=${rmId} 未找到相应的图形数据`)
+      }
+      // 筛选出排除目标数据的所有其他数据
+      const othersData = target.value.filter(g => g.id !== rmId)
+      // 把其他数据进行全局重新绘制
+      for (const d of othersData) {
+        redrawCanvasImage(ctx, d)
+      }
+      // if (othersData.length < 1) {
+      //   // 若排除后，其他数据为空，则说明画面上仅有一个图形，那么清空画布即可
+      //   ctx.clearRect(0, 0, value.canvas.width, value.canvas.height)
+      // } else {
+      //   // 清屏
+      //   ctx.clearRect(0, 0, value.canvas.width, value.canvas.height)
+
+      // }
+
+      // 移除数据
+      if (!notRemoveData) target.value.splice(findIndex, 1)
+    } catch (err) {
+      throw new Error(`${errorHint}${err}`)
+    }
   }
-  let canvasGraphicsPositionsUpdateProxy = new Proxy(canvasGraphicsPositions, {
-    get: function (target, _value) {
-      return target.value
-    },
-    set: function (target, key, value) {
-      const errorHint = 'set canvasGraphicsPositions Error: '
-      try {
-        if (key === 'update') {
-          if (!Object.hasOwnProperty.call(value, 'type') || typeof value.type !== 'string') {
-            throw new Error(`${errorHint}append 中的参数 type 是必传的, 且必须是字符串类型`)
-          }
-          if (!Object.hasOwnProperty.call(value, 'id') || typeof value.id !== 'string') {
-            throw new Error(`${errorHint}append 中的参数 id 是必传的, 且必须是字符串类型`)
-          }
-          if (!BLOCK_TYPES.includes(value.type)) {
-            throw new Error(`${errorHint}type 值仅支持 player/block/coin`)
-          }
-          const updateVal = { ...value }
-          // 记录到总数据中
-          let findIndex = null
-          if (updateVal.id && (findIndex = target.value.findIndex(g => g.id === updateVal.id)) !== -1) {
-            // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
-            const options = updateVal // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
-            redrawCanvasImage(options.ctx, options)
-            // 找出最大的 zIndex 并加1得到最新的zIndex
-            const zIndex = [...target.value].sort((a, b) => b.zIndex - a.zIndex)[0].zIndex + 1
-            const updateData = { ...target.value[findIndex], position: options.position, zIndex }
-            // 移除原来的数据
-            target.value.splice(findIndex, 1)
-            // 再追加
-            target.value.push(updateData)
-          } else {
-            throw new Error(`${errorHint} 未找到 id=${updateVal.id} 的数据`)
-          }
-          return true
-        } else if (key === 'remove') {
-          // 删除对应的图形和数据
-          const { ctx, id: rmId, notRemoveData } = value
-          const findIndex = target.value.findIndex(g => g.id === rmId)
-          if (findIndex === -1) {
-            throw new Error(`${errorHint}通过 id=${rmId} 未找到相应的图形数据`)
-          }
-          // 筛选出排除目标数据的所有其他数据
-          const othersData = target.value.filter(g => g.id !== rmId)
-          // 把其他数据进行全局重新绘制
-          for (const d of othersData) {
-            redrawCanvasImage(ctx, d)
-          }
-          // 移除数据
-          if (!notRemoveData) target.value.splice(findIndex, 1)
-          return true
-        }
-      } catch (err) {
-        throw new Error(`${errorHint}${err}`)
+
+  // { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size, ...others } --> 这里的 ...others 表示添加图形时允许根据需要添加一些可选属性数据，也会同时存入数据中
+  const updateGraphicsInCanvas = (value) => {
+    const { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size } = value
+    const target = canvasGraphicsPositions
+    const errorHint = 'set canvasGraphicsPositions Error: '
+    try {
+      if (!Object.hasOwnProperty.call(value, 'type') || typeof value.type !== 'string') {
+        throw new Error(`${errorHint}append 中的参数 type 是必传的, 且必须是字符串类型`)
       }
-    }
-  })
-  let canvasGraphicsPositionsProxy = new Proxy(canvasGraphicsPositions, {
-    get: function (target, _value) {
-      return target.value
-    },
-    set: async function (target, key, value) {
-      const errorHint = 'set canvasGraphicsPositions Error: '
-      try {
-        if (key === 'append') {
-          if (!Object.hasOwnProperty.call(value, 'type') || typeof value.type !== 'string') {
-            throw new Error(`${errorHint}append 中的参数 type 是必传的, 且必须是字符串类型`)
-          }
-          if (!BLOCK_TYPES.includes(value.type)) {
-            throw new Error(`${errorHint}type 值仅支持 player/block/coin`)
-          }
-          const newVal = { ...value }
-          const options = newVal
-          // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
-          const { cvsImg: imgInstance } = await drawCanvasImage(options.ctx, options)
-          // 记录到总数据中
-          // 新增则需要新建id
-          const newId = `${value.type}-${target.value.filter(t => t.type === value.type).length + 1}`
-          // 找出最大的 zIndex 并加1得到最新的zIndex
-          const zIndex = target.value.length > 0 ? [...target.value].sort((a, b) => b.zIndex - a.zIndex)[0].zIndex + 1 : 1
-          target.value.push({ ...newVal, imgInstance, id: newId, zIndex })
-          return true
-        }
-        throw new Error(`${errorHint}canvasGraphicsPositionsProxy.${key}不存在或不可访问`)
-      } catch (err) {
-        throw new Error(`${errorHint}${err}`)
+      if (!Object.hasOwnProperty.call(value, 'id') || typeof value.id !== 'string') {
+        throw new Error(`${errorHint}append 中的参数 id 是必传的, 且必须是字符串类型`)
       }
+      if (!BLOCK_TYPES.includes(value.type)) {
+        throw new Error(`${errorHint}type 值仅支持 player/block/coin`)
+      }
+      const updateVal = { ...value }
+      // 记录到总数据中
+      let findIndex = null
+      if (updateVal.id && (findIndex = target.value.findIndex(g => g.id === updateVal.id)) !== -1) {
+        // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
+        const options = updateVal // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
+        redrawCanvasImage(options.ctx, options)
+        // 找出最大的 zIndex 并加1得到最新的zIndex
+        const zIndex = [...target.value].sort((a, b) => b.zIndex - a.zIndex)[0].zIndex + 1
+        const updateData = { ...target.value[findIndex], position: options.position, zIndex }
+        // 移除原来的数据
+        target.value.splice(findIndex, 1)
+        // 再追加
+        target.value.push(updateData)
+      } else {
+        throw new Error(`${errorHint} 未找到 id=${updateVal.id} 的数据`)
+      }
+    } catch (err) {
+      throw new Error(`${errorHint}${err}`)
     }
-  })
+  }
+
+  // { type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size, ...others }
+  // --> 这里的 ...others 表示添加图形时允许根据需要添加一些可选属性数据，也会同时存入数据中
+  const appendGraphicsInCanvas = async (value) => {
+    const { type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size } = value
+    const target = canvasGraphicsPositions
+    const errorHint = 'set canvasGraphicsPositions Error: '
+    try {
+      if (!Object.hasOwnProperty.call(value, 'type') || typeof value.type !== 'string') {
+        throw new Error(`${errorHint}append 中的参数 type 是必传的, 且必须是字符串类型`)
+      }
+      if (!BLOCK_TYPES.includes(value.type)) {
+        throw new Error(`${errorHint}type 值仅支持 player/block/coin`)
+      }
+      const newVal = { ...value }
+      const options = newVal
+      // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
+      const { cvsImg: imgInstance } = await drawCanvasImage(options.ctx, options)
+      // 记录到总数据中
+      // 新增则需要新建id
+      const newId = `${value.type}-${target.value.filter(t => t.type === value.type).length + 1}`
+      // 找出最大的 zIndex 并加1得到最新的zIndex
+      const zIndex = target.value.length > 0 ? [...target.value].sort((a, b) => b.zIndex - a.zIndex)[0].zIndex + 1 : 1
+      target.value.push({ ...newVal, imgInstance, id: newId, zIndex })
+    } catch (err) {
+      throw new Error(`${errorHint}${err}`)
+    }
+  }
 
 </script>
 
@@ -1327,12 +1362,23 @@
   }
 
   const appendNewBlockToCanvas = (type) => {
-    canvasGraphicsPositionsProxy.append = {
+    appendGraphicsInCanvas({
       type,
       ctx: canvasContext,
       imgSrc: gameBoxDefaultParams[type].backgroundImage,
       position: gameBoxDefaultParams[type].position,
       size: gameBoxDefaultParams[type].size
+    })
+  }
+
+  const removeSelectedBlockInCanvas = () => {
+    if (canvasRectSelected) {
+      const canvas = canvasDom
+      const ctx = canvasContext
+      // 清屏
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      removeGraphicsInCanvas({ canvas, ctx, id: canvasRectSelected.id, notRemoveData: false })
+      canvasRectSelectedProxy.value = undefined
     }
   }
 
@@ -1355,11 +1401,11 @@
   // }
 
   const drawOtherRects = (ctx, { targetRect }) => {
-    canvasGraphicsPositionsUpdateProxy.remove = { ctx, id: targetRect.id, notRemoveData: true }
+    removeGraphicsInCanvas({ canvas: canvasDom, ctx, id: targetRect.id, notRemoveData: true })
   }
 
   const redrawTargetRect = (canvas, ctx, targetRect) => {
-    canvasGraphicsPositionsUpdateProxy.update = targetRect
+    updateGraphicsInCanvas(targetRect)
   }
 
   // 绘制移动过程中的图形包含选中框
@@ -1388,14 +1434,14 @@
   const selectCanvasRect = (mousePosition) => {
     const mp = getMousePositionInCanvas(mousePosition)
     // 根据鼠标按下的坐标点，判断是否当前坐标下是否存在图形
-    const rects = canvasGraphicsPositionsProxy.value.filter(g => checkPointInRect(mp, { position: g.position, size: g.size }))
+    const rects = canvasGraphicsPositions.value.filter(g => checkPointInRect(mp, { position: g.position, size: g.size }))
     // 点击区域存在图形的话，取出最上层的图形，设为选中图形
     if (rects.length > 0) {
       // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
       rects.sort((a, b) => b.zIndex - a.zIndex)
       const targetRect = rects[0]
       // 记录选中图形数据
-      canvasRectSelected = targetRect
+      canvasRectSelectedProxy.value = targetRect
       const [px, py] = mp
       const [tw, th] = targetRect.size
       // 为选中图形绘制边框(需要清除其他选中的边框)
@@ -1408,7 +1454,7 @@
         // 若鼠标点击区域没有任何图形，则去除当前选中图形
         const ctx = canvasContext
         removeSelectedFrame(canvasDom, ctx, { targetRect: canvasRectSelected })
-        canvasRectSelected = undefined
+        canvasRectSelectedProxy.value = undefined
       }
     }
   }
@@ -1425,7 +1471,7 @@
     const position = [px - Math.round(tw / 2), py - Math.round(th / 2)]
     const newTargetRect = { ...targetRect, position }
     drawMoveSelectedRect(canvasDom, ctx, { targetRect: newTargetRect })
-    canvasRectSelected = newTargetRect
+    canvasRectSelectedProxy.value = newTargetRect
   }
 
   const drawCanvasUpdate = () => {
@@ -1438,7 +1484,7 @@
     //   // drawMoveImgTo(canvasDom, canvasContext, [mousePosition[0], mousePosition[1] - 100])
 
     //   // 根据鼠标按下的坐标点，判断是否当前坐标下是否存在图形
-    //   const rects = canvasGraphicsPositionsProxy.value.filter(g => checkPointInRect(startMp, { position: g.position, size: g.size }))
+    //   const rects = canvasGraphicsPositions.value.filter(g => checkPointInRect(startMp, { position: g.position, size: g.size }))
     //   // 点击区域存在图形的话，取出最上层的图形，设为选中图形
     //   if (rects.length > 0) {
     //     // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
@@ -1465,6 +1511,7 @@
     toolsWrapperHeight = toolsWrapper.clientHeight
     blocksSelectionPannelDom = document.querySelector('.blocks-selection-pannel')
     settingPannelDom = document.querySelector('.setting-pannel')
+    btnRemoveRectDom = document.querySelector('#btn-remove-rect')
   }
 
   const onBlocksSelectionClick = () => {
@@ -1481,6 +1528,11 @@
   const onBlockSelectionClick = (type) => {
     // 把选择的物体绘制到 canvas 上
     appendNewBlockToCanvas(type)
+  }
+
+  const onRemoveSelecteBlockClick = () => {
+    // 把选中的物体移除
+    removeSelectedBlockInCanvas()
   }
 
   const initOptions = () => {
