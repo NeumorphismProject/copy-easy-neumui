@@ -388,6 +388,7 @@
       display: flex;
       gap: 8px;
       justify-content: space-around;
+      padding: 8px 0;
     }
 
     .setting-pannel .group .area .img-selections-wrapper>img {
@@ -399,8 +400,11 @@
       cursor: pointer;
     }
 
-    .setting-pannel .group .area .img-selections-wrapper>.selected {
-      border: 1px inset gray;
+    .setting-pannel .group .area .img-selections-wrapper img:hover {
+      box-shadow: 0px 2px 4px rgb(235, 117, 6);
+    }
+
+    .setting-pannel .group .area .img-selections-wrapper img:active {
       box-shadow: 0px 2px 4px inset rgb(46, 45, 133);
     }
 
@@ -1367,14 +1371,14 @@
           <div setting-id="canvas-setting-row-width" class="row">
             <label>宽：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
               <span>px</span>
             </div>
           </div>
           <div setting-id="canvas-setting-row-height" class="row">
             <label>高：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
               <span>px</span>
             </div>
           </div>
@@ -1385,34 +1389,34 @@
           <div setting-id="base-setting-row-id" class="row">
             <label>ID：</label>
             <div class="input-wrapper">
-              <input type="text" value="123123" disabled>
+              <input setting-unit="input" type="text" value="123123" disabled>
             </div>
           </div>
-          <div setting-id="base-setting-posotion-row-x" class="row">
+          <div setting-id="base-setting-position-row-x" class="row">
             <label>坐标 X：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
               <span>px</span>
             </div>
           </div>
           <div setting-id="base-setting-position-row-y" class="row">
             <label>坐标 Y：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
               <span>px</span>
             </div>
           </div>
           <div setting-id="base-setting-row-width" class="row">
             <label>宽：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
               <span>px</span>
             </div>
           </div>
           <div setting-id="base-setting-row-height" class="row">
             <label>高：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
               <span>px</span>
             </div>
           </div>
@@ -1423,7 +1427,7 @@
           <div score-setting-score-row class="row">
             <label>金币得分：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
         </div>
@@ -1433,13 +1437,13 @@
           <div setting-id="image-setting-row-image" class="row">
             <label>图片 Url：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="" onchange="onImageSettingImageUrlChange(event)">
             </div>
           </div>
           <div setting-id="image-setting-row-image-selections" class="area">
             <label>选择预制图片：</label>
-            <div class="img-selections-wrapper">
-              <img class="selected" src="./imgs/coin.png" alt="背景图片">
+            <div setting-unit="img-list" class="img-selections-wrapper">
+              <img src="./imgs/coin.png" alt="背景图片">
               <img src="./imgs/coin-fish.png" alt="背景图片">
               <img src="./imgs/coin-carrot.png" alt="背景图片">
             </div>
@@ -1447,7 +1451,7 @@
           <div setting-id="image-setting-row-preview" class="area">
             <label>图片预览：</label>
             <div class="img-wrapper">
-              <img src="./imgs/coin.png" alt="背景图片">
+              <img setting-unit="img" src="./imgs/coin.png" alt="背景图片">
             </div>
           </div>
         </div>
@@ -1457,25 +1461,25 @@
           <div setting-id="player-role-setting-row-borth-position-x" class="row">
             <label>出生坐标 X：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-role-setting-row-borth-position-y" class="row">
             <label>出生坐标 Y：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-role-setting-row-run-speed" class="row">
             <label>跑步速度：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-role-setting-row-jump-start-speed" class="row">
             <label>起跳速度：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
         </div>
@@ -1485,44 +1489,44 @@
           <div setting-id="player-sprites-setting-row-image" class="row">
             <label>图片 Url：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-width" class="row">
             <label>宽：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-height" class="row">
             <label>高：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-start-x" class="row">
             <label>起始坐标 X：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-start-y" class="row">
             <label>起始坐标 Y：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-end-x" class="row">
             <label>结束坐标 X：</label>
             <div class="input-wrapper">
-              <input type="text" value="">
+              <input setting-unit="input" type="text" value="">
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-animation-preivew" class="area">
             <label>图片预览：</label>
             <button>【启动/停止】动画</button>
             <div class="img-wrapper">
-              <img src="./imgs/coin.png" alt="背景图片">
+              <img setting-unit="img" src="./imgs/coin.png" alt="背景图片">
             </div>
           </div>
         </div>
@@ -1553,8 +1557,48 @@
   let settingPannelDom = undefined
   // 参数面板悬浮窗体中的子元素Dom会根据自定义的 属性 存入，key就是这些自定义的 属性
   let settingPannelDoms = {}
+  // 不同类型图形对应的 参数面板上相应 dom 的在 settingPannelDoms 中存放的 key（可以通过这些key直接找到dom并进行更新操作）
   let settingPannelKeysMap = {
-
+    block: {
+      // blockIndex: 'base-setting-row-id',
+      // blockId: 'base-setting-row-id',
+      id: 'base-setting-row-id',
+      size: ['base-setting-row-width', 'base-setting-row-height'],
+      position: ['base-setting-position-row-x', 'base-setting-position-row-y'],
+      backgroundImage: 'image-setting-row-image'
+    }
+  }
+  let loadSettingPannelActions = {
+    // 游戏场景数据
+    global: (selectedRectData) => { },
+    // 玩家数据
+    player: (selectedRectData) => { },
+    // 普通砖块数据
+    block: (selectedRectData) => {
+      let domKey = null
+      const blockObj = settingPannelKeysMap.block
+      for (const k of Object.keys(blockObj)) {
+        domKey = blockObj[k]
+        if (Array.isArray(domKey)) {
+          domKey.forEach((dk, i) => {
+            settingPannelDoms[dk].value = selectedRectData[k][i]
+          })
+        } else {
+          settingPannelDoms[domKey].value = selectedRectData[k]
+        }
+      }
+      settingPannelTypeTitleDom.innerText = '砖块'
+      // 预制的图片列表加载
+      const imgListDom = settingPannelDoms['image-setting-row-image-selections']
+      let htmlStr = ''
+      const bgImg = selectedRectData.backgroundImage
+      for (const imgUrl of gameBlockPreimgs.block) {
+        htmlStr += `<img src="${imgUrl}" alt="背景图片" onclick="onPreimgSelectionsSelectChange(event)">`
+      }
+      imgListDom.innerHTML = htmlStr
+    },
+    // 金币数据
+    coin: (selectedRectData) => { },
   }
 
 
@@ -1651,6 +1695,12 @@
     player: playerDefault,
     block: blockDefault,
     coin: coinDefault
+  }
+
+  // 物体的预制图片
+  const gameBlockPreimgs = {
+    block: ['./imgs/block.png', './imgs/block-grass.png', './imgs/block-water.png'],
+    coin: ['./imgs/coin.png', './imgs/coin-fish.png', './imgs/coin-carrot.png'],
   }
 
   // --- 游戏关键数据 ---
@@ -2075,6 +2125,12 @@
     redrawTargetRect(canvas, ctx, { ...targetRect })
   }
 
+  // TODO:根据当前选中的图形数据，把参数显示到参数配置面板上
+  const loadSettingPannelForm = (selectedRectData) => {
+    const { type } = selectedRectData
+    loadSettingPannelActions[type](selectedRectData)
+  }
+
   // 选中图形（给图形加上选中边框）
   const selectCanvasRect = (mousePosition) => {
     const mp = getMousePositionInCanvas(mousePosition)
@@ -2086,7 +2142,9 @@
       rects.sort((a, b) => b.zIndex - a.zIndex)
       const targetRect = rects[0]
       // 记录选中图形数据(选中图形时，把当前位置记录到一个额外的属性中 moveStartposition ，这个属性用于拖拽图形时计算移动位置，当拖拽完成后会移除该属性)
-      canvasRectSelectedProxy.value = { ...targetRect, moveStartposition: targetRect.position }
+      const selectedRectData = { ...targetRect, moveStartposition: targetRect.position }
+      canvasRectSelectedProxy.value = selectedRectData
+      loadSettingPannelForm(selectedRectData)
       const [px, py] = mp
       const [tw, th] = targetRect.size
       // 为选中图形绘制边框(需要清除其他选中的边框)
@@ -2185,8 +2243,9 @@
     btnSettingToolResetDom = document.querySelector('#btn-setting-tool-reset')
     settingPannelTypeTitleDom = document.querySelector('.setting-pannel-type-title')
 
+    // 参数设置面板相关dom
     settingPannelDom = document.querySelector('.setting-pannel')
-    const settingInputDomList = document.querySelectorAll('[setting-id] input')
+    const settingInputDomList = document.querySelectorAll('[setting-id] [setting-unit="input"]')
     let domKey = ''
     // 查找并获取参数面板中所有的 input 元素
     for (const inputDom of settingInputDomList) {
@@ -2201,10 +2260,10 @@
     // player播放动画测试按钮和图片的dom
     settingPannelDoms['player-sprites-setting-row-animation-preivew-button'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>button')
     settingPannelDoms['player-sprites-setting-row-animation-preivew-img'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>.img-wrapper>img')
-    const imgSelectionsDom = document.querySelector('[setting-id="image-setting-row-image-selections"]>.img-selections-wrapper')
+    const imgSelectionsDom = document.querySelector('[setting-id="image-setting-row-image-selections"]>[setting-unit="img-list"]')
     const imgSelectionsDomKey = imgSelectionsDom.parentNode.getAttribute('setting-id')
     settingPannelDoms[imgSelectionsDomKey] = imgSelectionsDom
-    const imgPreviewDom = document.querySelector('[setting-id="image-setting-row-preview"]>div>img')
+    const imgPreviewDom = document.querySelector('[setting-id="image-setting-row-preview"] [setting-unit="img"]')
     const imgPreviewDomKey = imgPreviewDom.parentNode.parentNode.getAttribute('setting-id')
     settingPannelDoms[imgPreviewDomKey] = imgPreviewDom
     console.log(settingPannelDoms)
@@ -2230,6 +2289,24 @@
     // 把选中的物体移除
     removeSelectedBlockInCanvas()
   }
+
+  // #region ----------------参数面板相关事件---------------
+
+  // 参数面板的 图片设置>图片Url 输入框编辑事件
+  const onImageSettingImageUrlChange = (event) => {
+    console.log(event.target.value)
+    // 把修改的图片地址应用到下方的 图片预览 区域
+    settingPannelDoms['image-setting-row-preview'].src = event.target.value
+  }
+
+  // 图片设置>选择预制图片 中的选项点击事件
+  const onPreimgSelectionsSelectChange = (event) => {
+    const imgUrl = event.target.src
+    settingPannelDoms['image-setting-row-image'].value = imgUrl
+    settingPannelDoms['image-setting-row-preview'].src = imgUrl
+  }
+
+  // #endregion ------------------------------------
 
   // #region ---------- touch/click action ------------
 
@@ -2289,7 +2366,14 @@
       // 更新当前选中图形的数据
       canvasRectSelected.size = getAdjustRectSize(mousePosition)
     }
-    delete canvasRectSelected.moveStartposition
+    if (canvasRectSelected && Object.hasOwnProperty.call(canvasRectSelected, 'moveStartposition')) {
+      // moveStartposition 属性是为了拖拽移动图形而加上的临时计算属性，每次拖拽完成后，移除即可
+      delete canvasRectSelected.moveStartposition
+    }
+    if (canvasRectSelected) {
+      // 若存在已选择的图形，则把数据加载到参数面板上
+      loadSettingPannelForm(canvasRectSelected)
+    }
     mouseStartPosition = [null, null]
     mousePosition = [null, null]
     currentMouseActionStatus = MouseActionStatusType.default
