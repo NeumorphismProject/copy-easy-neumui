@@ -142,11 +142,16 @@
       height: auto;
     }
 
+    .tools-wrapper .tools-area .menu-selection .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
     .tools-wrapper .tools-area .menu-selection button {
       display: block;
       margin: 0 auto;
       cursor: pointer;
-      width: 60px;
+      min-width: 60px;
       height: 26px;
       line-height: 12px;
       background-color: rgb(102, 251, 251);
@@ -649,8 +654,12 @@
               </svg>
             </div>
           </div>
-          <button disabled>单人</button>
+          <div class="btn-group">
+            <button id="btn-player-mode-single" disabled>单人</button>
+            <button id="btn-player-mode-double" disabled>双人[待开发]</button>
+          </div>
         </div>
+
         <!-- block selection -->
         <div class="menu-selection">
           <div class="content">
@@ -920,6 +929,7 @@
           <button onclick="onBlocksSelectionClick(event)">选择</button>
         </div>
       </div>
+
       <div class="action-buttons-wrapper">
         <button id="btn-remove-rect" class="btn-delete" disabled onclick="onRemoveSelecteBlockClick()">移除物体</button>
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
@@ -1181,6 +1191,37 @@
   let settingPannelDom = undefined
   let blockSelectedFrameDom = undefined
   let btnRemoveRectDom = undefined
+  let btnPlayerModeSingleDom = undefined
+  let btnPlayerModeDoubleDom = undefined
+
+  // 玩家人数模式：单人/双人 （双人的待开发，此版本仅支持单人模式...）
+  // TODO: 该变量的 set 功能暂未使用，因为目前仅支持单人模式，所以模式切换功能后续再开发
+  const PlayerModeType = { single:'single', double:'double' }
+  let playerMode = {
+    value: PlayerModeType.single
+  }
+  let playerModeProxy = new Proxy(playerMode, {
+    get: function (target, _value) {
+      return target.value
+    },
+    set: function(target, key, value) {
+      const errorHint = 'set canvasGraphicsPositions Error: '
+      try {
+        if(value === PlayerModeType.single) {
+          btnPlayerModeSingleDom.setAttribute('disabled','true')
+          btnPlayerModeDoubleDom.removeAttribute('disabled')
+          return true
+        } else if(value === PlayerModeType.double) {
+          btnPlayerModeSingleDom.removeAttribute('disabled')
+          btnPlayerModeDoubleDom.setAttribute('disabled','true')
+          return true
+        }
+        throw new Error(`${errorHint}玩家模式仅支持设置为：'single', 'double' }`)
+      } catch (error) {
+        throw new Error(`${errorHint}${err}`)
+      }
+    }
+  })
 
   // 加载画面时，记录顶部工具栏的高度，鼠标在画布中的Y坐标值需要减去整个偏差
   let toolsWrapperHeight = null
@@ -1192,7 +1233,8 @@
       return canvasRectSelected
     },
     set: function (target, key, value) {
-      if (!value) btnRemoveRectDom.setAttribute('disabled', 'true')
+      // 玩家图形是不能被删除的，只能通过模式修改玩家图形数量
+      if (!value || value.type === 'player') btnRemoveRectDom.setAttribute('disabled', 'true')
       else btnRemoveRectDom.removeAttribute('disabled')
       canvasRectSelected = value
       return true
@@ -1217,7 +1259,7 @@
     },
     playerSpeed: [0, 0],
     playerSize: [54, 32],
-    playerSpritesBackgrundImageUrl: 'url("./imgs/cat-sprites.jpg")',
+    playerSpritesBackgrundImageUrl: './imgs/cat-sprites.jpg',
     playerSpritesRunActionAnimationOptions: {
       startX: 5.5, // gameSenceData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
       endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
@@ -1593,18 +1635,43 @@
     gameSenceDom.appendChild(canvas)
     canvasContext = canvas.getContext("2d")
 
+    // 根据玩法模式添加玩家图形到画布上
+    loadPlayerRectByMode()
+
     // TODO: 用于实验的案例
     // drawCanvasDemo(canvasContext)
   }
 
   const appendNewBlockToCanvas = (type) => {
+    const params = gameBoxDefaultParams[type]
     appendGraphicsInCanvas({
       type,
       ctx: canvasContext,
-      imgSrc: gameBoxDefaultParams[type].backgroundImage,
-      position: gameBoxDefaultParams[type].position,
-      size: gameBoxDefaultParams[type].size
+      ...params,
+      imgSrc: params.backgroundImage,
+      position: params.position,
+      size: params.size
     })
+  }
+
+  // 添加一个玩家到画布上
+  const appendSinglePlayerToCanvas = () => {
+    const type = 'player'
+    const playerParams = gameBoxDefaultParams[type]
+    // 把物体绘制到 canvas 上
+    appendGraphicsInCanvas({
+      type,
+      ctx: canvasContext,
+      ...playerParams,
+      imgSrc: playerParams.playerSpritesBackgrundImageUrl,
+      position: [0,0],
+      size: playerParams.playerSize,
+    })
+  }
+
+  // 根据模式添加玩家图形到画布上
+  const loadPlayerRectByMode = () => {
+    if(playerModeProxy.value === PlayerModeType.single) appendSinglePlayerToCanvas()
   }
 
   const removeSelectedBlockInCanvas = () => {
@@ -1617,24 +1684,6 @@
       canvasRectSelectedProxy.value = undefined
     }
   }
-
-  // let movImg = undefined
-  // const drawMoveImgTo = async (canvas, ctx, position) => {
-  //   // 清屏
-  //   ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-  //   // 先重新绘制排除目标图像后的所有图像
-
-  //   // 再绘制目标图像
-  //   let svgDom = undefined
-  //   if (!movImg) {
-  //     svgDom = document.querySelector('.blocks-selection-pannel > div:nth-child(1) > .icon > svg')
-  //     svgDom.setAttribute('width', 32)
-  //     svgDom.setAttribute('height', 32)
-  //   }
-  //   const { cvsImg } = await drawCanvasImage(ctx, { imgInstance: movImg, svgDom, position, size: [100, 100] })
-  //   movImg = cvsImg
-  // }
 
   const drawOtherRects = (ctx, { targetRect }) => {
     removeGraphicsInCanvas({ canvas: canvasDom, ctx, id: targetRect.id, notRemoveData: true })
@@ -1704,7 +1753,7 @@
 
     // 为选中图形绘制边框(需要清除其他选中的边框)
     const ctx = canvasContext
-    // TODO:图形移动的位置，会根据 鼠标的开始坐标 和 当前坐标的 偏移量进行计算
+    // 图形移动的位置，会根据 鼠标的开始坐标 和 当前坐标的 偏移量进行计算
     const position = [tx + px - psx, ty + py - psy]
     return position
   }
@@ -1759,34 +1808,6 @@
     // 根据目标图形参数绘制边框，从而实现拖拽图形的同时，确保选中边框也跟随
     drawGraphicsSelectedFrame(ctx, { position: targetRect.position, size })
   }
-
-  const drawCanvasUpdate = () => {
-    // // TODO: Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
-    // if (JSON.stringify(mouseStartPosition) !== '[null,null]' && JSON.stringify(mousePosition) !== '[null,null]') {
-    //   // 鼠标坐标是相对于视口定位的，[0,0]坐标位于视口的左上角，所以要想以canvas的左上角为[0,0]远点，则y坐标需要减去上部分的工具栏高度值，后面的 -2 是boder边框宽度
-    //   const pOffset = toolsWrapperHeight + 2
-    //   const startMp = [mouseStartPosition[0], mouseStartPosition[1] - pOffset]
-    //   const curMousePosition = [mousePosition[0], mousePosition[1] - pOffset]
-    //   // drawMoveImgTo(canvasDom, canvasContext, [mousePosition[0], mousePosition[1] - 100])
-
-    //   // 根据鼠标按下的坐标点，判断是否当前坐标下是否存在图形
-    //   const rects = canvasGraphicsPositions.value.filter(g => checkPointInRect(startMp, { position: g.position, size: g.size }))
-    //   // 点击区域存在图形的话，取出最上层的图形，设为选中图形
-    //   if (rects.length > 0) {
-    //     // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
-    //     rects.sort((a, b) => b.zIndex - a.zIndex)
-    //     const targetRect = rects[0]
-    //     // TODO:  后续将处理这个目标图形，实现鼠标选中和拖拽
-    //     canvasRectSelected = targetRect
-
-    //     // 拖拽移动鼠标点击选中的图形
-    //     const ctx = canvasContext
-    //     const cPosition = [curMousePosition[0] - Math.round(targetRect.size[0] / 2), curMousePosition[1] - Math.round(targetRect.size[1] / 2)]
-    //     drawMoveSelectedRect(canvasDom, ctx, { targetRect, position: cPosition })
-    //   }
-    // }
-    // return requestAnimationFrame(drawCanvasUpdate)
-  }
 </script>
 
 <!-- 事件注册 -->
@@ -1798,6 +1819,8 @@
     blocksSelectionPannelDom = document.querySelector('.blocks-selection-pannel')
     settingPannelDom = document.querySelector('.setting-pannel')
     btnRemoveRectDom = document.querySelector('#btn-remove-rect')
+    btnPlayerModeSingleDom = document.querySelector('#btn-player-mode-single')
+    btnPlayerModeDoubleDom = document.querySelector('#btn-player-mode-double')
   }
 
   const onBlocksSelectionClick = (event) => {
@@ -1912,40 +1935,10 @@
 
   // #endregion
 
-  // #region ----- touch listener handle ----
-
-  // const handleTouchStart = (ev) => {
-  //   const clientPosition = [ev.touches[0].clientX, ev.touches[0].clientY]
-  //   onMoveStart(clientPosition, ev.target)
-  // }
-
-  // const handleTouchMove = (ev) => {
-  //   const clientPosition = [ev.touches[0].clientX, ev.touches[0].clientY]
-  //   onMoving(clientPosition, ev.target)
-  // }
-
-  // const handleTouchEnd = (ev) => {
-  //   onMoveEnd(ev.target)
-  // }
-
-  // #endregion
-
-  // // mouse listener
-  // window.addEventListener('mousedown', handleMouseDown)
-  // window.addEventListener('mousemove', handleMouseMove)
-  // window.addEventListener('mouseup', handleMouseUp)
-
-  // // touch listener
-  // window.addEventListener('touchstart', handleTouchStart)
-  // window.addEventListener('touchmove', handleTouchMove)
-  // window.addEventListener('touchend', handleTouchEnd)
-
   window.addEventListener('load', () => {
     console.log('--- load ---')
     initDoms()
     loadCanvas()
-    // requestAnimationFrame(drawCanvasUpdate)
-    // canvasDom.style='cursor: nwse-resize;'
   })
 </script>
 
