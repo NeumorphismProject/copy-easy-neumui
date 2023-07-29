@@ -286,7 +286,20 @@
     .setting-pannel .group {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
+    }
+
+    .setting-pannel .group input {
+      outline: none;
+      border: none;
+      box-shadow: 0px 1px 2px rgb(62, 79, 224);
+      border-radius: 2px;
+      font-size: 22px;
+      width: 200px;
+    }
+
+    .setting-pannel .group input:disabled {
+      color: gray;
     }
 
     .setting-pannel .group .group-label {
@@ -1048,14 +1061,14 @@
         <!-- 画布设置 -->
         <div class="group">
           <label class="group-label">画布设置</label>
-          <div class="row">
+          <div canvas-setting-width-row class="row">
             <label>宽：</label>
             <div class="input-wrapper">
               <input type="text" value="">
               <span>px</span>
             </div>
           </div>
-          <div class="row">
+          <div canvas-setting-height-row class="row">
             <label>高：</label>
             <div class="input-wrapper">
               <input type="text" value="">
@@ -1066,34 +1079,34 @@
         <!-- 基础设置 -->
         <div class="group">
           <label class="group-label">基础设置</label>
-          <div class="row">
+          <div base-setting-id-row class="row">
             <label>ID：</label>
             <div class="input-wrapper">
-              <input type="text" value="" disabled>
+              <input type="text" value="123123" disabled>
             </div>
           </div>
-          <div class="row">
+          <div base-setting-posotion-x-row class="row">
             <label>坐标 X：</label>
             <div class="input-wrapper">
               <input type="text" value="">
               <span>px</span>
             </div>
           </div>
-          <div class="row">
+          <div base-setting-position-y-row class="row">
             <label>坐标 Y：</label>
             <div class="input-wrapper">
               <input type="text" value="">
               <span>px</span>
             </div>
           </div>
-          <div class="row">
+          <div base-setting-width-row class="row">
             <label>宽：</label>
             <div class="input-wrapper">
               <input type="text" value="">
               <span>px</span>
             </div>
           </div>
-          <div class="row">
+          <div base-setting-height-row class="row">
             <label>高：</label>
             <div class="input-wrapper">
               <input type="text" value="">
@@ -1102,9 +1115,9 @@
           </div>
         </div>
         <!-- 得分设置 -->
-        <div class="group">
+        <div score-setting-group class="group">
           <label class="group-label">得分设置</label>
-          <div class="row">
+          <div score-setting-score-row class="row">
             <label>金币得分：</label>
             <div class="input-wrapper">
               <input type="text" value="">
@@ -1112,15 +1125,15 @@
           </div>
         </div>
         <!-- 图片设置 -->
-        <div class="group">
+        <div image-setting-group class="group">
           <label class="group-label">图片设置</label>
-          <div class="row">
+          <div image-setting-image-row class="row">
             <label>图片 Url：</label>
             <div class="input-wrapper">
               <input type="text" value="">
             </div>
           </div>
-          <div class="area">
+          <div image-setting-preview-row class="area">
             <label>图片预览：</label>
             <div class="img-wrapper">
               <img src="./imgs/coin.png" alt="背景图片">
@@ -1128,45 +1141,45 @@
           </div>
         </div>
         <!-- 玩家雪碧图设置（跑步动作） -->
-        <div class="group">
+        <div player-sprites-setting-group class="group">
           <label class="group-label">玩家雪碧图设置（跑步动作）</label>
-          <div class="row">
+          <div player-sprites-setting-image-row class="row">
             <label>图片 Url：</label>
             <div class="input-wrapper">
               <input type="text" value="">
             </div>
           </div>
-          <div class="row">
+          <div player-sprites-setting-width-row class="row">
             <label>宽：</label>
             <div class="input-wrapper">
               <input type="text" value="">
             </div>
           </div>
-          <div class="row">
+          <div player-sprites-setting-height-row class="row">
             <label>高：</label>
             <div class="input-wrapper">
               <input type="text" value="">
             </div>
           </div>
-          <div class="row">
+          <div player-sprites-setting-position-start-x-row class="row">
             <label>起始坐标 X：</label>
             <div class="input-wrapper">
               <input type="text" value="">
             </div>
           </div>
-          <div class="row">
+          <div player-sprites-setting-position-start-y-row class="row">
             <label>起始坐标 Y：</label>
             <div class="input-wrapper">
               <input type="text" value="">
             </div>
           </div>
-          <div class="row">
+          <div player-sprites-setting-position-end-x-row class="row">
             <label>结束坐标 X：</label>
             <div class="input-wrapper">
               <input type="text" value="">
             </div>
           </div>
-          <div class="area">
+          <div player-sprites-setting-image-preivew-row class="area">
             <label>图片预览：</label>
             <button>【启动/停止】动画</button>
             <div class="img-wrapper">
