@@ -291,12 +291,12 @@
       color: black;
     }
 
-    .btn-setting-tool-params-useto:active{
+    .btn-setting-tool-params-useto:active {
       background-color: blanchedalmond;
       color: black;
     }
 
-    .btn-setting-tool-params-useto:hover{
+    .btn-setting-tool-params-useto:hover {
       color: black;
     }
 
@@ -1436,7 +1436,7 @@
               <input type="text" value="">
             </div>
           </div>
-          <div setting-id="image-setting-row-image-selection" class="area">
+          <div setting-id="image-setting-row-image-selections" class="area">
             <label>选择预制图片：</label>
             <div class="img-selections-wrapper">
               <img class="selected" src="./imgs/coin.png" alt="背景图片">
@@ -1518,7 +1518,7 @@
               <input type="text" value="">
             </div>
           </div>
-          <div setting-id="player-sprites-setting-row-image-preivew" class="area">
+          <div setting-id="player-sprites-setting-row-animation-preivew" class="area">
             <label>图片预览：</label>
             <button>【启动/停止】动画</button>
             <div class="img-wrapper">
@@ -1545,6 +1545,9 @@
   let btnPlayerModeSingleDom = undefined
   let btnPlayerModeDoubleDom = undefined
   let btnGameLevelPreviewDom = undefined
+  let btnSettingToolParamsUsetoDom = undefined
+  let btnSettingToolResetDom = undefined
+  let settingPannelTypeTitleDom = undefined
 
   // 参数面板悬浮窗体Dom
   let settingPannelDom = undefined
@@ -2178,11 +2181,33 @@
     btnPlayerModeSingleDom = document.querySelector('#btn-player-mode-single')
     btnPlayerModeDoubleDom = document.querySelector('#btn-player-mode-double')
     btnGameLevelPreviewDom = document.querySelector('#btn-game-level-preview')
+    btnSettingToolParamsUsetoDom = document.querySelector('.btn-setting-tool-params-useto')
+    btnSettingToolResetDom = document.querySelector('#btn-setting-tool-reset')
+    settingPannelTypeTitleDom = document.querySelector('.setting-pannel-type-title')
 
     settingPannelDom = document.querySelector('.setting-pannel')
-    settingPannelDoms = {
-      'canvas-setting-width-row': document.querySelector('[canvas-setting-width-row]')
+    const settingInputDomList = document.querySelectorAll('[setting-id] input')
+    let domKey = ''
+    // 查找并获取参数面板中所有的 input 元素
+    for (const inputDom of settingInputDomList) {
+      domKey = inputDom.parentNode.parentNode.getAttribute('setting-id')
+      if (Object.hasOwnProperty.call(settingPannelDoms, domKey)) {
+        throw new Error(`query setting-pannel>input doms Error：setting-id=["${domKey}"] 重复了，请查找原因进行修复`)
+      }
+      settingPannelDoms[domKey] = inputDom
     }
+    // 查找并获取
+    // settingPannelDoms['player-role-setting-row-borth-position-x'].value = '100'
+    // player播放动画测试按钮和图片的dom
+    settingPannelDoms['player-sprites-setting-row-animation-preivew-button'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>button')
+    settingPannelDoms['player-sprites-setting-row-animation-preivew-img'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>.img-wrapper>img')
+    const imgSelectionsDom = document.querySelector('[setting-id="image-setting-row-image-selections"]>.img-selections-wrapper')
+    const imgSelectionsDomKey = imgSelectionsDom.parentNode.getAttribute('setting-id')
+    settingPannelDoms[imgSelectionsDomKey] = imgSelectionsDom
+    const imgPreviewDom = document.querySelector('[setting-id="image-setting-row-preview"]>div>img')
+    const imgPreviewDomKey = imgPreviewDom.parentNode.parentNode.getAttribute('setting-id')
+    settingPannelDoms[imgPreviewDomKey] = imgPreviewDom
+    console.log(settingPannelDoms)
   }
 
   const onBlocksSelectionClick = (event) => {
