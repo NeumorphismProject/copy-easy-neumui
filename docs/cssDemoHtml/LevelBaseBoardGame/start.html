@@ -67,6 +67,10 @@
     let coinsDoms = undefined
 
     // 玩家得分
+    let playerScore = {
+      value: 0, // 当前得分
+      append: 0 // 追加得分属性
+    }
     let playerScoreProxy = new Proxy(playerScore, {
       get: function (target, key) {
         return target[key]

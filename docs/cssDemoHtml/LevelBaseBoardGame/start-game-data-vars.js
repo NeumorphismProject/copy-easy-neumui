@@ -8,12 +8,6 @@ const PLAYER_BORTH_POSITION = [250, 0] // 玩家出生位置
 const COIN_COLLISION_OFFSET = 10 // 玩家与金币碰撞的边缘计算偏移量（为了体验更好，玩家需要进入金币div一定的范围内部才会让金币被碰撞而消失）
 const PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT = [5.5, 7] // 玩家雪碧图背景的 background-position 的初始值（实际在css中的单位时百分比%）
 
-// 玩家得分
-let playerScore = {
-  value: 0, // 当前得分
-  append: 0 // 追加得分属性
-}
-
 // 玩家运动初速度 [x,y]
 let playerSpeed = [0, 0]
 // 玩家尺寸
