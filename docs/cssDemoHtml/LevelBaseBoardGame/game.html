@@ -60,6 +60,9 @@
     const PLAYER_TRANSFORM_CLASS_KEY = 'playerTransform'
     const COIN_DEFAULT_CLASS_KEY = 'coin-default' // 所有 金币div 都带有的一个默认的 class 样式名称
 
+    // 消息通道实例
+    let channelPort2 = undefined
+
     let gameSceneDom = undefined
     let playerDom = undefined
     let playerSocreDom = undefined
@@ -247,6 +250,24 @@
   <!-- 公共函数 -->
   <script>
 
+    // 把 window.location.search 里这样的 '?level=preview&a=123' 字符串转成 json
+    function parseSearchToJson(search) {
+      const json = {}
+      const regex = /[?&](\w+)=(\w+)/g
+      let match
+
+      while (match = regex.exec(search)) {
+        json[match[1]] = match[2]
+      }
+
+      return Object.keys(json).length > 0 ? json : null
+    }
+
+    // 获取json格式的把 window.location.search
+    function getRouteQuery() {
+      return parseSearchToJson(window.location.search)
+    }
+
     // 随机16进制颜色值
     function createRandomColor() {
       let r = Math.floor(Math.random() * 256)
@@ -371,37 +392,43 @@
 
     // 创建普通砖块的集合数据
     const createSceneMapBlocksData = () => {
-      const dataList = []
-      for (let i = 0; i < 10; i += 1) {
-        dataList.push({
-          size: [50, 50],
-          position: [50 * i, 400],
-          backgroundImage: ''
-        })
-      }
+      let dataList = []
+      if (Array.isArray(blocksData)) {
+        // 优先使用配置数据
+        dataList = blocksData
+      } else {
+        // Demo 数据
+        for (let i = 0; i < 10; i += 1) {
+          dataList.push({
+            size: [50, 50],
+            position: [50 * i, 400],
+            backgroundImage: ''
+          })
+        }
 
-      for (let i = 0; i < 5; i += 1) {
-        dataList.push({
-          size: [50, 50],
-          position: [400 + 50 * i, 340],
-          backgroundImage: ''
-        })
-      }
+        for (let i = 0; i < 5; i += 1) {
+          dataList.push({
+            size: [50, 50],
+            position: [400 + 50 * i, 340],
+            backgroundImage: ''
+          })
+        }
 
-      for (let i = 0; i < 2; i += 1) {
-        dataList.push({
-          size: [50, 50],
-          position: [100 + 50 * i, 300],
-          backgroundImage: ''
-        })
-      }
+        for (let i = 0; i < 2; i += 1) {
+          dataList.push({
+            size: [50, 50],
+            position: [100 + 50 * i, 300],
+            backgroundImage: ''
+          })
+        }
 
-      for (let i = 0; i < 2; i += 1) {
-        dataList.push({
-          size: [50, 50],
-          position: [100 + 50 * i, 100],
-          backgroundImage: ''
-        })
+        for (let i = 0; i < 2; i += 1) {
+          dataList.push({
+            size: [50, 50],
+            position: [100 + 50 * i, 100],
+            backgroundImage: ''
+          })
+        }
       }
 
       return dataList.map((d, index) => createSceneMapBlock({ ...d, type: 'block', index }))
@@ -446,24 +473,28 @@
     }
 
     const createSceneMapCoinsData = () => {
-      const dataList = []
+      let dataList = []
+      if (Array.isArray(coinsData.value)) {
+        // 优先使用配置数据
+        dataList = coinsData.value
+      } else {
+        for (let i = 0; i < 5; i += 1) {
+          dataList.push({
+            size: [50, 50],
+            position: [100 + 50 * i, 230],
+            score: (i + 1), // 金币代表的分数值
+            backgroundImage: '' // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
+          })
+        }
 
-      for (let i = 0; i < 5; i += 1) {
-        dataList.push({
-          size: [50, 50],
-          position: [100 + 50 * i, 230],
-          score: (i + 1), // 金币代表的分数值
-          backgroundImage: '' // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
-        })
-      }
-
-      for (let i = 0; i < 8; i += 1) {
-        dataList.push({
-          size: [50, 50],
-          position: [300 + 50 * i, 280],
-          score: (i + 1), // 金币代表的分数值
-          backgroundImage: ''
-        })
+        for (let i = 0; i < 8; i += 1) {
+          dataList.push({
+            size: [50, 50],
+            position: [300 + 50 * i, 280],
+            score: (i + 1), // 金币代表的分数值
+            backgroundImage: ''
+          })
+        }
       }
 
       return dataList.map((d, index) => createSceneMapCoin({ ...d, type: 'coin', index }))
@@ -938,10 +969,13 @@
     window.addEventListener('load', () => {
       console.log('------onload')
 
-      initGame()
-
-      playerSpeed[1] = 1
-      startGameEngine()
+      const routeQuery = getRouteQuery()
+      // 若路由参数中的 level 值不是 'preview'，则正常加载游戏，否则就根据消息通道的通知消息来加载游戏
+      if (!routeQuery || !Object.hasOwnProperty.call(routeQuery, 'level') || !routeQuery.level !== 'preview') {
+        initGame()
+        playerSpeed[1] = 1
+        startGameEngine()
+      }
 
       // playerActionAnimation()
 
@@ -972,7 +1006,62 @@
       // setTimeout(() => {
       //   stopGameEngine()
       // }, 11250)
+
+      // // 测试下消息通道通知
+      // setTimeout(() => {
+      //   // window.postMessage('port', '*', [channelPort1]);
+      //   // window.open('http://127.0.0.1:5500/docs/cssDemoHtml/LevelBaseBoardGame/game.html')
+      //   // window.postMessage('port', '*', [channelPort1]);
+      //   channel.postMessage({ from: 'game', data: { a: 1, b: 1 } })
+      // }, 3000)
     })
+  </script>
+
+  <!-- 消息通道 -->
+  <script>
+    const loadGameParams = (channelData) => {
+      GAME_SENCE_BACKGROUND_IMAGE = channelData.global.GAME_SENCE_BACKGROUND_IMAGE // 整个游戏场景的背景图（为了游戏效果，背景图不会自适应，游戏场景中的每个物体目前均以px为单位进行布局，位置需要与背景图相对应）
+      PLAYER_X_START_SPEED = channelData.player.PLAYER_X_START_SPEED // 玩家移动初速度
+      PLAYER_Y_FREE_FALL_STEP_SPEED = channelData.player.PLAYER_Y_FREE_FALL_STEP_SPEED // 控制玩家下落速度的单位值
+      PLAYER_Y_JUMP_START_SPEED = channelData.player.PLAYER_Y_JUMP_START_SPEED // 玩家跳跃的初速度值
+      PLAYER_BORTH_POSITION = channelData.player.PLAYER_BORTH_POSITION // 玩家出生位置
+      PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT = channelData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT // 玩家雪碧图背景的 background-position 的初始值（实际在css中的单位时百分比%）
+      COIN_COLLISION_OFFSET = channelData.coin.COIN_COLLISION_OFFSET // 玩家与金币碰撞的边缘计算偏移量（为了体验更好，玩家需要进入金币div一定的范围内部才会让金币被碰撞而消失）
+
+      // 玩家运动初速度 [x,y]
+      playerSpeed = channelData.player.playerSpeed
+      // 玩家尺寸
+      playerSize = channelData.player.playerSize
+      // 玩家角色图片
+      playerSpritesBackgrundImageUrl = `url("${channelData.player.playerSpritesBackgrundImageUrl}")`
+      // 用于播放玩家跑步运动时，雪碧图不断切换的一些参数（目前仅支持 x 轴，即仅支持行上的动作切换）(这里的属性都是百分比值，即使用在 background-position:0% 0% 中)
+      playerSpritesRunActionAnimationOptions = channelData.player.playerSpritesRunActionAnimationOptions
+
+      // 游戏画面中的砖块集合
+      blocksData = channelData.block.blocksData
+      // 金币集合
+      coinsData.value = channelData.coin.coinsData
+    }
+
+    const loadGameByChannelData = (channelData) => {
+      loadGameParams(channelData)
+      initGame()
+      playerSpeed[1] = 1
+      startGameEngine()
+    }
+
+    const channel = new BroadcastChannel('mic-2d-dream')
+    channel.addEventListener('message', (event) => {
+      const { data: message } = event
+      // 从广播中过滤出属于自己的信息
+      if (message.from === 'sence-creator' && message.type === 'level-preview') {
+        alert(JSON.stringify(message))
+        console.log(message)
+        // 根据传递过来的数据，加载游戏
+        loadGameByChannelData(message.data)
+      }
+    })
+
   </script>
 </body>
 

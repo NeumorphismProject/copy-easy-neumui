@@ -1243,7 +1243,7 @@
               </svg>
             </div>
           </div>
-          <button id="btn-game-level-preview">预览</button>
+          <button id="btn-game-level-preview" onclick="onGameLevelPreviewClick()">预览</button>
         </div>
       </div>
 
@@ -1661,7 +1661,7 @@
     Y_JUMP_START_SPEED: 20,
     PLAYER_BORTH_POSITION: [250, 0],
     PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: [5.5, 7],
-    playerSpeed: [0, 0],
+    playerSpeed: [0, 0], // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
     playerSize: [54, 32],
     playerSpritesBackgrundImageUrl: './imgs/cat-sprites.jpg',
     playerSpritesRunActionAnimationOptions: {
@@ -1823,6 +1823,66 @@
     }
   }
 
+  // 收集当前画布绘制的所有游戏数据
+  const collectGameData = () => {
+    const GAME_SENCE_BACKGROUND_IMAGE = './imgs/game-bg.jpg'
+    const COIN_COLLISION_OFFSET = 10
+
+    // 排除非 game.html 页面所需的数据，当然这些 html canvas 之类的引用数据在 Channel 里也是不能传递的
+    const rectData = canvasGraphicsPositions.value.map(g => {
+      const newG = { ...g }
+      delete newG.ctx
+      delete newG.customDraw
+      for (const k of Object.keys(newG)) {
+        if (newG[k] instanceof HTMLElement) {
+          delete newG[k]
+        }
+      }
+      return newG
+    })
+
+    let player = {}
+    let blocksData = []
+    let coinsData = []
+    rectData.forEach((g, index) => {
+      if (g.type === 'player') {
+        player = {
+          ...playerDefault,
+          ...g
+        }
+      } else if (g.type === 'block') {
+        blocksData.push({
+          ...blockDefault,
+          ...g
+        })
+      } else if (g.type === 'coin') {
+        coinsData.push({
+          ...coinDefault,
+          ...g
+        })
+      }
+    })
+
+    gameSenceData = {
+      // 游戏场景数据
+      global: {
+        GAME_SENCE_BACKGROUND_IMAGE
+      },
+      // 玩家数据
+      player,
+      // 普通砖块数据
+      block: {
+        blocksData
+      },
+      // 金币数据
+      coin: {
+        COIN_COLLISION_OFFSET,
+        coinsData
+      }
+    }
+
+    return gameSenceData
+  }
 </script>
 
 <!-- 通用函数 -->
@@ -2290,6 +2350,12 @@
     removeSelectedBlockInCanvas()
   }
 
+  // 游戏关卡预览
+  const onGameLevelPreviewClick = () => {
+    // 收集当前画布上绘制的所有数据，打开并传递给 game.html 页面
+    openGameLevelPage()
+  }
+
   // #region ----------------参数面板相关事件---------------
 
   // 参数面板的 图片设置>图片Url 输入框编辑事件
@@ -2410,7 +2476,42 @@
     console.log('--- load ---')
     initDoms()
     loadCanvas()
+
+    // // 测试下消息通道通知
+    // setTimeout(() => {
+    //   // window.postMessage('port', '*', [channelPort1]);
+    //   const popup = window.open('http://127.0.0.1:5500/docs/cssDemoHtml/LevelBaseBoardGame/game.html')
+    //   popup.onload = () => {
+    //     channel.postMessage({ from: 'sence-creator', data: { a: 1, b: 1 } })
+    //   }
+    //   // window.postMessage('port', '*', [channelPort1]);
+
+    // }, 3000)
   })
+</script>
+
+<!-- 通过 BroadcastChannel 实现跨页签通信 -->
+<script>
+
+  const channel = new BroadcastChannel('mic-2d-dream')
+  channel.addEventListener('message', (event) => {
+    const { data: message } = event
+    if (message.from === 'game') {
+      // alert(JSON.stringify(message))
+    }
+  })
+
+  const openGameLevelPage = () => {
+    // 整理出当前画布上的所有游戏数据，然后传递给 game.html 页面
+    const data = collectGameData()
+
+    const popup = window.open('game.html?level=preview')
+    popup.onload = () => {
+      console.log('------------data = ', data)
+      channel.postMessage({ from: 'sence-creator', type: 'level-preview', data })
+    }
+  }
+
 </script>
 
 </html>
