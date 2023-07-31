@@ -1689,7 +1689,7 @@
     PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: [5.5, 7],
     playerSpeed: [0, 0], // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
     playerSize: [54, 32],
-    playerSpritesBackgrundImageUrl: './imgs/cat-sprites.jpg',
+    playerSpritesBackgrundImageUrl: toAbsURL('./imgs/cat-sprites.jpg'),
     playerSpritesRunActionAnimationOptions: {
       startX: 5.5, // gameSenceData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
       endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
@@ -1713,7 +1713,7 @@
     size: [50, 50],
     position: [0, 0],
     score: 1, // 金币代表的分数值
-    backgroundImage: './imgs/coin.png' // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
+    backgroundImage: toAbsURL('./imgs/coin.png') // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
   }
 
   // 默认参数统一这里到该对象中，方便部分函数中直接根据key进行取用
@@ -1725,8 +1725,8 @@
 
   // 物体的预制图片
   const gameBlockPreimgs = {
-    block: ['./imgs/block.png', './imgs/block-grass.png', './imgs/block-water.png'],
-    coin: ['./imgs/coin.png', './imgs/coin-fish.png', './imgs/coin-carrot.png'],
+    block: [toAbsURL('./imgs/block.png'), toAbsURL('./imgs/block-grass.png'), toAbsURL('./imgs/block-water.png')],
+    coin: [toAbsURL('./imgs/coin.png'), toAbsURL('./imgs/coin-fish.png'), toAbsURL('./imgs/coin-carrot.png')],
   }
 
   // --- 游戏关键数据 ---
@@ -1813,8 +1813,8 @@
         const updateSize = Array.isArray(size) && size.length > 1 ? size : targetVal.size
         let updateData = { ...targetVal, position: options.position, size: updateSize, zIndex }
         // 若存在选中数据，则可能有最新的数据需要，则这里填入
-        if(!!canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.id === targetVal.id) {
-          updateData = {...targetVal, ...canvasRectSelectedProxy.value, position: options.position, size: updateSize, zIndex}
+        if (!!canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.id === targetVal.id) {
+          updateData = { ...targetVal, ...canvasRectSelectedProxy.value, position: options.position, size: updateSize, zIndex }
         }
         // 移除原来的数据
         target.value.splice(findIndex, 1)
@@ -1858,7 +1858,7 @@
 
   // 收集当前画布绘制的所有游戏数据
   const collectGameData = () => {
-    const GAME_SENCE_BACKGROUND_IMAGE = './imgs/game-bg.jpg'
+    const GAME_SENCE_BACKGROUND_IMAGE = toAbsURL('./imgs/game-bg.jpg')
     const COIN_COLLISION_OFFSET = 10
 
     // 排除非 game.html 页面所需的数据，当然这些 html canvas 之类的引用数据在 Channel 里也是不能传递的
@@ -1940,6 +1940,20 @@
         dom.style.opacity = '1'
       })
     }
+  }
+
+  // 检测图片url是否有效
+  function checkImgUrl(imgurl) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image()
+      img.src = imgurl
+      img.onload = function (res) {
+        resolve(res)
+      }
+      img.onerror = function (err) {
+        reject(err)
+      }
+    })
   }
 </script>
 
@@ -2254,7 +2268,7 @@
       } else {
         selectedRectData = { ...canvasRectSelectedProxy.value, moveStartposition: targetRect.position }
         canvasRectSelectedProxy.value = selectedRectData
-        targetRect = {...canvasRectSelectedProxy.value}
+        targetRect = { ...canvasRectSelectedProxy.value }
       }
       loadSettingPannelForm(selectedRectData)
       const [px, py] = mp
@@ -2411,6 +2425,21 @@
 
   // #region ----------------参数面板相关事件---------------
 
+  const updateSelectedRectData = (updateOptions) => {
+    if (updateOptions) {
+      const targetRect = { ...canvasRectSelectedProxy.value, ...updateOptions }
+      // 更新数据,下面 drawMoveSelectedRect 会用到
+      canvasRectSelectedProxy.value = targetRect
+
+      // 重绘画布图形
+      const canvas = canvasDom
+      const ctx = canvasContext
+      drawMoveSelectedRect(canvas, ctx, { targetRect })
+    } else {
+      throw new Error(`updateSelectedRectData params Error: please check function params [updateOptions]`)
+    }
+  }
+
   // *** 基础设置 ***
 
   const onBasesetingPositionXChange = (event) => {
@@ -2419,12 +2448,9 @@
       return void 0
     }
     if (canvasRectSelectedProxy.value) {
-      const targetRect = { ...canvasRectSelectedProxy.value }
-      targetRect.position[0] = Math.round(val)
-      // 重绘画布图形
-      const canvas = canvasDom
-      const ctx = canvasContext
-      drawMoveSelectedRect(canvas, ctx, { targetRect })
+      const position = canvasRectSelectedProxy.value.position
+      position[0] = Math.round(val)
+      updateSelectedRectData({ position })
     }
   }
 
@@ -2434,12 +2460,9 @@
       return void 0
     }
     if (canvasRectSelectedProxy.value) {
-      const targetRect = { ...canvasRectSelectedProxy.value }
-      targetRect.position[1] = Math.round(val)
-      // 重绘画布图形
-      const canvas = canvasDom
-      const ctx = canvasContext
-      drawMoveSelectedRect(canvas, ctx, { targetRect })
+      const position = canvasRectSelectedProxy.value.position
+      position[1] = Math.round(val)
+      updateSelectedRectData({ position })
     }
   }
 
@@ -2449,12 +2472,8 @@
       return void 0
     }
     if (canvasRectSelectedProxy.value) {
-      const targetRect = { ...canvasRectSelectedProxy.value }
-      targetRect.size[0] = Math.round(val)
-      // 重绘画布图形
-      const canvas = canvasDom
-      const ctx = canvasContext
-      drawMoveSelectedRect(canvas, ctx, { targetRect })
+      const size = [Math.round(val), canvasRectSelectedProxy.value.size[1]]
+      updateSelectedRectData({ size })
     }
   }
 
@@ -2464,50 +2483,25 @@
       return void 0
     }
     if (canvasRectSelectedProxy.value) {
-      const targetRect = { ...canvasRectSelectedProxy.value }
-      targetRect.size[1] = Math.round(val)
-      // 重绘画布图形
-      const canvas = canvasDom
-      const ctx = canvasContext
-      drawMoveSelectedRect(canvas, ctx, { targetRect })
+      const size = [canvasRectSelectedProxy.value.size[0], Math.round(val)]
+      updateSelectedRectData({ size })
     }
   }
 
 
   // *** 图片设置 ***
 
-  // 检测图片url是否有效
-  function checkImgUrl(imgurl) {
-    return new Promise(function (resolve, reject) {
-      var img = new Image()
-      img.src = imgurl
-      img.onload = function (res) {
-        resolve(res)
-      }
-      img.onerror = function (err) {
-        reject(err)
-      }
-    })
-  }
-
   // 参数面板的 图片设置>图片Url 输入框编辑事件
   const onImageSettingImageUrlChange = (event) => {
-    const val = event.target.value
+    const imgUrl = event.target.value
     // 把修改的图片地址应用到下方的 图片预览 区域
-    settingPannelDoms['image-setting-row-preview'].src = val
-    const imgUrl = val
+    settingPannelDoms['image-setting-row-preview'].src = imgUrl
     // 若图片url是无效地址，则不会在canvas上更新图形
     checkImgUrl(imgUrl).then(() => {
       try {
         if (canvasRectSelectedProxy.value) {
-          const targetRect = { ...canvasRectSelectedProxy.value }
-          targetRect.backgroundImage = imgUrl
-          // 更新数据,下面 drawMoveSelectedRect 会用到
-          canvasRectSelectedProxy.value = targetRect
-          // 重绘画布图形
-          const canvas = canvasDom
-          const ctx = canvasContext
-          drawMoveSelectedRect(canvas, ctx, { targetRect })
+          const backgroundImage = imgUrl
+          updateSelectedRectData({ backgroundImage })
         }
       } catch (err) {
         throw new Error(`onImageSettingImageUrlChange: ${err}`)
@@ -2522,14 +2516,8 @@
     settingPannelDoms['image-setting-row-preview'].src = imgUrl
     try {
       if (canvasRectSelectedProxy.value) {
-        const targetRect = { ...canvasRectSelectedProxy.value }
-        targetRect.backgroundImage = imgUrl
-        // 更新数据,下面 drawMoveSelectedRect 会用到
-        canvasRectSelectedProxy.value = targetRect
-        // 重绘画布图形
-        const canvas = canvasDom
-        const ctx = canvasContext
-        drawMoveSelectedRect(canvas, ctx, { targetRect })
+        const backgroundImage = imgUrl
+        updateSelectedRectData({ backgroundImage })
       }
     } catch (err) {
       throw new Error(`onPreimgSelectionsSelectChange: ${err}`)
