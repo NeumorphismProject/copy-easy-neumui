@@ -1784,7 +1784,8 @@
 
   // { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size, ...others } --> 这里的 ...others 表示添加图形时允许根据需要添加一些可选属性数据，也会同时存入数据中
   const updateGraphicsInCanvas = (value) => {
-    const { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size } = value
+    const { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size: newSize } = value
+    const size = [].concat(newSize) // 避免地址引用
     const target = canvasGraphicsPositions
     const errorHint = 'set canvasGraphicsPositions Error: '
     try {
@@ -2472,7 +2473,8 @@
       return void 0
     }
     if (canvasRectSelectedProxy.value) {
-      const size = [Math.round(val), canvasRectSelectedProxy.value.size[1]]
+      const size = canvasRectSelectedProxy.value.size
+      size[0] = Math.round(val)
       updateSelectedRectData({ size })
     }
   }
@@ -2483,7 +2485,8 @@
       return void 0
     }
     if (canvasRectSelectedProxy.value) {
-      const size = [canvasRectSelectedProxy.value.size[0], Math.round(val)]
+      const size = canvasRectSelectedProxy.value.size
+      size[1] = Math.round(val)
       updateSelectedRectData({ size })
     }
   }
