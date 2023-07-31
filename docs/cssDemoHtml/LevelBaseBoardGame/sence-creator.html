@@ -1389,34 +1389,34 @@
           <div setting-id="base-setting-row-id" class="row">
             <label>ID：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="123123" disabled>
+              <input setting-unit="input" type="text" value="" disabled>
             </div>
           </div>
           <div setting-id="base-setting-position-row-x" class="row">
             <label>坐标 X：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" onchange="onBasesetingPositionXChange(event)">
               <span>px</span>
             </div>
           </div>
           <div setting-id="base-setting-position-row-y" class="row">
             <label>坐标 Y：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" onchange="onBasesetingPositionYChange(event)">
               <span>px</span>
             </div>
           </div>
           <div setting-id="base-setting-row-width" class="row">
             <label>宽：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" onchange="onBasesetingWidthChange(event)">
               <span>px</span>
             </div>
           </div>
           <div setting-id="base-setting-row-height" class="row">
             <label>高：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" onchange="onBasesetingHeightChange(event)">
               <span>px</span>
             </div>
           </div>
@@ -1536,6 +1536,22 @@
 </body>
 <!-- 全局变量 -->
 <script>
+  // 把相对路径转为绝对路径
+  let absURLImg = null
+  function toAbsURL(url) {
+    try {
+      let result
+      let img = absURLImg
+      if (!img) {
+        img = document.createElement('img')
+        absURLImg = img
+      }
+      img.src = url
+      result = img.src
+      return result
+    } catch (error) { }
+  }
+
   const CANVAS_CURSOR_DEFALUT = 'auto' // 鼠标在 canvas 上的默认光标
   const CANVAS_CURSOR_NWSERESIZE = 'nwse-resize'
 
@@ -1575,8 +1591,10 @@
     player: (selectedRectData) => { },
     // 普通砖块数据
     block: (selectedRectData) => {
+      const rectId = selectedRectData.id
       let domKey = null
       const blockObj = settingPannelKeysMap.block
+      // 将基础参数填入对应的输入框中（这里对应上面 settingPannelKeysMap 和 settingPannelDoms 的map映射规则）
       for (const k of Object.keys(blockObj)) {
         domKey = blockObj[k]
         if (Array.isArray(domKey)) {
@@ -1587,15 +1605,23 @@
           settingPannelDoms[domKey].value = selectedRectData[k]
         }
       }
+      settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
+
+      const imgListDom = settingPannelDoms['image-setting-row-image-selections']
+      const lastRectId = imgListDom.getAttribute('rect-id')
+      // 若id没变，那么预制选项图片就不需要重新加载
+      if (lastRectId && String(lastRectId) === String(rectId)) return
+
+      // 更新选项图片相关dom
       settingPannelTypeTitleDom.innerText = '砖块'
       // 预制的图片列表加载
-      const imgListDom = settingPannelDoms['image-setting-row-image-selections']
       let htmlStr = ''
       const bgImg = selectedRectData.backgroundImage
       for (const imgUrl of gameBlockPreimgs.block) {
         htmlStr += `<img src="${imgUrl}" alt="背景图片" onclick="onPreimgSelectionsSelectChange(event)">`
       }
       imgListDom.innerHTML = htmlStr
+      imgListDom.setAttribute('rect-id', String(rectId))
     },
     // 金币数据
     coin: (selectedRectData) => { },
@@ -1677,7 +1703,7 @@
     blockId: 'block-0', // 唯一id
     size: [50, 50],
     position: [0, 0],
-    backgroundImage: './imgs/block.png'
+    backgroundImage: toAbsURL('./imgs/block.png')
   }
 
   // 一个金币物体的默认参数
@@ -1708,7 +1734,7 @@
   let gameSenceData = {
     // 游戏场景数据
     global: {
-      GAME_SENCE_BACKGROUND_IMAGE: './imgs/game-bg.jpg'
+      GAME_SENCE_BACKGROUND_IMAGE: toAbsURL('./imgs/game-bg.jpg')
     },
     // 玩家数据
     player: playerDefault,
@@ -1777,12 +1803,19 @@
       if (updateVal.id && (findIndex = target.value.findIndex(g => g.id === updateVal.id)) !== -1) {
         // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
         const options = updateVal // { id, type, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size }
+        if (options.backgroundImage !== options.imgInstance.src) {
+          options['updateImgSrc'] = options.backgroundImage
+        }
         redrawCanvasImage(options.ctx, options)
         const targetVal = target.value[findIndex]
         // 找出最大的 zIndex 并加1得到最新的zIndex
         const zIndex = [...target.value].sort((a, b) => b.zIndex - a.zIndex)[0].zIndex + 1
         const updateSize = Array.isArray(size) && size.length > 1 ? size : targetVal.size
-        const updateData = { ...targetVal, position: options.position, size: updateSize, zIndex }
+        let updateData = { ...targetVal, position: options.position, size: updateSize, zIndex }
+        // 若存在选中数据，则可能有最新的数据需要，则这里填入
+        if(!!canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.id === targetVal.id) {
+          updateData = {...targetVal, ...canvasRectSelectedProxy.value, position: options.position, size: updateSize, zIndex}
+        }
         // 移除原来的数据
         target.value.splice(findIndex, 1)
         // 再追加
@@ -1887,6 +1920,12 @@
 
 <!-- 通用函数 -->
 <script>
+
+  // 检测是否为数值
+  function checkNumberStr(val) {
+    return val === 0 || (!!val && !isNaN(Number(val)))
+  }
+
   function displayOrHiddenPannel(dom, left) {
     let styleOpacity = dom.style.opacity
     if (styleOpacity === '' || parseInt(styleOpacity) > 0) {
@@ -1972,12 +2011,19 @@
     })
   }
 
-  function redrawCanvasImage(ctx, { imgInstance, position, size }) {
+  function redrawCanvasImage(ctx, { imgInstance, position, size, updateImgSrc }) {
     let img = imgInstance
     if (!img) {
       throw new Error('[function] redrawCanvasImage Error: imgInstance 参数不存在，是必传的')
     }
-    drawCanvasImageAction(ctx, img, { position, size })
+    if (updateImgSrc) {
+      img.onload = () => {
+        drawCanvasImageAction(ctx, img, { position, size })
+      }
+      img.src = updateImgSrc
+    } else {
+      drawCanvasImageAction(ctx, img, { position, size })
+    }
   }
 
   // 根据目标图形的左上角坐标和尺寸，计算出绘制 图形右下角 尺寸调节三角标记的 绘制所需参数
@@ -2145,12 +2191,12 @@
   }
 
   const removeSelectedBlockInCanvas = () => {
-    if (canvasRectSelected) {
+    if (canvasRectSelectedProxy.value) {
       const canvas = canvasDom
       const ctx = canvasContext
       // 清屏
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      removeGraphicsInCanvas({ canvas, ctx, id: canvasRectSelected.id, notRemoveData: false })
+      removeGraphicsInCanvas({ canvas, ctx, id: canvasRectSelectedProxy.value.id, notRemoveData: false })
       canvasRectSelectedProxy.value = undefined
     }
   }
@@ -2200,10 +2246,16 @@
     if (rects.length > 0) {
       // 对数组进行 zIndex 的递减排序，zIndex 表示图像绘制顺序，即认定为层级，鼠标点击的区域则取层级最高的图形
       rects.sort((a, b) => b.zIndex - a.zIndex)
-      const targetRect = rects[0]
+      let targetRect = rects[0]
       // 记录选中图形数据(选中图形时，把当前位置记录到一个额外的属性中 moveStartposition ，这个属性用于拖拽图形时计算移动位置，当拖拽完成后会移除该属性)
-      const selectedRectData = { ...targetRect, moveStartposition: targetRect.position }
-      canvasRectSelectedProxy.value = selectedRectData
+      let selectedRectData = { ...targetRect, moveStartposition: targetRect.position }
+      if (!canvasRectSelectedProxy.value || canvasRectSelectedProxy.value.id !== selectedRectData.id) {
+        canvasRectSelectedProxy.value = selectedRectData
+      } else {
+        selectedRectData = { ...canvasRectSelectedProxy.value, moveStartposition: targetRect.position }
+        canvasRectSelectedProxy.value = selectedRectData
+        targetRect = {...canvasRectSelectedProxy.value}
+      }
       loadSettingPannelForm(selectedRectData)
       const [px, py] = mp
       const [tw, th] = targetRect.size
@@ -2211,10 +2263,10 @@
       const ctx = canvasContext
       drawMoveSelectedRect(canvasDom, ctx, { targetRect })
     } else {
-      if (canvasRectSelected) {
+      if (canvasRectSelectedProxy.value) {
         // 若鼠标点击区域没有任何图形，则去除当前图形的选中框
         const ctx = canvasContext
-        removeSelectedFrame(canvasDom, ctx, { targetRect: canvasRectSelected })
+        removeSelectedFrame(canvasDom, ctx, { targetRect: canvasRectSelectedProxy.value })
         canvasRectSelectedProxy.value = undefined
       }
     }
@@ -2238,14 +2290,15 @@
 
   // 拖拽 canvas 上的图形
   const dropCanvasRect = (mousePosition) => {
-    if (!canvasRectSelected) return
+    if (!canvasRectSelectedProxy.value) return
     // Canvas 实现拖拽指定图像思路：（1）根据鼠标坐标位置，找到canvas中对应的图像坐标；（2）擦除整个canvas；（3）重绘排除该图像后的整个画布内容；（4）再绘制以鼠标坐标为准的该图像；
     const [px, py] = getMousePositionInCanvas(mousePosition)
-    const targetRect = canvasRectSelected
+    const targetRect = canvasRectSelectedProxy.value
+
     const [tw, th] = targetRect.size
     // 拖拽移动鼠标点击选中的图形
     const ctx = canvasContext
-    const position = getCanvasRectDropMovePosition(canvasRectSelected)
+    const position = getCanvasRectDropMovePosition(canvasRectSelectedProxy.value)
     const newTargetRect = { ...targetRect, position }
     drawMoveSelectedRect(canvasDom, ctx, { targetRect: newTargetRect })
     canvasRectSelectedProxy.value = newTargetRect
@@ -2259,7 +2312,7 @@
 
     const canvas = canvasDom
     const ctx = canvasContext
-    const targetRect = canvasRectSelected
+    const targetRect = canvasRectSelectedProxy.value
     const [tw, th] = targetRect.size
 
     const nw = tw + cx - sx
@@ -2271,10 +2324,10 @@
 
   // 修改图形尺寸
   const ajdustCanvasRectSize = (clientPosition) => {
-    if (!canvasRectSelected) return
+    if (!canvasRectSelectedProxy.value) return
     const canvas = canvasDom
     const ctx = canvasContext
-    const targetRect = canvasRectSelected
+    const targetRect = canvasRectSelectedProxy.value
     // 根据鼠标移动距离计算图形尺寸
     const size = getAdjustRectSize(clientPosition)
     // 清屏
@@ -2358,11 +2411,108 @@
 
   // #region ----------------参数面板相关事件---------------
 
+  // *** 基础设置 ***
+
+  const onBasesetingPositionXChange = (event) => {
+    let val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value) {
+      const targetRect = { ...canvasRectSelectedProxy.value }
+      targetRect.position[0] = Math.round(val)
+      // 重绘画布图形
+      const canvas = canvasDom
+      const ctx = canvasContext
+      drawMoveSelectedRect(canvas, ctx, { targetRect })
+    }
+  }
+
+  const onBasesetingPositionYChange = (event) => {
+    let val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value) {
+      const targetRect = { ...canvasRectSelectedProxy.value }
+      targetRect.position[1] = Math.round(val)
+      // 重绘画布图形
+      const canvas = canvasDom
+      const ctx = canvasContext
+      drawMoveSelectedRect(canvas, ctx, { targetRect })
+    }
+  }
+
+  const onBasesetingWidthChange = (event) => {
+    let val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value) {
+      const targetRect = { ...canvasRectSelectedProxy.value }
+      targetRect.size[0] = Math.round(val)
+      // 重绘画布图形
+      const canvas = canvasDom
+      const ctx = canvasContext
+      drawMoveSelectedRect(canvas, ctx, { targetRect })
+    }
+  }
+
+  const onBasesetingHeightChange = (event) => {
+    let val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value) {
+      const targetRect = { ...canvasRectSelectedProxy.value }
+      targetRect.size[1] = Math.round(val)
+      // 重绘画布图形
+      const canvas = canvasDom
+      const ctx = canvasContext
+      drawMoveSelectedRect(canvas, ctx, { targetRect })
+    }
+  }
+
+
+  // *** 图片设置 ***
+
+  // 检测图片url是否有效
+  function checkImgUrl(imgurl) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image()
+      img.src = imgurl
+      img.onload = function (res) {
+        resolve(res)
+      }
+      img.onerror = function (err) {
+        reject(err)
+      }
+    })
+  }
+
   // 参数面板的 图片设置>图片Url 输入框编辑事件
   const onImageSettingImageUrlChange = (event) => {
-    console.log(event.target.value)
+    const val = event.target.value
     // 把修改的图片地址应用到下方的 图片预览 区域
-    settingPannelDoms['image-setting-row-preview'].src = event.target.value
+    settingPannelDoms['image-setting-row-preview'].src = val
+    const imgUrl = val
+    // 若图片url是无效地址，则不会在canvas上更新图形
+    checkImgUrl(imgUrl).then(() => {
+      try {
+        if (canvasRectSelectedProxy.value) {
+          const targetRect = { ...canvasRectSelectedProxy.value }
+          targetRect.backgroundImage = imgUrl
+          // 更新数据,下面 drawMoveSelectedRect 会用到
+          canvasRectSelectedProxy.value = targetRect
+          // 重绘画布图形
+          const canvas = canvasDom
+          const ctx = canvasContext
+          drawMoveSelectedRect(canvas, ctx, { targetRect })
+        }
+      } catch (err) {
+        throw new Error(`onImageSettingImageUrlChange: ${err}`)
+      }
+    })
   }
 
   // 图片设置>选择预制图片 中的选项点击事件
@@ -2370,6 +2520,20 @@
     const imgUrl = event.target.src
     settingPannelDoms['image-setting-row-image'].value = imgUrl
     settingPannelDoms['image-setting-row-preview'].src = imgUrl
+    try {
+      if (canvasRectSelectedProxy.value) {
+        const targetRect = { ...canvasRectSelectedProxy.value }
+        targetRect.backgroundImage = imgUrl
+        // 更新数据,下面 drawMoveSelectedRect 会用到
+        canvasRectSelectedProxy.value = targetRect
+        // 重绘画布图形
+        const canvas = canvasDom
+        const ctx = canvasContext
+        drawMoveSelectedRect(canvas, ctx, { targetRect })
+      }
+    } catch (err) {
+      throw new Error(`onPreimgSelectionsSelectChange: ${err}`)
+    }
   }
 
   // #endregion ------------------------------------
@@ -2399,8 +2563,8 @@
   const onCheckInRectAdjustRect = (clientPosition) => {
     if (currentMouseActionStatus === MouseActionStatusType.resize) return
     // 只有存在已选中的图形，才需要判断
-    if (canvasRectSelected) {
-      const valid = checkInRectSizeAdjustRect({ position: getMousePositionInCanvas(clientPosition), selectedRect: canvasRectSelected })
+    if (canvasRectSelectedProxy.value) {
+      const valid = checkInRectSizeAdjustRect({ position: getMousePositionInCanvas(clientPosition), selectedRect: canvasRectSelectedProxy.value })
       canvasDom.style.cursor = valid ? CANVAS_CURSOR_NWSERESIZE : CANVAS_CURSOR_DEFALUT
     } else {
       canvasDom.style.cursor = CANVAS_CURSOR_DEFALUT
@@ -2428,17 +2592,17 @@
    * @param clientPosition the position whitch is current mouse or touch poition. As [clientX, clientY]. Example: [0,0]
    */
   const onMoveEnd = (targetDom) => {
-    if (canvasRectSelected && currentMouseActionStatus === MouseActionStatusType.resize) {
+    if (canvasRectSelectedProxy.value && currentMouseActionStatus === MouseActionStatusType.resize) {
       // 更新当前选中图形的数据
-      canvasRectSelected.size = getAdjustRectSize(mousePosition)
+      canvasRectSelectedProxy.value.size = getAdjustRectSize(mousePosition)
     }
-    if (canvasRectSelected && Object.hasOwnProperty.call(canvasRectSelected, 'moveStartposition')) {
+    if (canvasRectSelectedProxy.value && Object.hasOwnProperty.call(canvasRectSelectedProxy.value, 'moveStartposition')) {
       // moveStartposition 属性是为了拖拽移动图形而加上的临时计算属性，每次拖拽完成后，移除即可
-      delete canvasRectSelected.moveStartposition
+      delete canvasRectSelectedProxy.value.moveStartposition
     }
-    if (canvasRectSelected) {
+    if (canvasRectSelectedProxy.value) {
       // 若存在已选择的图形，则把数据加载到参数面板上
-      loadSettingPannelForm(canvasRectSelected)
+      loadSettingPannelForm(canvasRectSelectedProxy.value)
     }
     mouseStartPosition = [null, null]
     mousePosition = [null, null]
