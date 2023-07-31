@@ -1574,39 +1574,63 @@
   // 参数面板悬浮窗体中的子元素Dom会根据自定义的 属性 存入，key就是这些自定义的 属性
   let settingPannelDoms = {}
   // 不同类型图形对应的 参数面板上相应 dom 的在 settingPannelDoms 中存放的 key（可以通过这些key直接找到dom并进行更新操作）
+  const settingPannelCommonKeysMap = {
+    // blockIndex: 'base-setting-row-id',
+    // blockId: 'base-setting-row-id',
+    id: 'base-setting-row-id',
+    size: ['base-setting-row-width', 'base-setting-row-height'],
+    position: ['base-setting-position-row-x', 'base-setting-position-row-y'],
+    // backgroundImage: 'image-setting-row-image'
+  }
   let settingPannelKeysMap = {
+    player: {
+      ...settingPannelCommonKeysMap
+    },
     block: {
-      // blockIndex: 'base-setting-row-id',
-      // blockId: 'base-setting-row-id',
-      id: 'base-setting-row-id',
-      size: ['base-setting-row-width', 'base-setting-row-height'],
-      position: ['base-setting-position-row-x', 'base-setting-position-row-y'],
+      ...settingPannelCommonKeysMap,
+      backgroundImage: 'image-setting-row-image'
+    },
+    coin: {
+      ...settingPannelCommonKeysMap,
       backgroundImage: 'image-setting-row-image'
     }
   }
+
+  const loadSettingBaseData = (selectedRectData, keysMap) => {
+    // 将基础参数填入对应的输入框中（这里对应上面 settingPannelKeysMap 和 settingPannelDoms 的map映射规则）
+    for (const k of Object.keys(keysMap)) {
+      domKey = keysMap[k]
+      if (Array.isArray(domKey)) {
+        domKey.forEach((dk, i) => {
+          settingPannelDoms[dk].value = selectedRectData[k][i]
+        })
+      } else {
+        settingPannelDoms[domKey].value = selectedRectData[k]
+      }
+    }
+    settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
+  }
+
   let loadSettingPannelActions = {
     // 游戏场景数据
     global: (selectedRectData) => { },
     // 玩家数据
-    player: (selectedRectData) => { },
-    // 普通砖块数据
-    block: (selectedRectData) => {
+    player: (selectedRectData) => {
+      // ** 基础数据处理
       const rectId = selectedRectData.id
       let domKey = null
-      const blockObj = settingPannelKeysMap.block
-      // 将基础参数填入对应的输入框中（这里对应上面 settingPannelKeysMap 和 settingPannelDoms 的map映射规则）
-      for (const k of Object.keys(blockObj)) {
-        domKey = blockObj[k]
-        if (Array.isArray(domKey)) {
-          domKey.forEach((dk, i) => {
-            settingPannelDoms[dk].value = selectedRectData[k][i]
-          })
-        } else {
-          settingPannelDoms[domKey].value = selectedRectData[k]
-        }
-      }
-      settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
+      const keysMap = settingPannelKeysMap.coin
+      loadSettingBaseData(selectedRectData, keysMap)
+    },
+    // 普通砖块数据
+    block: (selectedRectData) => {
+      // ** 基础数据处理
+      const rectId = selectedRectData.id
+      let domKey = null
+      const keysMap = settingPannelKeysMap.block
+      loadSettingBaseData(selectedRectData, keysMap)
 
+      // ** 图片处理
       const imgListDom = settingPannelDoms['image-setting-row-image-selections']
       const lastRectId = imgListDom.getAttribute('rect-id')
       // 若id没变，那么预制选项图片就不需要重新加载
@@ -1618,13 +1642,36 @@
       let htmlStr = ''
       const bgImg = selectedRectData.backgroundImage
       for (const imgUrl of gameBlockPreimgs.block) {
-        htmlStr += `<img src="${imgUrl}" alt="背景图片" onclick="onPreimgSelectionsSelectChange(event)">`
+        htmlStr += `<img src="${imgUrl}" alt="砖块背景图片" onclick="onPreimgSelectionsSelectChange(event)">`
       }
       imgListDom.innerHTML = htmlStr
       imgListDom.setAttribute('rect-id', String(rectId))
     },
     // 金币数据
-    coin: (selectedRectData) => { },
+    coin: (selectedRectData) => {
+      // ** 基础数据处理
+      const rectId = selectedRectData.id
+      let domKey = null
+      const keysMap = settingPannelKeysMap.coin
+      loadSettingBaseData(selectedRectData, keysMap)
+
+      // ** 图片处理
+      const imgListDom = settingPannelDoms['image-setting-row-image-selections']
+      const lastRectId = imgListDom.getAttribute('rect-id')
+      // 若id没变，那么预制选项图片就不需要重新加载
+      if (lastRectId && String(lastRectId) === String(rectId)) return
+
+      // 更新选项图片相关dom
+      settingPannelTypeTitleDom.innerText = '金币'
+      // 预制的图片列表加载
+      let htmlStr = ''
+      const bgImg = selectedRectData.backgroundImage
+      for (const imgUrl of gameBlockPreimgs.coin) {
+        htmlStr += `<img src="${imgUrl}" alt="金币背景图片" onclick="onPreimgSelectionsSelectChange(event)">`
+      }
+      imgListDom.innerHTML = htmlStr
+      imgListDom.setAttribute('rect-id', String(rectId))
+    },
   }
 
 
