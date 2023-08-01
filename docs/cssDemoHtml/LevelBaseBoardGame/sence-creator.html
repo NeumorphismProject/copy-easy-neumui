@@ -374,6 +374,11 @@
       gap: 4px;
     }
 
+    .setting-pannel .group .row .input-wrapper>span {
+      position: relative;
+      top: 8px;
+    }
+
     .setting-pannel .group .area {
       display: flex;
       flex-direction: column;
@@ -1458,7 +1463,7 @@
         <!-- 玩家参数设置 -->
         <div setting-id="player-role-setting-group" class="group">
           <label class="group-label">玩家参数设置</label>
-          <div setting-id="player-role-setting-row-borth-position-x" class="row">
+          <!-- <div setting-id="player-role-setting-row-borth-position-x" class="row">
             <label>出生坐标 X：</label>
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="">
@@ -1469,7 +1474,7 @@
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="">
             </div>
-          </div>
+          </div> -->
           <div setting-id="player-role-setting-row-run-speed" class="row">
             <label>跑步速度：</label>
             <div class="input-wrapper">
@@ -1486,13 +1491,13 @@
         <!-- 玩家雪碧图设置（跑步动作） -->
         <div setting-id="player-sprites-setting-group" class="group">
           <label class="group-label">玩家雪碧图设置（跑步动作）</label>
-          <div setting-id="player-sprites-setting-row-image" class="row">
+          <!-- <div setting-id="player-sprites-setting-row-image" class="row">
             <label>图片 Url：</label>
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="">
             </div>
-          </div>
-          <div setting-id="player-sprites-setting-row-width" class="row">
+          </div> -->
+          <!-- <div setting-id="player-sprites-setting-row-width" class="row">
             <label>宽：</label>
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="">
@@ -1503,23 +1508,61 @@
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="">
             </div>
-          </div>
+          </div> -->
           <div setting-id="player-sprites-setting-row-position-start-x" class="row">
             <label>起始坐标 X：</label>
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="">
+              <span>%</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-start-y" class="row">
             <label>起始坐标 Y：</label>
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="">
+              <span>%</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-end-x" class="row">
             <label>结束坐标 X：</label>
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="">
+              <span>%</span>
+            </div>
+          </div>
+          <div setting-id="player-sprites-setting-row-position-end-y" class="row">
+            <label>结束坐标 Y：</label>
+            <div class="input-wrapper">
+              <input setting-unit="input" type="text" value="">
+              <span>%</span>
+            </div>
+          </div>
+          <div setting-id="player-sprites-setting-row-position-rendx" class="row">
+            <label>行尾坐标 X：</label>
+            <div class="input-wrapper">
+              <input setting-unit="input" type="text" value="">
+              <span>%</span>
+            </div>
+          </div>
+          <div setting-id="player-sprites-setting-row-frame-x" class="row">
+            <label>单帧步长 X：</label>
+            <div class="input-wrapper">
+              <input setting-unit="input" type="text" value="">
+              <span>%</span>
+            </div>
+          </div>
+          <div setting-id="player-sprites-setting-row-frame-y" class="row">
+            <label>单帧步长 Y：</label>
+            <div class="input-wrapper">
+              <input setting-unit="input" type="text" value="">
+              <span>%</span>
+            </div>
+          </div>
+          <div setting-id="player-sprites-setting-row-frame-unit-ms" class="row">
+            <label>切换速度：</label>
+            <div class="input-wrapper">
+              <input setting-unit="input" type="text" value="" disabled>
+              <span>ms</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-animation-preivew" class="area">
@@ -1580,21 +1623,27 @@
     id: 'base-setting-row-id',
     size: ['base-setting-row-width', 'base-setting-row-height'],
     position: ['base-setting-position-row-x', 'base-setting-position-row-y'],
-    // backgroundImage: 'image-setting-row-image'
+    backgroundImage: 'image-setting-row-image'
   }
   let settingPannelKeysMap = {
     player: {
       ...settingPannelCommonKeysMap,
-      // PLAYER_BORTH_POSITION: ['','']
+      // PLAYER_BORTH_POSITION: ['player-role-setting-row-borth-position-x','player-role-setting-row-borth-position-y']
+      playerSpeed: ['player-role-setting-row-run-speed', 'player-role-setting-row-jump-start-speed'],
+      playerSpritesRunActionAnimationOptions: {
+        start: ['player-sprites-setting-row-position-start-x', 'player-sprites-setting-row-position-start-y'], // 开始坐标
+        end: ['player-sprites-setting-row-position-end-x', 'player-sprites-setting-row-position-end-y'], // 结束坐标
+        rowEndX: 'player-sprites-setting-row-position-rendx', // 行尾坐标
+        frameLen: ['player-sprites-setting-row-frame-x', 'player-sprites-setting-row-frame-y'], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
+        playMs: 'player-sprites-setting-row-frame-unit-ms' // 动画播放速度（单位：毫秒）
+      }
     },
     block: {
       ...settingPannelCommonKeysMap,
-      backgroundImage: 'image-setting-row-image'
     },
     coin: {
       ...settingPannelCommonKeysMap,
       score: 'score-setting-score-row',
-      backgroundImage: 'image-setting-row-image',
     }
   }
 
@@ -1602,7 +1651,9 @@
     // 将基础参数填入对应的输入框中（这里对应上面 settingPannelKeysMap 和 settingPannelDoms 的map映射规则）
     for (const k of Object.keys(keysMap)) {
       domKey = keysMap[k]
-      if (Array.isArray(domKey)) {
+      if(typeof domKey === 'object' && !Array.isArray(domKey)) {
+        loadSettingBaseData(selectedRectData[k], domKey)
+      } else if (Array.isArray(domKey)) {
         domKey.forEach((dk, i) => {
           settingPannelDoms[dk].value = selectedRectData[k][i]
         })
@@ -1622,6 +1673,24 @@
       let domKey = null
       const keysMap = settingPannelKeysMap.player
       loadSettingBaseData(selectedRectData, keysMap)
+
+      // ** 图片处理
+      settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
+      const imgListDom = settingPannelDoms['image-setting-row-image-selections']
+      const lastRectId = imgListDom.getAttribute('rect-id')
+      // 若id没变，那么预制选项图片就不需要重新加载
+      if (lastRectId && String(lastRectId) === String(rectId)) return
+
+      // 更新选项图片相关dom
+      settingPannelTypeTitleDom.innerText = '玩家'
+      // 预制的图片列表加载
+      let htmlStr = ''
+      const bgImg = selectedRectData.backgroundImage
+      for (const imgUrl of gameBlockPreimgs.player) {
+        htmlStr += `<img src="${imgUrl}" alt="玩家图片" onclick="onPreimgSelectionsSelectChange(event)">`
+      }
+      imgListDom.innerHTML = htmlStr
+      imgListDom.setAttribute('rect-id', String(rectId))
     },
     // 普通砖块数据
     block: (selectedRectData) => {
@@ -1644,7 +1713,7 @@
       let htmlStr = ''
       const bgImg = selectedRectData.backgroundImage
       for (const imgUrl of gameBlockPreimgs.block) {
-        htmlStr += `<img src="${imgUrl}" alt="砖块背景图片" onclick="onPreimgSelectionsSelectChange(event)">`
+        htmlStr += `<img src="${imgUrl}" alt="砖块图片" onclick="onPreimgSelectionsSelectChange(event)">`
       }
       imgListDom.innerHTML = htmlStr
       imgListDom.setAttribute('rect-id', String(rectId))
@@ -1670,7 +1739,7 @@
       let htmlStr = ''
       const bgImg = selectedRectData.backgroundImage
       for (const imgUrl of gameBlockPreimgs.coin) {
-        htmlStr += `<img src="${imgUrl}" alt="金币背景图片" onclick="onPreimgSelectionsSelectChange(event)">`
+        htmlStr += `<img src="${imgUrl}" alt="金币图片" onclick="onPreimgSelectionsSelectChange(event)">`
       }
       imgListDom.innerHTML = htmlStr
       imgListDom.setAttribute('rect-id', String(rectId))
@@ -1738,13 +1807,19 @@
     Y_JUMP_START_SPEED: 20,
     PLAYER_BORTH_POSITION: [250, 0],
     PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: [5.5, 7],
-    playerSpeed: [0, 0], // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
+    playerSpeed: [8, 8], // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
     playerSize: [54, 32],
     playerSpritesBackgrundImageUrl: toAbsURL('./imgs/cat-sprites.jpg'),
     playerSpritesRunActionAnimationOptions: {
       startX: 5.5, // gameSenceData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
       endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
       stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
+      // TODO: 角色动画新方案
+      start: [5.5, 7], // 开始坐标
+      end: [5.5, 7], // 结束坐标
+      rowEndX: 95.5, // 行尾坐标
+      frameLen: [30, 25], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
+      playMs: 100 // 动画播放速度（单位：毫秒）
     },
   }
 
@@ -1776,6 +1851,7 @@
 
   // 物体的预制图片
   const gameBlockPreimgs = {
+    player: [toAbsURL('./imgs/cat-sprites.jpg'), toAbsURL('./imgs/blackwhite-cat-sprites.png'), toAbsURL('./imgs/horse-sprites.png')],
     block: [toAbsURL('./imgs/block.png'), toAbsURL('./imgs/block-grass.png'), toAbsURL('./imgs/block-water.png')],
     coin: [toAbsURL('./imgs/coin.png'), toAbsURL('./imgs/coin-fish.png'), toAbsURL('./imgs/coin-carrot.png')],
   }
@@ -2287,6 +2363,7 @@
       type,
       ctx: canvasContext,
       ...playerParams,
+      backgroundImage: playerParams.playerSpritesBackgrundImageUrl,
       imgSrc: playerParams.playerSpritesBackgrundImageUrl,
       size: playerParams.playerSize,
     })
