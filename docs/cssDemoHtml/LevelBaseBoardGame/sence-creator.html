@@ -1844,7 +1844,7 @@
       stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
       // TODO: 角色动画新方案
       start: [5.5, 7], // 开始坐标
-      end: [5.5, 7], // 结束坐标
+      end: [5.5, 92], // 结束坐标
       rowEndX: 95.5, // 行尾坐标
       frameLen: [30, 25], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
       playMs: 100 // 动画播放速度（单位：毫秒）
@@ -2854,7 +2854,15 @@
 
   // 玩家跑步运动控制（通过background-position控制雪碧图裁剪区域实现）
   let playerRunActionInterval = null
+  let playerRunActionImgClipPosition = null // [x,y] 每次动画帧移动都会改变这个坐标
   const startPlayerRunActionAnimation = () => {
+    if(!canvasRectSelectedProxy.value || canvasRectSelectedProxy.value.type !== 'player') {
+      settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【启动】动画'
+      stopPlayerRunActionAnimation()
+      return
+    }
+    const { playerSpritesRunActionAnimationOptions:animationOptions } = canvasRectSelectedProxy.value
+    const {start, end, rowEndX, frameLen} = animationOptions
     // const { startX, endX, stepLen } = options
     if (playerRunActionInterval) return
     playerRunActionInterval = setInterval(() => {
@@ -2864,6 +2872,26 @@
       // const apx = px >= endX ? (startX + stepLen) : (px + stepLen)
       // const newPosition = [apx, py]
       // playerSpritesBackgrundPositionProxy.value = newPosition
+
+      if(!playerRunActionImgClipPosition || (playerRunActionImgClipPosition[0] >= end[0] && playerRunActionImgClipPosition[1] >= end[1])) {
+        playerRunActionImgClipPosition = [...start]
+      } else {
+        const [x, y] = playerRunActionImgClipPosition
+        let nextX = 0
+        let nextY = 0
+        if(x >= rowEndX) {
+          nextX = start[0]
+          nextY = y + frameLen[1]
+        } else {
+          nextX = x + frameLen[0]
+          nextY = y
+        }
+        playerRunActionImgClipPosition = [nextX, nextY]
+      }
+      // 更新动画预览图片
+      const [bpx, bpy] = playerRunActionImgClipPosition
+      console.log('bpx, bpy = ', bpx, bpy)
+      settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.backgroundPosition = `${bpx}% ${bpy}%`
     }, 100)
   }
   // 停止玩家跑步运动
