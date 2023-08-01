@@ -1423,11 +1423,11 @@
         </div>
         <!-- 得分设置 -->
         <div setting-id="score-setting-group" class="group">
-          <label class="group-label">得分设置</label>
-          <div score-setting-score-row class="row">
-            <label>金币得分：</label>
+          <label class="group-label">分值设置</label>
+          <div setting-id="score-setting-score-row" class="row">
+            <label>金币分值：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" onchange="onScoresetingScoreChange(event)">
             </div>
           </div>
         </div>
@@ -1584,7 +1584,8 @@
   }
   let settingPannelKeysMap = {
     player: {
-      ...settingPannelCommonKeysMap
+      ...settingPannelCommonKeysMap,
+      // PLAYER_BORTH_POSITION: ['','']
     },
     block: {
       ...settingPannelCommonKeysMap,
@@ -1592,7 +1593,8 @@
     },
     coin: {
       ...settingPannelCommonKeysMap,
-      backgroundImage: 'image-setting-row-image'
+      score: 'score-setting-score-row',
+      backgroundImage: 'image-setting-row-image',
     }
   }
 
@@ -1608,7 +1610,6 @@
         settingPannelDoms[domKey].value = selectedRectData[k]
       }
     }
-    settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
   }
 
   let loadSettingPannelActions = {
@@ -1619,7 +1620,7 @@
       // ** 基础数据处理
       const rectId = selectedRectData.id
       let domKey = null
-      const keysMap = settingPannelKeysMap.coin
+      const keysMap = settingPannelKeysMap.player
       loadSettingBaseData(selectedRectData, keysMap)
     },
     // 普通砖块数据
@@ -1631,6 +1632,7 @@
       loadSettingBaseData(selectedRectData, keysMap)
 
       // ** 图片处理
+      settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
       const imgListDom = settingPannelDoms['image-setting-row-image-selections']
       const lastRectId = imgListDom.getAttribute('rect-id')
       // 若id没变，那么预制选项图片就不需要重新加载
@@ -1656,6 +1658,7 @@
       loadSettingBaseData(selectedRectData, keysMap)
 
       // ** 图片处理
+      settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
       const imgListDom = settingPannelDoms['image-setting-row-image-selections']
       const lastRectId = imgListDom.getAttribute('rect-id')
       // 若id没变，那么预制选项图片就不需要重新加载
@@ -1729,6 +1732,7 @@
 
   // 玩家的默认参数
   const playerDefault = {
+    position: [50, 50],
     X_START_SPEED: 4,
     Y_FREE_FALL_STEP_SPEED: 8,
     Y_JUMP_START_SPEED: 20,
@@ -1749,7 +1753,7 @@
     blockIndex: 0,
     blockId: 'block-0', // 唯一id
     size: [50, 50],
-    position: [0, 0],
+    position: [50, 50],
     backgroundImage: toAbsURL('./imgs/block.png')
   }
 
@@ -1758,7 +1762,7 @@
     coinIndex: 0,
     coinId: 'coin-0', // 唯一id
     size: [50, 50],
-    position: [0, 0],
+    position: [50, 50],
     score: 1, // 金币代表的分数值
     backgroundImage: toAbsURL('./imgs/coin.png') // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
   }
@@ -1800,6 +1804,27 @@
   // TODO: 做导出数据功能的时候，会把这里的数据抽离到 gameSenceData 相应的数据中
   let canvasGraphicsPositions = { value: [] }
 
+  const RectTexts = {
+    player: '玩家',
+    block: '',
+    coin: '金币分值:'
+  }
+
+  /**
+   * canvas 为一个矩形上绘制文本
+   * @params options: ctx=画布上下文；position=矩形的左上角坐标；size=矩形的尺寸；top=在矩形的上方绘制的文本内容
+   * */
+  const drawCanvasTextForRect = (ctx, { position, size, top = '' }) => {
+    const margin = 14
+    const [x, y] = position
+    ctx.save()
+    ctx.font = "16px serif"
+    if (top) {
+      ctx.fillText(top, x, y - margin)
+    }
+    ctx.restore()
+  }
+
   // { canvas, ctx, id, notRemoveData:true } 传递图形id，删除对应的图形和数据
   // 注意：该函数只会重新绘制排除需要 被移除图形 以外的其他图形，而目前使用的移除方案是需要先对 canvas 清空
   // 所以要想清楚目标图形，调用此函数前一定要自己清空canvas先，这是为了性能考虑，避免和其他函数组合使用的时候，这里多做一次清空画布操作
@@ -1820,6 +1845,13 @@
       // 把其他数据进行全局重新绘制
       for (const d of othersData) {
         redrawCanvasImage(ctx, d)
+        // 绘制text文本
+        let topTexts = {
+          player: RectTexts.player,
+          block: RectTexts.block,
+          coin: `${RectTexts.coin}${d.score ?? ''}`
+        }
+        if (topTexts[d.type]) drawCanvasTextForRect(ctx, { position: d.position, size: d.size, top: topTexts[d.type] })
       }
 
       // 移除数据
@@ -1855,6 +1887,13 @@
           options['updateImgSrc'] = options.backgroundImage
         }
         redrawCanvasImage(options.ctx, options)
+        // 绘制text文本
+        let topTexts = {
+          player: RectTexts.player,
+          block: RectTexts.block,
+          coin: `${RectTexts.coin}${updateVal.score ?? ''}`
+        }
+        if (topTexts[type]) drawCanvasTextForRect(ctx, { position, size, top: topTexts[type] })
         const targetVal = target.value[findIndex]
         // 找出最大的 zIndex 并加1得到最新的zIndex
         const zIndex = [...target.value].sort((a, b) => b.zIndex - a.zIndex)[0].zIndex + 1
@@ -1893,6 +1932,13 @@
       const options = newVal
       // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
       const { cvsImg: imgInstance } = await drawCanvasImage(options.ctx, options)
+      // 绘制text文本
+      let topTexts = {
+        player: RectTexts.player,
+        block: RectTexts.block,
+        coin: `${RectTexts.coin}${newVal.score ?? ''}`
+      }
+      if (topTexts[type]) drawCanvasTextForRect(ctx, { position, size, top: topTexts[type] })
       // 记录到总数据中
       // 新增则需要新建id
       const newId = `${value.type}-${target.value.filter(t => t.type === value.type).length + 1}`
@@ -2242,7 +2288,6 @@
       ctx: canvasContext,
       ...playerParams,
       imgSrc: playerParams.playerSpritesBackgrundImageUrl,
-      position: [0, 0],
       size: playerParams.playerSize,
     })
   }
@@ -2535,6 +2580,19 @@
       const size = canvasRectSelectedProxy.value.size
       size[1] = Math.round(val)
       updateSelectedRectData({ size })
+    }
+  }
+
+  // *** 分值设置 ***
+
+  const onScoresetingScoreChange = (event) => {
+    let val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'coin') {
+      const score = Math.round(val)
+      updateSelectedRectData({ score })
     }
   }
 
