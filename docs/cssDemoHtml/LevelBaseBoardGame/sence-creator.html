@@ -425,9 +425,16 @@
       height: 100%;
     }
 
-    .setting-pannel .group .area .img-wrapper .img-box {
-      width: 100px;
-      height: 100%;
+    .setting-pannel .group .area .animation-img-wrapper {
+      border: 1px dashed rgb(58, 51, 153);
+      width: 100%;
+      height: auto;
+      text-align: center;
+    }
+
+    .setting-pannel .group .area .animation-img-wrapper .img-box {
+      width: 50px;
+      height: 50px;
       border: 1px dashed green;
       margin: 0 auto;
     }
@@ -1519,49 +1526,56 @@
           <div setting-id="player-sprites-setting-row-position-start-x" class="row">
             <label>起始坐标 X：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value=""
+                onchange="onPlayerSpritesSettingPositionStartXChange(event)">
               <span>%</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-start-y" class="row">
             <label>起始坐标 Y：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value=""
+                onchange="onPlayerSpritesSettingPositionStartYChange(event)">
               <span>%</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-end-x" class="row">
             <label>结束坐标 X：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value=""
+                onchange="onPlayerSpritesSettingPositionEndXChange(event)">
               <span>%</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-end-y" class="row">
             <label>结束坐标 Y：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value=""
+                onchange="onPlayerSpritesSettingPositionEndYChange(event)">
               <span>%</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-position-rendx" class="row">
             <label>行尾坐标 X：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value=""
+                onchange="onPlayerSpritesSettingPositionRowEndXChange(event)">
               <span>%</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-frame-x" class="row">
             <label>单帧步长 X：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value=""
+                onchange="onPlayerSpritesSettingPositionFrameXChange(event)">
               <span>%</span>
             </div>
           </div>
           <div setting-id="player-sprites-setting-row-frame-y" class="row">
             <label>单帧步长 Y：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value=""
+                onchange="onPlayerSpritesSettingPositionFrameYChange(event)">
               <span>%</span>
             </div>
           </div>
@@ -1575,7 +1589,7 @@
           <div setting-id="player-sprites-setting-row-animation-preivew" class="area">
             <label>图片预览：</label>
             <button onclick="onPlayerSpritesSettingAnimationClick()">【启动/停止】动画</button>
-            <div class="img-wrapper">
+            <div class="animation-img-wrapper">
               <div class="img-box" setting-unit="img" style="background-image: url('./imgs/coin.png');"></div>
             </div>
           </div>
@@ -1681,11 +1695,18 @@
       const keysMap = settingPannelKeysMap.player
       loadSettingBaseData(selectedRectData, keysMap)
 
+      // ** 绘制玩家动画预览图片
+      const bgImgUrl = selectedRectData.backgroundImage.includes('url(') ? selectedRectData.backgroundImage : `url(${selectedRectData.backgroundImage})`
+      const playerPreviewImgBoxDom = settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box']
+      playerPreviewImgBoxDom.style.backgroundImage = bgImgUrl
+      const [psx, psy] = selectedRectData.playerSpritesRunActionAnimationOptions.start
+      playerPreviewImgBoxDom.style.backgroundPosition = `${psx}% ${psy}%`
+
       // ** 图片处理
       settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
       const imgListDom = settingPannelDoms['image-setting-row-image-selections']
       const lastRectId = imgListDom.getAttribute('rect-id')
-      // 若id没变，那么预制选项图片就不需要重新加载
+      // *** 若id没变，那么预制选项图片就不需要重新加载
       if (lastRectId && String(lastRectId) === String(rectId)) return
 
       // 更新选项图片相关dom
@@ -1711,7 +1732,7 @@
       settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
       const imgListDom = settingPannelDoms['image-setting-row-image-selections']
       const lastRectId = imgListDom.getAttribute('rect-id')
-      // 若id没变，那么预制选项图片就不需要重新加载
+      // *** 若id没变，那么预制选项图片就不需要重新加载
       if (lastRectId && String(lastRectId) === String(rectId)) return
 
       // 更新选项图片相关dom
@@ -1737,7 +1758,7 @@
       settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
       const imgListDom = settingPannelDoms['image-setting-row-image-selections']
       const lastRectId = imgListDom.getAttribute('rect-id')
-      // 若id没变，那么预制选项图片就不需要重新加载
+      // *** 若id没变，那么预制选项图片就不需要重新加载
       if (lastRectId && String(lastRectId) === String(rectId)) return
 
       // 更新选项图片相关dom
@@ -2563,7 +2584,7 @@
     // settingPannelDoms['player-role-setting-row-borth-position-x'].value = '100'
     // player播放动画测试按钮和图片的dom
     settingPannelDoms['player-sprites-setting-row-animation-preivew-button'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>button')
-    settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>.img-wrapper>.img-box')
+    settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>.animation-img-wrapper>.img-box')
     const imgSelectionsDom = document.querySelector('[setting-id="image-setting-row-image-selections"]>[setting-unit="img-list"]')
     const imgSelectionsDomKey = imgSelectionsDom.parentNode.getAttribute('setting-id')
     settingPannelDoms[imgSelectionsDomKey] = imgSelectionsDom
@@ -2620,7 +2641,7 @@
   // *** 基础设置 ***
 
   const onBasesetingPositionXChange = (event) => {
-    let val = event.target.value
+    const val = event.target.value
     if (!checkNumberStr(val)) {
       return void 0
     }
@@ -2632,7 +2653,7 @@
   }
 
   const onBasesetingPositionYChange = (event) => {
-    let val = event.target.value
+    const val = event.target.value
     if (!checkNumberStr(val)) {
       return void 0
     }
@@ -2644,7 +2665,7 @@
   }
 
   const onBasesetingWidthChange = (event) => {
-    let val = event.target.value
+    const val = event.target.value
     if (!checkNumberStr(val)) {
       return void 0
     }
@@ -2652,11 +2673,16 @@
       const size = canvasRectSelectedProxy.value.size
       size[0] = Math.round(val)
       updateSelectedRectData({ size })
+      if (canvasRectSelectedProxy.value.type === 'player') {
+        // 修改玩家的雪碧图动画预览图片
+        settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.width = `${size[0]}px`
+        settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.height = `${size[1]}px`
+      }
     }
   }
 
   const onBasesetingHeightChange = (event) => {
-    let val = event.target.value
+    const val = event.target.value
     if (!checkNumberStr(val)) {
       return void 0
     }
@@ -2664,13 +2690,18 @@
       const size = canvasRectSelectedProxy.value.size
       size[1] = Math.round(val)
       updateSelectedRectData({ size })
+      if (canvasRectSelectedProxy.value.type === 'player') {
+        // 修改玩家的雪碧图动画预览图片
+        settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.width = `${size[0]}px`
+        settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.height = `${size[1]}px`
+      }
     }
   }
 
   // *** 分值设置 ***
 
   const onScoresetingScoreChange = (event) => {
-    let val = event.target.value
+    const val = event.target.value
     if (!checkNumberStr(val)) {
       return void 0
     }
@@ -2718,6 +2749,109 @@
 
   // *** 玩家雪碧图设置（跑步动作） ***
 
+  // 起始坐标 X
+  const onPlayerSpritesSettingPositionStartXChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const startX = Number(val)
+      const animationOptions = { ...canvasRectSelectedProxy.value.playerSpritesRunActionAnimationOptions }
+      const start = [startX, animationOptions.start[1]]
+      updateSelectedRectData({ playerSpritesRunActionAnimationOptions: { ...animationOptions, start } })
+      // ** 绘制玩家动画预览图片
+      const [psx, psy] = start
+      settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.backgroundPosition = `${psx}% ${psy}%`
+    }
+  }
+
+  // 起始坐标 Y
+  const onPlayerSpritesSettingPositionStartYChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const startY = Number(val)
+      const animationOptions = { ...canvasRectSelectedProxy.value.playerSpritesRunActionAnimationOptions }
+      const start = [animationOptions.start[0], startY]
+      updateSelectedRectData({ playerSpritesRunActionAnimationOptions: { ...animationOptions, start } })
+      // ** 绘制玩家动画预览图片
+      const [psx, psy] = start
+      settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.backgroundPosition = `${psx}% ${psy}%`
+    }
+  }
+
+  // 结束坐标 X
+  const onPlayerSpritesSettingPositionEndXChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const endX = Number(val)
+      const animationOptions = { ...canvasRectSelectedProxy.value.playerSpritesRunActionAnimationOptions }
+      const end = [endX, animationOptions.end[1]]
+      updateSelectedRectData({ playerSpritesRunActionAnimationOptions: { ...animationOptions, end } })
+    }
+  }
+
+  // 结束坐标 Y
+  const onPlayerSpritesSettingPositionEndYChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const endY = Number(val)
+      const animationOptions = { ...canvasRectSelectedProxy.value.playerSpritesRunActionAnimationOptions }
+      const end = [animationOptions.end[0], endY]
+      updateSelectedRectData({ playerSpritesRunActionAnimationOptions: { ...animationOptions, end } })
+    }
+  }
+
+  // 行尾坐标 X
+  const onPlayerSpritesSettingPositionRowEndXChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const rowEndX = Number(val)
+      const animationOptions = { ...canvasRectSelectedProxy.value.playerSpritesRunActionAnimationOptions }
+      updateSelectedRectData({ playerSpritesRunActionAnimationOptions: { ...animationOptions, rowEndX } })
+    }
+  }
+
+  const onPlayerSpritesSettingPositionFrameXChange = (event) => {
+    const val = event.target.value
+    console.log('frameLenX = val = ', val)
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const frameLenX = Number(val)
+      console.log('frameLenX = ', frameLenX)
+      const animationOptions = { ...canvasRectSelectedProxy.value.playerSpritesRunActionAnimationOptions }
+      const frameLen = [frameLenX, animationOptions.frameLen[1]]
+      updateSelectedRectData({ playerSpritesRunActionAnimationOptions: { ...animationOptions, frameLen } })
+    }
+  }
+
+  const onPlayerSpritesSettingPositionFrameYChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const frameLenY = Number(val)
+      const animationOptions = { ...canvasRectSelectedProxy.value.playerSpritesRunActionAnimationOptions }
+      const frameLen = [animationOptions.frameLen[0], frameLenY]
+      updateSelectedRectData({ playerSpritesRunActionAnimationOptions: { ...animationOptions, frameLen } })
+    }
+  }
+
   // 玩家跑步运动控制（通过background-position控制雪碧图裁剪区域实现）
   let playerRunActionInterval = null
   const startPlayerRunActionAnimation = () => {
@@ -2743,7 +2877,7 @@
   const onPlayerSpritesSettingAnimationClick = () => {
     // settingPannelDoms['player-sprites-setting-row-animation-preivew-button']
     // settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box']
-    if(!playerRunActionInterval) {
+    if (!playerRunActionInterval) {
       settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【停止】动画'
       startPlayerRunActionAnimation()
     } else {
@@ -2809,8 +2943,14 @@
    */
   const onMoveEnd = (targetDom) => {
     if (canvasRectSelectedProxy.value && currentMouseActionStatus === MouseActionStatusType.resize) {
+      // 调节图形尺寸操作后
       // 更新当前选中图形的数据
       canvasRectSelectedProxy.value.size = getAdjustRectSize(mousePosition)
+      if (canvasRectSelectedProxy.value.type === 'player') {
+        // 修改玩家的雪碧图动画预览图片
+        settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.width = `${canvasRectSelectedProxy.value.size[0]}px`
+        settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.height = `${canvasRectSelectedProxy.value.size[1]}px`
+      }
     }
     if (canvasRectSelectedProxy.value && Object.hasOwnProperty.call(canvasRectSelectedProxy.value, 'moveStartposition')) {
       // moveStartposition 属性是为了拖拽移动图形而加上的临时计算属性，每次拖拽完成后，移除即可
