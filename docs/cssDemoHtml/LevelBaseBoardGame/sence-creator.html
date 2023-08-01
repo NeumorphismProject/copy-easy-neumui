@@ -425,6 +425,13 @@
       height: 100%;
     }
 
+    .setting-pannel .group .area .img-wrapper .img-box {
+      width: 100px;
+      height: 100%;
+      border: 1px dashed green;
+      margin: 0 auto;
+    }
+
     /* ------------------------游戏场景---------------------- */
 
     .game-sence {
@@ -1569,7 +1576,7 @@
             <label>图片预览：</label>
             <button onclick="onPlayerSpritesSettingAnimationClick()">【启动/停止】动画</button>
             <div class="img-wrapper">
-              <img setting-unit="img" src="./imgs/coin.png" alt="背景图片">
+              <div class="img-box" setting-unit="img" style="background-image: url('./imgs/coin.png');"></div>
             </div>
           </div>
         </div>
@@ -2556,7 +2563,7 @@
     // settingPannelDoms['player-role-setting-row-borth-position-x'].value = '100'
     // player播放动画测试按钮和图片的dom
     settingPannelDoms['player-sprites-setting-row-animation-preivew-button'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>button')
-    settingPannelDoms['player-sprites-setting-row-animation-preivew-img'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>.img-wrapper>img')
+    settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'] = document.querySelector('[setting-id="player-sprites-setting-row-animation-preivew"]>.img-wrapper>img-box')
     const imgSelectionsDom = document.querySelector('[setting-id="image-setting-row-image-selections"]>[setting-unit="img-list"]')
     const imgSelectionsDomKey = imgSelectionsDom.parentNode.getAttribute('setting-id')
     settingPannelDoms[imgSelectionsDomKey] = imgSelectionsDom
@@ -2735,7 +2742,7 @@
   // 动画的 启动/停止 按钮
   const onPlayerSpritesSettingAnimationClick = () => {
     // settingPannelDoms['player-sprites-setting-row-animation-preivew-button']
-    // settingPannelDoms['player-sprites-setting-row-animation-preivew-img']
+    // settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box']
     if(!playerRunActionInterval) {
       settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【停止】动画'
       startPlayerRunActionAnimation()
