@@ -1567,7 +1567,7 @@
           </div>
           <div setting-id="player-sprites-setting-row-animation-preivew" class="area">
             <label>图片预览：</label>
-            <button>【启动/停止】动画</button>
+            <button onclick="onPlayerSpritesSettingAnimationClick()">【启动/停止】动画</button>
             <div class="img-wrapper">
               <img setting-unit="img" src="./imgs/coin.png" alt="背景图片">
             </div>
@@ -1651,7 +1651,7 @@
     // 将基础参数填入对应的输入框中（这里对应上面 settingPannelKeysMap 和 settingPannelDoms 的map映射规则）
     for (const k of Object.keys(keysMap)) {
       domKey = keysMap[k]
-      if(typeof domKey === 'object' && !Array.isArray(domKey)) {
+      if (typeof domKey === 'object' && !Array.isArray(domKey)) {
         loadSettingBaseData(selectedRectData[k], domKey)
       } else if (Array.isArray(domKey)) {
         domKey.forEach((dk, i) => {
@@ -2706,6 +2706,42 @@
       }
     } catch (err) {
       throw new Error(`onPreimgSelectionsSelectChange: ${err}`)
+    }
+  }
+
+  // *** 玩家雪碧图设置（跑步动作） ***
+
+  // 玩家跑步运动控制（通过background-position控制雪碧图裁剪区域实现）
+  let playerRunActionInterval = null
+  const startPlayerRunActionAnimation = () => {
+    // const { startX, endX, stepLen } = options
+    if (playerRunActionInterval) return
+    playerRunActionInterval = setInterval(() => {
+      console.log('playerRunActionInterval')
+      // 雪碧图切换
+      // const [px, py] = playerSpritesBackgrundPositionProxy.value
+      // const apx = px >= endX ? (startX + stepLen) : (px + stepLen)
+      // const newPosition = [apx, py]
+      // playerSpritesBackgrundPositionProxy.value = newPosition
+    }, 100)
+  }
+  // 停止玩家跑步运动
+  const stopPlayerRunActionAnimation = () => {
+    playerRunActionInterval && clearInterval(playerRunActionInterval)
+    playerRunActionInterval = null
+    // playerSpritesBackgrundPositionProxy.value = PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
+  }
+
+  // 动画的 启动/停止 按钮
+  const onPlayerSpritesSettingAnimationClick = () => {
+    // settingPannelDoms['player-sprites-setting-row-animation-preivew-button']
+    // settingPannelDoms['player-sprites-setting-row-animation-preivew-img']
+    if(!playerRunActionInterval) {
+      settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【停止】动画'
+      startPlayerRunActionAnimation()
+    } else {
+      settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【启动】动画'
+      stopPlayerRunActionAnimation()
     }
   }
 
