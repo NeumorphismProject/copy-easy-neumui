@@ -437,6 +437,7 @@
       height: 50px;
       border: 1px dashed green;
       margin: 0 auto;
+      transition: all 10ms steps(0, end);
     }
 
     /* ------------------------游戏场景---------------------- */
@@ -1701,6 +1702,8 @@
       playerPreviewImgBoxDom.style.backgroundImage = bgImgUrl
       const [psx, psy] = selectedRectData.playerSpritesRunActionAnimationOptions.start
       playerPreviewImgBoxDom.style.backgroundPosition = `${psx}% ${psy}%`
+      playerPreviewImgBoxDom.style.width = `${selectedRectData.size[0]}px`
+      playerPreviewImgBoxDom.style.height = `${selectedRectData.size[1]}px`
 
       // ** 图片处理
       settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
@@ -2826,13 +2829,11 @@
 
   const onPlayerSpritesSettingPositionFrameXChange = (event) => {
     const val = event.target.value
-    console.log('frameLenX = val = ', val)
     if (!checkNumberStr(val)) {
       return void 0
     }
     if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
       const frameLenX = Number(val)
-      console.log('frameLenX = ', frameLenX)
       const animationOptions = { ...canvasRectSelectedProxy.value.playerSpritesRunActionAnimationOptions }
       const frameLen = [frameLenX, animationOptions.frameLen[1]]
       updateSelectedRectData({ playerSpritesRunActionAnimationOptions: { ...animationOptions, frameLen } })
@@ -2856,30 +2857,29 @@
   let playerRunActionInterval = null
   let playerRunActionImgClipPosition = null // [x,y] 每次动画帧移动都会改变这个坐标
   const startPlayerRunActionAnimation = () => {
-    if(!canvasRectSelectedProxy.value || canvasRectSelectedProxy.value.type !== 'player') {
+    if (!canvasRectSelectedProxy.value || canvasRectSelectedProxy.value.type !== 'player') {
       settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【启动】动画'
       stopPlayerRunActionAnimation()
       return
     }
-    const { playerSpritesRunActionAnimationOptions:animationOptions } = canvasRectSelectedProxy.value
-    const {start, end, rowEndX, frameLen} = animationOptions
+    const { playerSpritesRunActionAnimationOptions: animationOptions } = canvasRectSelectedProxy.value
+    const { start, end, rowEndX, frameLen, playMs } = animationOptions
     // const { startX, endX, stepLen } = options
     if (playerRunActionInterval) return
     playerRunActionInterval = setInterval(() => {
-      console.log('playerRunActionInterval')
       // 雪碧图切换
       // const [px, py] = playerSpritesBackgrundPositionProxy.value
       // const apx = px >= endX ? (startX + stepLen) : (px + stepLen)
       // const newPosition = [apx, py]
       // playerSpritesBackgrundPositionProxy.value = newPosition
 
-      if(!playerRunActionImgClipPosition || (playerRunActionImgClipPosition[0] >= end[0] && playerRunActionImgClipPosition[1] >= end[1])) {
+      if (!playerRunActionImgClipPosition || (playerRunActionImgClipPosition[0] >= end[0] && playerRunActionImgClipPosition[1] >= end[1])) {
         playerRunActionImgClipPosition = [...start]
       } else {
         const [x, y] = playerRunActionImgClipPosition
         let nextX = 0
         let nextY = 0
-        if(x >= rowEndX) {
+        if (x >= rowEndX) {
           nextX = start[0]
           nextY = y + frameLen[1]
         } else {
@@ -2890,14 +2890,19 @@
       }
       // 更新动画预览图片
       const [bpx, bpy] = playerRunActionImgClipPosition
-      console.log('bpx, bpy = ', bpx, bpy)
       settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.backgroundPosition = `${bpx}% ${bpy}%`
-    }, 100)
+    }, playMs)
   }
   // 停止玩家跑步运动
   const stopPlayerRunActionAnimation = () => {
     playerRunActionInterval && clearInterval(playerRunActionInterval)
     playerRunActionInterval = null
+    playerRunActionImgClipPosition = null
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const { playerSpritesRunActionAnimationOptions: animationOptions } = canvasRectSelectedProxy.value
+      const { start } = animationOptions
+      settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.backgroundPosition = `${start[0]}% ${start[1]}%`
+    }
     // playerSpritesBackgrundPositionProxy.value = PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
   }
 
