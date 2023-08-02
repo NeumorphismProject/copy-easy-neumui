@@ -1832,11 +1832,10 @@
 
   // 玩家的默认参数
   const playerDefault = {
-    position: [50, 50],
     X_START_SPEED: 4,
     Y_FREE_FALL_STEP_SPEED: 8,
     Y_JUMP_START_SPEED: 20,
-    PLAYER_BORTH_POSITION: [250, 0],
+    PLAYER_BORTH_POSITION: [50, 50],
     PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: [5.5, 7],
     playerSpeed: [8, 8], // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
     playerSize: [54, 32],
@@ -1847,9 +1846,9 @@
       stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
       // TODO: 角色动画新方案
       start: [5.5, 7], // 开始坐标
-      end: [5.5, 92], // 结束坐标
+      end: [95.5, 30], // 结束坐标
       rowEndX: 95.5, // 行尾坐标
-      frameLen: [30, 25], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
+      frameLen: [30, 23], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
       playMs: 100 // 动画播放速度（单位：毫秒）
     },
   }
@@ -1885,6 +1884,35 @@
     player: [toAbsURL('./imgs/cat-sprites.jpg'), toAbsURL('./imgs/blackwhite-cat-sprites.png'), toAbsURL('./imgs/horse-sprites.png')],
     block: [toAbsURL('./imgs/block.png'), toAbsURL('./imgs/block-grass.png'), toAbsURL('./imgs/block-water.png')],
     coin: [toAbsURL('./imgs/coin.png'), toAbsURL('./imgs/coin-fish.png'), toAbsURL('./imgs/coin-carrot.png')],
+  }
+
+  // 因为 player 是雪碧图，所以需要对不同的雪碧图预制一些默认的动画切换参数
+  const playerAnimationsDefaultParams = {
+    'cat-sprites.jpg': {
+      size: [54, 32],
+      start: [5.5, 7], // 开始坐标
+      end: [95.5, 30], // 结束坐标
+      rowEndX: 95.5, // 行尾坐标
+      frameLen: [30, 23], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
+      playMs: 100 // 动画播放速度（单位：毫秒）
+    },
+    'blackwhite-cat-sprites.png': {
+      size: [72, 72],
+      start: [15.5, 7], // 开始坐标
+      end: [195.5, 130], // 结束坐标
+      rowEndX: 195.5, // 行尾坐标
+      frameLen: [130, 123], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
+      playMs: 100 // 动画播放速度（单位：毫秒）
+    },
+    'horse-sprites.png': {
+      size: [62, 52],
+      start: [25.5, 27], // 开始坐标
+      end: [295.5, 20], // 结束坐标
+      rowEndX: 295.5, // 行尾坐标
+      frameLen: [230, 223], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
+      playMs: 100 // 动画播放速度（单位：毫秒）
+    },
+
   }
 
   // --- 游戏关键数据 ---
@@ -2394,6 +2422,7 @@
       type,
       ctx: canvasContext,
       ...playerParams,
+      position: playerParams.PLAYER_BORTH_POSITION,
       backgroundImage: playerParams.playerSpritesBackgrundImageUrl,
       imgSrc: playerParams.playerSpritesBackgrundImageUrl,
       size: playerParams.playerSize,
@@ -2740,14 +2769,35 @@
     const imgUrl = event.target.src
     settingPannelDoms['image-setting-row-image'].value = imgUrl
     settingPannelDoms['image-setting-row-preview'].src = imgUrl
-    try {
-      if (canvasRectSelectedProxy.value) {
-        const backgroundImage = imgUrl
-        updateSelectedRectData({ backgroundImage })
+
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const backgroundImage = imgUrl
+      const updateOptions = { backgroundImage, playerSpritesBackgrundImageUrl: backgroundImage }
+
+      // 从预制的动画参数中查找对应雪碧图的预制参数
+      let preparams = null
+      const preparamsKey = Object.keys(playerAnimationsDefaultParams).find(k => imgUrl.includes(k))
+      if (preparamsKey) {
+        preparams = playerAnimationsDefaultParams[preparamsKey]
+        updateOptions['size'] = preparams.size
+        updateOptions['playerSize'] = preparams.size
+        updateOptions['playerSpritesRunActionAnimationOptions'] = {
+          start: [...preparams.start], // 开始坐标
+          end: [...preparams.end], // 结束坐标
+          rowEndX: preparams.rowEndX, // 行尾坐标
+          frameLen: [...preparams.frameLen], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
+          playMs: preparams.playMs // 动画播放速度（单位：毫秒）
+        }
       }
-    } catch (err) {
-      throw new Error(`onPreimgSelectionsSelectChange: ${err}`)
+      console.log(updateOptions)
+      updateSelectedRectData(updateOptions)
+      const selectedRectData = canvasRectSelectedProxy.value
+      loadSettingPannelForm(selectedRectData)
+    } else if (canvasRectSelectedProxy.value) {
+      const backgroundImage = imgUrl
+      updateSelectedRectData({ backgroundImage })
     }
+
   }
 
   // *** 玩家雪碧图设置（跑步动作） ***
