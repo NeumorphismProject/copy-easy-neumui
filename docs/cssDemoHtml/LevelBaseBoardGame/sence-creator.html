@@ -35,7 +35,7 @@
       /* 控制垂直方向滚动条宽度 */
       width: 2px;
       /* 控制水平方向滚动条高度 */
-      height: 2px;
+      height: 8px;
     }
 
     /* 滚动条里面小方块 */
@@ -357,6 +357,18 @@
       padding: 2px;
       box-shadow: 0px 1px 0px rgba(3, 3, 160, 0.5);
       margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .setting-pannel .group .group-icon-shrink {
+      width: 24px;
+      height: 24px;
+      background-image: url('./imgs/icon-shrink.png');
+      background-size: cover;
+      cursor: pointer;
+      position: relative;
+      bottom: 2px;
     }
 
     .setting-pannel .group .row {
@@ -390,10 +402,15 @@
     }
 
     .setting-pannel .group .area .img-selections-wrapper {
+      max-width: 300px;
+      overflow-x: auto;
       display: flex;
       gap: 8px;
-      justify-content: space-around;
-      padding: 8px 0;
+      justify-content: space-between;
+      /* display: flex;
+      gap: 8px;
+      justify-content: space-around; */
+      padding: 8px 8px;
     }
 
     .setting-pannel .group .area .img-selections-wrapper>img {
@@ -1386,26 +1403,28 @@
       </div>
       <div class="contents">
         <!-- 画布设置 -->
-        <div class="group">
-          <label class="group-label">画布设置</label>
+        <div setting-id="canvas-area-setting-group" class="group">
+          <label class="group-label">画布设置<div class="group-icon-shrink" onclick="onSettingPannelShrinkClick(event)">
+            </div></label>
           <div setting-id="canvas-setting-row-width" class="row">
             <label>宽：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" disabled>
               <span>px</span>
             </div>
           </div>
           <div setting-id="canvas-setting-row-height" class="row">
             <label>高：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" disabled>
               <span>px</span>
             </div>
           </div>
         </div>
         <!-- 基础设置 -->
-        <div class="group">
-          <label class="group-label">基础设置</label>
+        <div setting-id="base-setting-group" class="group">
+          <label class="group-label">基础设置<div class="group-icon-shrink" onclick="onSettingPannelShrinkClick(event)">
+            </div></label>
           <div setting-id="base-setting-row-id" class="row">
             <label>ID：</label>
             <div class="input-wrapper">
@@ -1443,8 +1462,9 @@
         </div>
         <!-- 得分设置 -->
         <div setting-id="score-setting-group" class="group">
-          <label class="group-label">分值设置</label>
-          <div setting-id="score-setting-score-row" class="row">
+          <label class="group-label">分值设置<div class="group-icon-shrink" onclick="onSettingPannelShrinkClick(event)">
+            </div></label>
+          <div setting-id="score-setting-row-score" class="row">
             <label>金币分值：</label>
             <div class="input-wrapper">
               <input setting-unit="input" type="text" value="" onchange="onScoresetingScoreChange(event)">
@@ -1453,7 +1473,8 @@
         </div>
         <!-- 图片设置 -->
         <div setting-id="image-setting-group" class="group">
-          <label class="group-label">图片设置</label>
+          <label class="group-label">图片设置<div class="group-icon-shrink" onclick="onSettingPannelShrinkClick(event)">
+            </div></label>
           <div setting-id="image-setting-row-image" class="row">
             <label>图片 Url：</label>
             <div class="input-wrapper">
@@ -1466,6 +1487,9 @@
               <img src="./imgs/coin.png" alt="背景图片">
               <img src="./imgs/coin-fish.png" alt="背景图片">
               <img src="./imgs/coin-carrot.png" alt="背景图片">
+              <img src="./imgs/coin.png" alt="背景图片">
+              <img src="./imgs/coin-fish.png" alt="背景图片">
+              <!-- <img src="./imgs/coin-carrot.png" alt="背景图片"> -->
             </div>
           </div>
           <div setting-id="image-setting-row-preview" class="area">
@@ -1477,7 +1501,8 @@
         </div>
         <!-- 玩家参数设置 -->
         <div setting-id="player-role-setting-group" class="group">
-          <label class="group-label">玩家参数设置</label>
+          <label class="group-label">玩家参数设置<div class="group-icon-shrink" onclick="onSettingPannelShrinkClick(event)">
+            </div></label>
           <!-- <div setting-id="player-role-setting-row-borth-position-x" class="row">
             <label>出生坐标 X：</label>
             <div class="input-wrapper">
@@ -1505,7 +1530,8 @@
         </div>
         <!-- 玩家雪碧图设置（跑步动作） -->
         <div setting-id="player-sprites-setting-group" class="group">
-          <label class="group-label">玩家雪碧图设置（跑步动作）</label>
+          <label class="group-label">玩家雪碧图设置（跑步动作）<div class="group-icon-shrink"
+              onclick="onSettingPannelShrinkClick(event)"></div></label>
           <!-- <div setting-id="player-sprites-setting-row-image" class="row">
             <label>图片 Url：</label>
             <div class="input-wrapper">
@@ -1665,7 +1691,7 @@
     },
     coin: {
       ...settingPannelCommonKeysMap,
-      score: 'score-setting-score-row',
+      score: 'score-setting-row-score',
     }
   }
 
@@ -1685,6 +1711,7 @@
     }
   }
 
+  // 不同的选中对象，在参数设置面板中加载相应的数据
   let loadSettingPannelActions = {
     // 游戏场景数据
     global: (selectedRectData) => { },
@@ -1775,6 +1802,40 @@
       imgListDom.innerHTML = htmlStr
       imgListDom.setAttribute('rect-id', String(rectId))
     },
+  }
+
+  // 参数设置面板中的所有分组dom都以 setting-id 属性值为key，批量存在这里
+  let settingPannelGroupDoms = {}
+  // 不同的选中对象，在参数设置面板中加载相应的分组
+  let loadSettingPannelGroupActions = {
+    // 游戏场景数据
+    global: () => {
+      const canvasGroupKey = 'canvas-area-setting-group'
+      for (const k of Object.keys(settingPannelGroupDoms)) {
+        settingPannelGroupDoms[k].style.display = k === canvasGroupKey ? '' : 'none'
+      }
+    },
+    // 玩家数据
+    player: () => {
+      const groupKeys = ['canvas-area-setting-group', 'base-setting-group', 'image-setting-group', 'player-role-setting-group', 'player-sprites-setting-group']
+      for (const k of Object.keys(settingPannelGroupDoms)) {
+        settingPannelGroupDoms[k].style.display = groupKeys.includes(k) ? '' : 'none'
+      }
+    },
+    // 普通砖块数据
+    block: () => {
+      const groupKeys = ['canvas-area-setting-group', 'base-setting-group', 'image-setting-group']
+      for (const k of Object.keys(settingPannelGroupDoms)) {
+        settingPannelGroupDoms[k].style.display = groupKeys.includes(k) ? '' : 'none'
+      }
+    },
+    // 金币数据
+    coin: () => {
+      const groupKeys = ['canvas-area-setting-group', 'base-setting-group', 'score-setting-group', 'image-setting-group']
+      for (const k of Object.keys(settingPannelGroupDoms)) {
+        settingPannelGroupDoms[k].style.display = groupKeys.includes(k) ? '' : 'none'
+      }
+    }
   }
 
 
@@ -2479,6 +2540,7 @@
   const loadSettingPannelForm = (selectedRectData) => {
     const { type } = selectedRectData
     loadSettingPannelActions[type](selectedRectData)
+    loadSettingPannelGroupActions[type]()
   }
 
   // 选中图形（给图形加上选中边框）
@@ -2512,6 +2574,8 @@
         const ctx = canvasContext
         removeSelectedFrame(canvasDom, ctx, { targetRect: canvasRectSelectedProxy.value })
         canvasRectSelectedProxy.value = undefined
+        // 参数面板分组加载设置
+        loadSettingPannelGroupActions.global()
       }
     }
   }
@@ -2602,6 +2666,12 @@
 
     // 参数设置面板相关dom
     settingPannelDom = document.querySelector('.setting-pannel')
+    // 获取分组dom
+    const groupDoms = document.querySelectorAll('.setting-pannel .contents [setting-id*="setting-group"]')
+    for (const gdom of groupDoms) {
+      settingPannelGroupDoms[gdom.getAttribute('setting-id')] = gdom
+    }
+    // 获取表单dom
     const settingInputDomList = document.querySelectorAll('[setting-id] [setting-unit="input"]')
     let domKey = ''
     // 查找并获取参数面板中所有的 input 元素
@@ -2969,6 +3039,21 @@
     }
   }
 
+  // *** 菜单分组 [展开/收缩] 按钮点击事件
+  const onSettingPannelShrinkClick = (event) => {
+    event.stopPropagation()
+    // 祖级元素中查找所有以 setting-id 属性以 player-sprites-setting-row- 开头的所有元素
+    const rowDoms = event.target.parentNode.parentNode.querySelectorAll('[setting-id*="setting-row-"]')
+    let rowDomDisplay = null
+    for (const rdom of rowDoms) {
+      if (!rdom.style.display) {
+        rdom.style.display = 'none'
+      } else {
+        rdom.style.display = ''
+      }
+    }
+  }
+
   // #endregion ------------------------------------
 
   // #region ---------- touch/click action ------------
@@ -3079,6 +3164,7 @@
     console.log('--- load ---')
     initDoms()
     loadCanvas()
+    loadSettingPannelGroupActions.global()
 
     // // 测试下消息通道通知
     // setTimeout(() => {
