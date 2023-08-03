@@ -705,13 +705,14 @@
     //#region ------------创建普通砖块-------------------
 
     // 创建一个普通砖块的dom预置数据
-    const createSceneMapBlock = ({ size, position, backgroundImage, index }) => {
+    const createSceneMapBlock = ({ size, position, backgroundImage, opacity, index }) => {
       console.log('backgroundImage = ', backgroundImage)
       const blockClassKey = `block-${index}`
       const blockSizeClassKey = `blockSize-${index}`
       const blockTransformClassKey = `blockTransform-${index}`
       const htmlStr = `<div class="block-default ${addDashBeforeUppercase(blockClassKey)} ${addDashBeforeUppercase(blockSizeClassKey)} ${addDashBeforeUppercase(blockTransformClassKey)}"></div>`
       const blockClass = {
+        opacity,
         backgroundColor: 'rgba(0,0,0,0)' // createRandomColor(),
       }
       const blockSizeClass = {
@@ -785,12 +786,13 @@
     //#region ------------创建金币物体-----------------
 
     // 创建一个金币碰撞物的dom预置数据
-    const createSceneMapCoin = ({ size, position, score, backgroundImage, index }) => {
+    const createSceneMapCoin = ({ size, position, score, backgroundImage, opacity, index }) => {
       const blockClassKey = `coin-${index}`
       const blockSizeClassKey = `coinSize-${index}`
       const blockTransformClassKey = `coinTransform-${index}`
       const htmlStr = `<div id="${blockClassKey}" class="${COIN_DEFAULT_CLASS_KEY} ${addDashBeforeUppercase(blockClassKey)} ${addDashBeforeUppercase(blockSizeClassKey)} ${addDashBeforeUppercase(blockTransformClassKey)}"></div>`
       const blockClass = {
+        opacity,
         backgroundColor: 'rgba(0,0,0,0)'
       }
       const blockSizeClass = {

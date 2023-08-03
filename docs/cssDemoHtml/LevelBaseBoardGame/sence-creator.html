@@ -1344,6 +1344,18 @@
             </div>
           </div>
         </div>
+        <!-- 隐形设置 -->
+        <div setting-id="hidden-setting-group" class="group">
+          <label class="group-label">隐形设置<div class="group-icon-shrink" onclick="onSettingPannelShrinkClick(event)">
+            </div></label>
+          <div setting-id="hidden-setting-row-opacity" class="row">
+            <label>透明度：</label>
+            <div class="input-wrapper">
+              <input setting-unit="input" type="text" value="" onchange="onHiddenSettingOpacityChange(event)">
+              <span>(0~1)</span>
+            </div>
+          </div>
+        </div>
         <!-- 基础设置 -->
         <div setting-id="base-setting-group" class="group">
           <label class="group-label">基础设置<div class="group-icon-shrink" onclick="onSettingPannelShrinkClick(event)">
@@ -1390,7 +1402,7 @@
           <div setting-id="score-setting-row-score" class="row">
             <label>金币分值：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="" onchange="onScoresetingScoreChange(event)">
+              <input setting-unit="input" type="text" value="" onchange="onScoreSettingScoreChange(event)">
             </div>
           </div>
         </div>
@@ -1617,10 +1629,12 @@
     },
     block: {
       ...settingPannelCommonKeysMap,
+      opacity: 'hidden-setting-row-opacity'
     },
     coin: {
       ...settingPannelCommonKeysMap,
       score: 'score-setting-row-score',
+      opacity: 'hidden-setting-row-opacity'
     }
   }
 
@@ -1778,12 +1792,12 @@
     },
     // 普通砖块数据
     block: () => {
-      const groupKeys = ['canvas-area-setting-group', 'base-setting-group', 'image-setting-group']
+      const groupKeys = ['canvas-area-setting-group', 'hidden-setting-group', 'base-setting-group', 'image-setting-group']
       loadSettingPannelGroupDomsFilter(groupKeys)
     },
     // 金币数据
     coin: () => {
-      const groupKeys = ['canvas-area-setting-group', 'base-setting-group', 'score-setting-group', 'image-setting-group']
+      const groupKeys = ['canvas-area-setting-group', 'hidden-setting-group', 'base-setting-group', 'score-setting-group', 'image-setting-group']
       loadSettingPannelGroupDomsFilter(groupKeys)
     }
   }
@@ -1865,7 +1879,8 @@
     blockId: 'block-0', // 唯一id
     size: [50, 50],
     position: [50, 50],
-    backgroundImage: toAbsURL('./imgs/block.png')
+    backgroundImage: toAbsURL('./imgs/block.png'),
+    opacity: 1
   }
 
   // 一个金币物体的默认参数
@@ -1875,7 +1890,8 @@
     size: [50, 50],
     position: [50, 50],
     score: 1, // 金币代表的分数值
-    backgroundImage: toAbsURL('./imgs/coin.png') // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
+    backgroundImage: toAbsURL('./imgs/coin.png'), // 金币如果想添加动画，可以使用gif图即可（雪碧图控制代码有点麻烦，后续再计划是否加入支持雪碧图动画功能）
+    opacity: 1
   }
 
   // 默认参数统一这里到该对象中，方便部分函数中直接根据key进行取用
@@ -1988,11 +2004,12 @@
       // 把其他数据进行全局重新绘制
       for (const d of othersData) {
         redrawCanvasImage(ctx, d)
+        const hiddenText = Object.hasOwnProperty.call(d, 'opacity') && Number(d.opacity) < 1 ? `(透:${Number(d.opacity ?? 0) * 100}%)` : ''
         // 绘制text文本
         let topTexts = {
           player: RectTexts.player,
-          block: RectTexts.block,
-          coin: `${RectTexts.coin}${d.score ?? ''}`
+          block: RectTexts.block + hiddenText,
+          coin: `${RectTexts.coin}${d.score ?? ''}` + hiddenText
         }
         if (topTexts[d.type]) drawCanvasTextForRect(ctx, { position: d.position, size: d.size, top: topTexts[d.type] })
       }
@@ -2009,7 +2026,7 @@
     const { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size: newSize } = value
     let size = [].concat(newSize) // 避免地址引用
     const [oldW, oldH] = canvasRectSelectedProxy.value.size
-    if(Math.abs(oldW - newSize[0]) > 200 || Math.abs(oldH - newSize[1]) > 200) {
+    if (Math.abs(oldW - newSize[0]) > 200 || Math.abs(oldH - newSize[1]) > 200) {
       // 这步判断，是为了解决拖拽移动过程中，图形一瞬间变得特别大的bug
       size = [oldW, oldH]
     }
@@ -2037,10 +2054,11 @@
         }
         redrawCanvasImage(options.ctx, options)
         // 绘制text文本
+        const hiddenText = Object.hasOwnProperty.call(updateVal, 'opacity') && Number(updateVal.opacity) < 1 ? `(透:${Number(updateVal.opacity ?? 0) * 100}%)` : ''
         let topTexts = {
           player: RectTexts.player,
-          block: RectTexts.block,
-          coin: `${RectTexts.coin}${updateVal.score ?? ''}`
+          block: RectTexts.block + hiddenText,
+          coin: `${RectTexts.coin}${updateVal.score ?? ''}` + hiddenText
         }
         if (topTexts[type]) drawCanvasTextForRect(ctx, { position, size, top: topTexts[type] })
         const targetVal = target.value[findIndex]
@@ -2082,10 +2100,11 @@
       // 这里获取 imgInstance 图像实例，可避免每次都创建新的图像实例，对于移动已绘制过的图形，则使用已有的图像实例即可
       const { cvsImg: imgInstance } = await drawCanvasImage(options.ctx, options)
       // 绘制text文本
+      const hiddenText = Object.hasOwnProperty.call(newVal, 'opacity') && Number(newVal.opacity) < 1 ? `(透:${Number(newVal.opacity ?? 0) * 100}%)` : ''
       let topTexts = {
         player: RectTexts.player,
-        block: RectTexts.block,
-        coin: `${RectTexts.coin}${newVal.score ?? ''}`
+        block: RectTexts.block + hiddenText,
+        coin: `${RectTexts.coin}${newVal.score ?? ''}` + hiddenText
       }
       if (topTexts[type]) drawCanvasTextForRect(ctx, { position, size, top: topTexts[type] })
       // 记录到总数据中
@@ -2699,6 +2718,19 @@
     }
   }
 
+  // *** 隐形设置 ***
+
+  const onHiddenSettingOpacityChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value) {
+      const opacity = Number(val)
+      updateSelectedRectData({ opacity })
+    }
+  }
+
   // *** 基础设置 ***
 
   const onBasesetingPositionXChange = (event) => {
@@ -2761,7 +2793,7 @@
 
   // *** 分值设置 ***
 
-  const onScoresetingScoreChange = (event) => {
+  const onScoreSettingScoreChange = (event) => {
     const val = event.target.value
     if (!checkNumberStr(val)) {
       return void 0
