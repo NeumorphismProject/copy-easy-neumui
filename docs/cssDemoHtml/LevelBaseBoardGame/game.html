@@ -22,18 +22,18 @@
     }
 
     .block-default {
-      border: 1px dashed yellow;
+      /* border: 1px dashed yellow; */
       position: absolute;
       transition: 10ms linear;
-      opacity: 0.5;
+      /* opacity: 0.5; */
       z-index: 9;
     }
 
     .coin-default {
-      border: 1px dashed yellow;
+      /* border: 1px dashed yellow; */
       position: absolute;
       transition: 10ms linear;
-      opacity: 0.5;
+      /* opacity: 0.5; */
       z-index: 9;
       font-size: 22px;
       text-align: center;
@@ -377,7 +377,7 @@
       const blockTransformClassKey = `blockTransform-${index}`
       const htmlStr = `<div class="block-default ${addDashBeforeUppercase(blockClassKey)} ${addDashBeforeUppercase(blockSizeClassKey)} ${addDashBeforeUppercase(blockTransformClassKey)}"></div>`
       const blockClass = {
-        backgroundColor: createRandomColor(),
+        backgroundColor: 'rgba(0,0,0,0)' // createRandomColor(),
       }
       const blockSizeClass = {
         width: `${size[0]}px`,

@@ -1487,9 +1487,6 @@
               <img src="./imgs/coin.png" alt="背景图片">
               <img src="./imgs/coin-fish.png" alt="背景图片">
               <img src="./imgs/coin-carrot.png" alt="背景图片">
-              <img src="./imgs/coin.png" alt="背景图片">
-              <img src="./imgs/coin-fish.png" alt="背景图片">
-              <!-- <img src="./imgs/coin-carrot.png" alt="背景图片"> -->
             </div>
           </div>
           <div setting-id="image-setting-row-preview" class="area">
@@ -1678,6 +1675,10 @@
     backgroundImage: 'image-setting-row-image'
   }
   let settingPannelKeysMap = {
+    global: {
+      size: ['canvas-setting-row-width', 'canvas-setting-row-height'],
+      backgroundImage: 'image-setting-row-image'
+    },
     player: {
       ...settingPannelCommonKeysMap,
       // PLAYER_BORTH_POSITION: ['player-role-setting-row-borth-position-x','player-role-setting-row-borth-position-y']
@@ -1719,7 +1720,31 @@
   // 不同的选中对象，在参数设置面板中加载相应的数据
   let loadSettingPannelActions = {
     // 游戏场景数据
-    global: (selectedRectData) => { },
+    global: () => {
+      const rectId = 'canvas-sence'
+      const keysMap = settingPannelKeysMap.global
+      const backgroundImage = gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE
+      const selectedRectData = { size: [canvasDom.width, canvasDom.height], backgroundImage }
+      loadSettingBaseData(selectedRectData, keysMap)
+
+      // ** 图片处理
+      settingPannelDoms['image-setting-row-preview'].src = selectedRectData.backgroundImage
+      const imgListDom = settingPannelDoms['image-setting-row-image-selections']
+      const lastRectId = imgListDom.getAttribute('rect-id')
+      // *** 若id没变，那么预制选项图片就不需要重新加载
+      if (lastRectId && String(lastRectId) === String(rectId)) return
+
+      // 更新选项图片相关dom
+      settingPannelTypeTitleDom.innerText = '画布'
+      // 预制的图片列表加载
+      let htmlStr = ''
+      const bgImg = selectedRectData.backgroundImage
+      for (const imgUrl of gameBlockPreimgs.global) {
+        htmlStr += `<img src="${imgUrl}" alt="场景图片" onclick="onPreimgSelectionsSelectChange(event)">`
+      }
+      imgListDom.innerHTML = htmlStr
+      imgListDom.setAttribute('rect-id', String(rectId))
+    },
     // 玩家数据
     player: (selectedRectData) => {
       // ** 基础数据处理
@@ -1811,35 +1836,32 @@
 
   // 参数设置面板中的所有分组dom都以 setting-id 属性值为key，批量存在这里
   let settingPannelGroupDoms = {}
+  const loadSettingPannelGroupDomsFilter = (groupKeys) => {
+    for (const k of Object.keys(settingPannelGroupDoms)) {
+      settingPannelGroupDoms[k].style.display = groupKeys.includes(k) ? '' : 'none'
+    }
+  }
   // 不同的选中对象，在参数设置面板中加载相应的分组
   let loadSettingPannelGroupActions = {
     // 游戏场景数据
     global: () => {
-      const canvasGroupKey = 'canvas-area-setting-group'
-      for (const k of Object.keys(settingPannelGroupDoms)) {
-        settingPannelGroupDoms[k].style.display = k === canvasGroupKey ? '' : 'none'
-      }
+      const groupKeys = ['canvas-area-setting-group', 'image-setting-group']
+      loadSettingPannelGroupDomsFilter(groupKeys)
     },
     // 玩家数据
     player: () => {
       const groupKeys = ['canvas-area-setting-group', 'base-setting-group', 'image-setting-group', 'player-role-setting-group', 'player-sprites-setting-group']
-      for (const k of Object.keys(settingPannelGroupDoms)) {
-        settingPannelGroupDoms[k].style.display = groupKeys.includes(k) ? '' : 'none'
-      }
+      loadSettingPannelGroupDomsFilter(groupKeys)
     },
     // 普通砖块数据
     block: () => {
       const groupKeys = ['canvas-area-setting-group', 'base-setting-group', 'image-setting-group']
-      for (const k of Object.keys(settingPannelGroupDoms)) {
-        settingPannelGroupDoms[k].style.display = groupKeys.includes(k) ? '' : 'none'
-      }
+      loadSettingPannelGroupDomsFilter(groupKeys)
     },
     // 金币数据
     coin: () => {
       const groupKeys = ['canvas-area-setting-group', 'base-setting-group', 'score-setting-group', 'image-setting-group']
-      for (const k of Object.keys(settingPannelGroupDoms)) {
-        settingPannelGroupDoms[k].style.display = groupKeys.includes(k) ? '' : 'none'
-      }
+      loadSettingPannelGroupDomsFilter(groupKeys)
     }
   }
 
@@ -1942,6 +1964,7 @@
 
   // 物体的预制图片
   const gameBlockPreimgs = {
+    global: [toAbsURL('./imgs/game-bg.jpg'), toAbsURL('./imgs/shan-bg.png'), toAbsURL('./imgs/shamo-bg.png')],
     player: [toAbsURL('./imgs/cat-sprites.jpg'), toAbsURL('./imgs/blackwhite-cat-sprites.png'), toAbsURL('./imgs/horse-sprites.png')],
     block: [toAbsURL('./imgs/block.png'), toAbsURL('./imgs/block-grass.png'), toAbsURL('./imgs/block-water.png')],
     coin: [toAbsURL('./imgs/coin.png'), toAbsURL('./imgs/coin-fish.png'), toAbsURL('./imgs/coin-carrot.png')],
@@ -1981,6 +2004,7 @@
   let gameSenceData = {
     // 游戏场景数据
     global: {
+      size: [0, 0], // TODO: 目前暂不支持用户自定义canvas尺寸
       GAME_SENCE_BACKGROUND_IMAGE: toAbsURL('./imgs/game-bg.jpg')
     },
     // 玩家数据
@@ -2060,7 +2084,13 @@
   // { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size, ...others } --> 这里的 ...others 表示添加图形时允许根据需要添加一些可选属性数据，也会同时存入数据中
   const updateGraphicsInCanvas = (value) => {
     const { type, id, ctx, customDraw, imgInstance, imgSrc, svgDom, position, size: newSize } = value
-    const size = [].concat(newSize) // 避免地址引用
+    let size = [].concat(newSize) // 避免地址引用
+    const [oldW, oldH] = canvasRectSelectedProxy.value.size
+    if(Math.abs(oldW - newSize[0]) > 200 || Math.abs(oldH - newSize[1]) > 200) {
+      // 这步判断，是为了解决拖拽移动过程中，图形一瞬间变得特别大的bug
+      size = [oldW, oldH]
+    }
+
     const target = canvasGraphicsPositions
     const errorHint = 'set canvasGraphicsPositions Error: '
     try {
@@ -2148,7 +2178,6 @@
 
   // 收集当前画布绘制的所有游戏数据
   const collectGameData = () => {
-    const GAME_SENCE_BACKGROUND_IMAGE = toAbsURL('./imgs/game-bg.jpg')
     const COIN_COLLISION_OFFSET = 10 // TODO:金币碰撞检测范围暂时不提供用户自定义
 
     // 排除非 game.html 页面所需的数据，当然这些 html canvas 之类的引用数据在 Channel 里也是不能传递的
@@ -2186,9 +2215,12 @@
       }
     })
 
+    const GAME_SENCE_BACKGROUND_IMAGE = gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE
+
     gameSenceData = {
       // 游戏场景数据
       global: {
+        size: [canvasDom.width, canvasDom.height],
         GAME_SENCE_BACKGROUND_IMAGE
       },
       // 玩家数据
@@ -2203,10 +2235,6 @@
         coinsData
       }
     }
-
-    console.log('gameSenceData = ',gameSenceData)
-
-    // alert(gameSenceData)
 
     return gameSenceData
   }
@@ -2579,6 +2607,7 @@
         removeSelectedFrame(canvasDom, ctx, { targetRect: canvasRectSelectedProxy.value })
         canvasRectSelectedProxy.value = undefined
         // 参数面板分组加载设置
+        loadSettingPannelActions.global()
         loadSettingPannelGroupActions.global()
       }
     }
@@ -2834,6 +2863,11 @@
         if (canvasRectSelectedProxy.value) {
           const backgroundImage = imgUrl
           updateSelectedRectData({ backgroundImage })
+        } else {
+          // 无选中项，则默认为选中画布，则修改画布的背景图
+          const backgroundImage = imgUrl
+          gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE = backgroundImage
+          gameSenceDom.style.backgroundImage = `url("${gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE}")`
         }
       } catch (err) {
         throw new Error(`onImageSettingImageUrlChange: ${err}`)
@@ -2866,13 +2900,17 @@
           playMs: preparams.playMs // 动画播放速度（单位：毫秒）
         }
       }
-      console.log(updateOptions)
       updateSelectedRectData(updateOptions)
       const selectedRectData = canvasRectSelectedProxy.value
       loadSettingPannelForm(selectedRectData)
     } else if (canvasRectSelectedProxy.value) {
       const backgroundImage = imgUrl
       updateSelectedRectData({ backgroundImage })
+    } else {
+      // 无选中项，则默认为选中画布，则修改画布的背景图
+      const backgroundImage = imgUrl
+      gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE = backgroundImage
+      gameSenceDom.style.backgroundImage = `url("${gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE}")`
     }
 
   }
@@ -3164,6 +3202,7 @@
     console.log('--- load ---')
     initDoms()
     loadCanvas()
+    loadSettingPannelActions.global()
     loadSettingPannelGroupActions.global()
 
     // // 测试下消息通道通知
