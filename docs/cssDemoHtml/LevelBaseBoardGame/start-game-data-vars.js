@@ -16,9 +16,12 @@ let playerSize = [54, 32]
 let playerSpritesBackgrundImageUrl = 'url("./imgs/cat-sprites.jpg")'
 // 用于播放玩家跑步运动时，雪碧图不断切换的一些参数（目前仅支持 x 轴，即仅支持行上的动作切换）(这里的属性都是百分比值，即使用在 background-position:0% 0% 中)
 let playerSpritesRunActionAnimationOptions = {
-  startX: PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
-  endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
-  stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
+  // 角色动画新方案
+  start: [5.5, 7], // 开始坐标
+  end: [95.5, 30], // 结束坐标
+  rowEndX: 95.5, // 行尾坐标
+  frameLen: [30, 23], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
+  playMs: 80 // 动画播放速度（单位：毫秒）
 }
 
 // 游戏画面中的砖块集合

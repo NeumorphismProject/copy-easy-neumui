@@ -51,11 +51,14 @@
 
   <div class="game-scene">
   </div>
-
+  <script src="./player-run-animation.js"></script>
   <!-- 游戏关键数据的全局变量脚本 -->
   <script src="./start-game-data-vars.js"></script>
   <!-- 全局变量 -->
   <script>
+    // 玩家跑步动画控制器
+    let playerRunController = new PlayerRunAnimationController()
+
     // 游戏关卡预览时存储数据的KEY
     const LEVEL_PREVIEW_DATA_KEY = 'level-preview'
 
@@ -570,6 +573,9 @@
       playerDom = document.querySelector('#player')
       blockDoms = Array.apply(null, document.querySelectorAll('.block-default'))
       coinsDoms = Array.apply(null, document.querySelectorAll(`.${COIN_DEFAULT_CLASS_KEY}`))
+
+      // 为玩家动画控制器设置对应的dom元素
+      playerRunController.setPlayerImgBoxDom(playerDom)
     }
 
     const initGame = () => {
@@ -601,22 +607,24 @@
     //#endregion -----------------
 
     // 玩家跑步运动控制（通过background-position控制雪碧图裁剪区域实现）
-    let playerRunActionInterval = null
-    const startPlayerRunActionAnimation = ({ startX, endX, stepLen }) => {
-      if (playerRunActionInterval) return
-      playerRunActionInterval = setInterval(() => {
-        // 雪碧图切换
-        const [px, py] = playerSpritesBackgrundPositionProxy.value
-        const apx = px >= endX ? (startX + stepLen) : (px + stepLen)
-        const newPosition = [apx, py]
-        playerSpritesBackgrundPositionProxy.value = newPosition
-      }, 100)
+    // let playerRunActionInterval = null
+    const startPlayerRunActionAnimation = () => {
+      playerRunController.startRun(playerSpritesRunActionAnimationOptions)
+      // if (playerRunActionInterval) return
+      // playerRunActionInterval = setInterval(() => {
+      //   // 雪碧图切换
+      //   const [px, py] = playerSpritesBackgrundPositionProxy.value
+      //   const apx = px >= endX ? (startX + stepLen) : (px + stepLen)
+      //   const newPosition = [apx, py]
+      //   playerSpritesBackgrundPositionProxy.value = newPosition
+      // }, 100)
     }
     // 停止玩家跑步运动
     const stopPlayerRunActionAnimation = () => {
-      playerRunActionInterval && clearInterval(playerRunActionInterval)
-      playerRunActionInterval = null
-      playerSpritesBackgrundPositionProxy.value = PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
+      playerRunController.stopRun(playerSpritesRunActionAnimationOptions.start)
+      // playerRunActionInterval && clearInterval(playerRunActionInterval)
+      // playerRunActionInterval = null
+      // playerSpritesBackgrundPositionProxy.value = PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
     }
 
     // 玩家自由落体模拟
@@ -932,19 +940,15 @@
     const getResetGameData = () => {
       // 玩家的默认参数
       const playerDefault = {
-        X_START_SPEED: 4,
-        Y_FREE_FALL_STEP_SPEED: 8,
-        Y_JUMP_START_SPEED: 20,
-        PLAYER_BORTH_POSITION: [250, 0],
-        PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: [5.5, 7],
-        playerSpeed: [0, 0], // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
-        playerSize: [54, 32],
-        playerSpritesBackgrundImageUrl: './imgs/cat-sprites.jpg',
-        playerSpritesRunActionAnimationOptions: {
-          startX: 5.5, // gameSenceData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
-          endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
-          stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
-        },
+        X_START_SPEED,
+        Y_FREE_FALL_STEP_SPEED,
+        Y_JUMP_START_SPEED,
+        PLAYER_BORTH_POSITION,
+        PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT,
+        playerSpeed, // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
+        playerSize,
+        playerSpritesBackgrundImageUrl,
+        playerSpritesRunActionAnimationOptions,
       }
 
       // // 一个砖块物体的默认参数
@@ -1011,11 +1015,11 @@
 
       if (eventKey === 'ArrowLeft' && !downKeys[event.key]) {
         if (playerSpeed[0] >= 0) playerSpeed[0] = -PLAYER_X_START_SPEED
-        startPlayerRunActionAnimation(playerSpritesRunActionAnimationOptions)
+        startPlayerRunActionAnimation()
       }
       if (eventKey === 'ArrowRight' && !downKeys[event.key]) {
         if (playerSpeed[0] <= 0) playerSpeed[0] = PLAYER_X_START_SPEED
-        startPlayerRunActionAnimation(playerSpritesRunActionAnimationOptions)
+        startPlayerRunActionAnimation()
       }
       if (eventKey === 'ArrowUp' && !downKeys[event.key] && playerSpeed[1] === 0) {
         playerSpeed[1] = -PLAYER_Y_JUMP_START_SPEED

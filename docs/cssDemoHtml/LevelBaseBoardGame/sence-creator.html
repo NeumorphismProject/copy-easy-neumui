@@ -1625,6 +1625,7 @@
     </div>
   </div>
 </body>
+<script src="./player-run-animation.js"></script>
 <!-- 全局变量 -->
 <script>
   // 把相对路径转为绝对路径
@@ -1659,6 +1660,9 @@
   let btnSettingToolParamsUsetoDom = undefined
   let btnSettingToolResetDom = undefined
   let settingPannelTypeTitleDom = undefined
+
+  // 玩家跑步动画控制器
+  let playerRunController = new PlayerRunAnimationController()
 
   // 参数面板悬浮窗体Dom
   let settingPannelDom = undefined
@@ -1902,15 +1906,12 @@
     playerSize: [54, 32],
     playerSpritesBackgrundImageUrl: toAbsURL('./imgs/cat-sprites.jpg'),
     playerSpritesRunActionAnimationOptions: {
-      startX: 5.5, // gameSenceData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT[0], // 第一个动作图片的 x 坐标
-      endX: 95.5, // 最后一张动作图片的 x 坐标（若达到最后一张，会自动切换回第一张动作图片的 x 坐标）
-      stepLen: 30, // 每次切换下一张动作图片的 x 坐标步长
-      // TODO: 角色动画新方案
+      // 角色动画新方案
       start: [5.5, 7], // 开始坐标
       end: [95.5, 30], // 结束坐标
       rowEndX: 95.5, // 行尾坐标
       frameLen: [30, 23], // 切换一帧对应的x和y的步长（动画目前从start坐标依次向左切换，若当前行切换x在坐标到了设置的rowEndX，则切换到下一行的最左侧，再继续，直到到达坐标end）
-      playMs: 100 // 动画播放速度（单位：毫秒）
+      playMs: 80 // 动画播放速度（单位：毫秒）
     },
   }
 
@@ -2694,6 +2695,9 @@
     const imgPreviewDomKey = imgPreviewDom.parentNode.parentNode.getAttribute('setting-id')
     settingPannelDoms[imgPreviewDomKey] = imgPreviewDom
     console.log(settingPannelDoms)
+
+    // 为玩家动画控制器设置对应的dom元素
+    playerRunController.setPlayerImgBoxDom(settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'])
   }
 
   const onBlocksSelectionClick = (event) => {
@@ -2974,63 +2978,30 @@
   }
 
   // 玩家跑步运动控制（通过background-position控制雪碧图裁剪区域实现）
-  let playerRunActionInterval = null
-  let playerRunActionImgClipPosition = null // [x,y] 每次动画帧移动都会改变这个坐标
   const startPlayerRunActionAnimation = () => {
     if (!canvasRectSelectedProxy.value || canvasRectSelectedProxy.value.type !== 'player') {
       settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【启动】动画'
       stopPlayerRunActionAnimation()
       return
     }
-    const { playerSpritesRunActionAnimationOptions: animationOptions } = canvasRectSelectedProxy.value
-    const { start, end, rowEndX, frameLen, playMs } = animationOptions
-    // const { startX, endX, stepLen } = options
-    if (playerRunActionInterval) return
-    playerRunActionInterval = setInterval(() => {
-      // 雪碧图切换
-      // const [px, py] = playerSpritesBackgrundPositionProxy.value
-      // const apx = px >= endX ? (startX + stepLen) : (px + stepLen)
-      // const newPosition = [apx, py]
-      // playerSpritesBackgrundPositionProxy.value = newPosition
 
-      if (!playerRunActionImgClipPosition || (playerRunActionImgClipPosition[0] >= end[0] && playerRunActionImgClipPosition[1] >= end[1])) {
-        playerRunActionImgClipPosition = [...start]
-      } else {
-        const [x, y] = playerRunActionImgClipPosition
-        let nextX = 0
-        let nextY = 0
-        if (x >= rowEndX) {
-          nextX = start[0]
-          nextY = y + frameLen[1]
-        } else {
-          nextX = x + frameLen[0]
-          nextY = y
-        }
-        playerRunActionImgClipPosition = [nextX, nextY]
-      }
-      // 更新动画预览图片
-      const [bpx, bpy] = playerRunActionImgClipPosition
-      settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.backgroundPosition = `${bpx}% ${bpy}%`
-    }, playMs)
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const { playerSpritesRunActionAnimationOptions: animationOptions } = canvasRectSelectedProxy.value
+      playerRunController.startRun(animationOptions)
+    }
   }
   // 停止玩家跑步运动
   const stopPlayerRunActionAnimation = () => {
-    playerRunActionInterval && clearInterval(playerRunActionInterval)
-    playerRunActionInterval = null
-    playerRunActionImgClipPosition = null
     if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
       const { playerSpritesRunActionAnimationOptions: animationOptions } = canvasRectSelectedProxy.value
       const { start } = animationOptions
-      settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'].style.backgroundPosition = `${start[0]}% ${start[1]}%`
+      playerRunController.stopRun(start)
     }
-    // playerSpritesBackgrundPositionProxy.value = PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
   }
 
   // 动画的 启动/停止 按钮
   const onPlayerSpritesSettingAnimationClick = () => {
-    // settingPannelDoms['player-sprites-setting-row-animation-preivew-button']
-    // settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box']
-    if (!playerRunActionInterval) {
+    if (!playerRunController.checkRunning()) {
       settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【停止】动画'
       startPlayerRunActionAnimation()
     } else {
