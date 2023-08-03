@@ -454,16 +454,16 @@
       const blockClassKey = `coin-${index}`
       const blockSizeClassKey = `coinSize-${index}`
       const blockTransformClassKey = `coinTransform-${index}`
-      const htmlStr = `<div id="${blockClassKey}" class="${COIN_DEFAULT_CLASS_KEY} ${addDashBeforeUppercase(blockClassKey)} ${addDashBeforeUppercase(blockSizeClassKey)} ${addDashBeforeUppercase(blockTransformClassKey)}">币${index}</div>`
+      const htmlStr = `<div id="${blockClassKey}" class="${COIN_DEFAULT_CLASS_KEY} ${addDashBeforeUppercase(blockClassKey)} ${addDashBeforeUppercase(blockSizeClassKey)} ${addDashBeforeUppercase(blockTransformClassKey)}"></div>`
       const blockClass = {
-        backgroundColor: 'yellow',
+        backgroundColor: 'rgba(0,0,0,0)'
       }
       const blockSizeClass = {
         width: `${size[0]}px`,
         height: `${size[1]}px`,
       }
       const blockTransformClass = {
-        backgroundImage,
+        backgroundImage: backgroundImage.includes('url(') ? backgroundImage : `url("${backgroundImage}")`,
         backgroundSize: '100% 100%',
         transform: `translate(${position[0]}px, ${position[1]}px)`
       }
