@@ -75,6 +75,9 @@
     let blockDoms = undefined
     let coinsDoms = undefined
 
+    // 玩家运动初速度 [x,y]
+    let playerSpeed = [0, 0]
+
     // 玩家得分
     let playerScore = {
       value: 0, // 当前得分
@@ -180,7 +183,7 @@
             styleTrans = `${styleTrans} ScaleX(1)`
             matchAry = styleTrans.match(/scaleX\((.*?)\)/i)
           }
-          const transStr = styleTrans.replace(matchAry[1], value ? 1 : -1)
+          const transStr = styleTrans.replace(`scaleX(${matchAry[1]})`, value ? 'scaleX(1)' : 'scaleX(-1)')
           playerDom.style.transform = transStr
           target[key] = value
         } catch (err) {
@@ -1052,7 +1055,7 @@
       // GAME_SENCE_BACKGROUND_IMAGE = gameData.global.GAME_SENCE_BACKGROUND_IMAGE // 整个游戏场景的背景图（为了游戏效果，背景图不会自适应，游戏场景中的每个物体目前均以px为单位进行布局，位置需要与背景图相对应）
       // PLAYER_X_START_SPEED = gameData.player.PLAYER_X_START_SPEED // 玩家移动初速度
       // // PLAYER_Y_FREE_FALL_STEP_SPEED = gameData.player.PLAYER_Y_FREE_FALL_STEP_SPEED // 控制玩家下落速度的单位值
-      // PLAYER_Y_JUMP_START_SPEED = gameData.player.PLAYER_Y_JUMP_START_SPEED // 玩家跳跃的初速度值
+      PLAYER_Y_JUMP_START_SPEED = gameData.player.PLAYER_Y_JUMP_START_SPEED // 玩家跳跃的初速度值
       // PLAYER_BORTH_POSITION = gameData.player.PLAYER_BORTH_POSITION // 玩家出生位置
       // PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT = gameData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT // 玩家雪碧图背景的 background-position 的初始值（实际在css中的单位时百分比%）
       // COIN_COLLISION_OFFSET = gameData.coin.COIN_COLLISION_OFFSET // 玩家与金币碰撞的边缘计算偏移量（为了体验更好，玩家需要进入金币div一定的范围内部才会让金币被碰撞而消失）
@@ -1086,13 +1089,15 @@
       }
       if (_gameData) loadGameParams(_gameData)
 
-      initGame()
-
-      startGameEngine()
-
       setTimeout(() => {
-        playerSpeed[1] = 1
-      }, 200)
+        initGame()
+
+        startGameEngine()
+
+        setTimeout(() => {
+          playerSpeed[1] = 1
+        }, 200)
+      }, 100)
     }
 
     window.addEventListener('load', () => {

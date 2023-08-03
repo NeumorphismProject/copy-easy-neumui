@@ -1518,13 +1518,13 @@
           <div setting-id="player-role-setting-row-run-speed" class="row">
             <label>跑步速度：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" onchange="onPlayerRoleRunSpeedChange(event)">
             </div>
           </div>
           <div setting-id="player-role-setting-row-jump-start-speed" class="row">
             <label>起跳速度：</label>
             <div class="input-wrapper">
-              <input setting-unit="input" type="text" value="">
+              <input setting-unit="input" type="text" value="" onchange="onPlayerRoleJumpStartSpeedChange(event)">
             </div>
           </div>
         </div>
@@ -1681,7 +1681,8 @@
     player: {
       ...settingPannelCommonKeysMap,
       // PLAYER_BORTH_POSITION: ['player-role-setting-row-borth-position-x','player-role-setting-row-borth-position-y']
-      playerSpeed: ['player-role-setting-row-run-speed', 'player-role-setting-row-jump-start-speed'],
+      X_START_SPEED: 'player-role-setting-row-run-speed',
+      Y_JUMP_START_SPEED: 'player-role-setting-row-jump-start-speed',
       playerSpritesRunActionAnimationOptions: {
         start: ['player-sprites-setting-row-position-start-x', 'player-sprites-setting-row-position-start-y'], // 开始坐标
         end: ['player-sprites-setting-row-position-end-x', 'player-sprites-setting-row-position-end-y'], // 结束坐标
@@ -1897,12 +1898,11 @@
 
   // 玩家的默认参数
   const playerDefault = {
-    X_START_SPEED: 4,
+    X_START_SPEED: 4, // 这里参数面板上的“跑步速度”
     Y_FREE_FALL_STEP_SPEED: 8,
-    Y_JUMP_START_SPEED: 20,
+    Y_JUMP_START_SPEED: 20, // 这里参数面板上的“起跳速度”
     PLAYER_BORTH_POSITION: [50, 50],
     PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: [5.5, 7],
-    playerSpeed: [8, 8], // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
     playerSize: [54, 32],
     playerSpritesBackgrundImageUrl: toAbsURL('./imgs/cat-sprites.jpg'),
     playerSpritesRunActionAnimationOptions: {
@@ -2872,6 +2872,32 @@
       updateSelectedRectData({ backgroundImage })
     }
 
+  }
+
+  // *** 玩家角色参数设置
+
+  // 玩家跑步初速度
+  const onPlayerRoleRunSpeedChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const X_START_SPEED = Math.round(val)
+      updateSelectedRectData({ X_START_SPEED })
+    }
+  }
+
+  // 玩家起跳初速度
+  const onPlayerRoleJumpStartSpeedChange = (event) => {
+    const val = event.target.value
+    if (!checkNumberStr(val)) {
+      return void 0
+    }
+    if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
+      const Y_JUMP_START_SPEED = Math.round(val)
+      updateSelectedRectData({ Y_JUMP_START_SPEED })
+    }
   }
 
   // *** 玩家雪碧图设置（跑步动作） ***
