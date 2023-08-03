@@ -115,7 +115,7 @@
 
     // 玩家雪碧图背景的 background-position（实际在css中的单位时百分比%）
     let playerSpritesBackgrundPosition = {
-      value: PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
+      value: playerSpritesRunActionAnimationOptions.start
     }
     let playerSpritesBackgrundPositionProxy = new Proxy(playerSpritesBackgrundPosition, {
       get: function (target, key) {
@@ -371,6 +371,7 @@
 
     // 创建一个普通砖块的dom预置数据
     const createSceneMapBlock = ({ size, position, backgroundImage, index }) => {
+      console.log('backgroundImage = ', backgroundImage)
       const blockClassKey = `block-${index}`
       const blockSizeClassKey = `blockSize-${index}`
       const blockTransformClassKey = `blockTransform-${index}`
@@ -571,7 +572,8 @@
       // insert html
       gameSceneDom = document.querySelector('.game-scene')
       gameSceneDom.innerHTML = ''
-      gameSceneDom.style = `background-image:${GAME_SENCE_BACKGROUND_IMAGE};background-repeat:no-repeat;`
+      const bgImgUrl = GAME_SENCE_BACKGROUND_IMAGE.includes('url(') ? GAME_SENCE_BACKGROUND_IMAGE : `url("${GAME_SENCE_BACKGROUND_IMAGE}")`
+      gameSceneDom.style = `background-image:${bgImgUrl};background-repeat:no-repeat;`
       gameSceneDom.innerHTML = getHtmlFromSceneData(sceneInitData)
       playerDom = document.querySelector('#player')
       blockDoms = Array.apply(null, document.querySelectorAll('.block-default'))
@@ -610,24 +612,13 @@
     //#endregion -----------------
 
     // 玩家跑步运动控制（通过background-position控制雪碧图裁剪区域实现）
-    // let playerRunActionInterval = null
     const startPlayerRunActionAnimation = () => {
       playerRunController.startRun(playerSpritesRunActionAnimationOptions)
-      // if (playerRunActionInterval) return
-      // playerRunActionInterval = setInterval(() => {
-      //   // 雪碧图切换
-      //   const [px, py] = playerSpritesBackgrundPositionProxy.value
-      //   const apx = px >= endX ? (startX + stepLen) : (px + stepLen)
-      //   const newPosition = [apx, py]
-      //   playerSpritesBackgrundPositionProxy.value = newPosition
-      // }, 100)
     }
+
     // 停止玩家跑步运动
     const stopPlayerRunActionAnimation = () => {
       playerRunController.stopRun(playerSpritesRunActionAnimationOptions.start)
-      // playerRunActionInterval && clearInterval(playerRunActionInterval)
-      // playerRunActionInterval = null
-      // playerSpritesBackgrundPositionProxy.value = PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT
     }
 
     // 玩家自由落体模拟
@@ -659,6 +650,7 @@
       let blockToPlayerCollisionBlocks = [] // block div 进入 player div 的碰撞情况时收集的 block div 集合
       // 预计算下一步 player div 的位置
       let prePlayerPosition = [px + psX, py + psY]
+      // console.log('prePlayerPosition = ',prePlayerPosition)
       const [ppx, ppy] = prePlayerPosition
       const [ppEndx, ppEndy] = [ppx + pw, ppy + ph]
 
@@ -947,7 +939,6 @@
         Y_FREE_FALL_STEP_SPEED,
         Y_JUMP_START_SPEED,
         PLAYER_BORTH_POSITION,
-        PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT,
         playerSpeed, // [x是这里参数面板上的“跑步速度”， y是这里参数面板上的“起跳速度”]
         playerSize,
         playerSpritesBackgrundImageUrl,
@@ -1052,24 +1043,24 @@
     })
 
     const loadGameParams = (gameData) => {
-      // GAME_SENCE_BACKGROUND_IMAGE = gameData.global.GAME_SENCE_BACKGROUND_IMAGE // 整个游戏场景的背景图（为了游戏效果，背景图不会自适应，游戏场景中的每个物体目前均以px为单位进行布局，位置需要与背景图相对应）
-      // PLAYER_X_START_SPEED = gameData.player.PLAYER_X_START_SPEED // 玩家移动初速度
+      console.log('gameData = ', gameData)
+      GAME_SENCE_BACKGROUND_IMAGE = gameData.global.GAME_SENCE_BACKGROUND_IMAGE // 整个游戏场景的背景图（为了游戏效果，背景图不会自适应，游戏场景中的每个物体目前均以px为单位进行布局，位置需要与背景图相对应）
+      PLAYER_X_START_SPEED = gameData.player.PLAYER_X_START_SPEED // 玩家移动初速度
       // // PLAYER_Y_FREE_FALL_STEP_SPEED = gameData.player.PLAYER_Y_FREE_FALL_STEP_SPEED // 控制玩家下落速度的单位值
       PLAYER_Y_JUMP_START_SPEED = gameData.player.PLAYER_Y_JUMP_START_SPEED // 玩家跳跃的初速度值
-      // PLAYER_BORTH_POSITION = gameData.player.PLAYER_BORTH_POSITION // 玩家出生位置
-      // PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT = gameData.player.PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT // 玩家雪碧图背景的 background-position 的初始值（实际在css中的单位时百分比%）
-      // COIN_COLLISION_OFFSET = gameData.coin.COIN_COLLISION_OFFSET // 玩家与金币碰撞的边缘计算偏移量（为了体验更好，玩家需要进入金币div一定的范围内部才会让金币被碰撞而消失）
+      PLAYER_BORTH_POSITION = gameData.player.PLAYER_BORTH_POSITION // 玩家出生位置
+      COIN_COLLISION_OFFSET = gameData.coin.COIN_COLLISION_OFFSET // 玩家与金币碰撞的边缘计算偏移量（为了体验更好，玩家需要进入金币div一定的范围内部才会让金币被碰撞而消失）
 
       // 玩家出生位置
-      // playerPosition.value = PLAYER_BORTH_POSITION
+      playerPosition.value = PLAYER_BORTH_POSITION
       // // 玩家运动初速度 [x,y]
       // playerSpeed = gameData.player.playerSpeed
-      // // 玩家尺寸
-      // playerSize = gameData.player.playerSize
-      // // 玩家角色图片
-      // playerSpritesBackgrundImageUrl = gameData.player.playerSpritesBackgrundImageUrl
+      // 玩家尺寸
+      playerSize = gameData.player.playerSize
+      // 玩家角色图片
+      playerSpritesBackgrundImageUrl = gameData.player.playerSpritesBackgrundImageUrl
       // 用于播放玩家跑步运动时，雪碧图不断切换的一些参数（目前仅支持 x 轴，即仅支持行上的动作切换）(这里的属性都是百分比值，即使用在 background-position:0% 0% 中)
-      // playerSpritesRunActionAnimationOptions = gameData.player.playerSpritesRunActionAnimationOptions
+      playerSpritesRunActionAnimationOptions = gameData.player.playerSpritesRunActionAnimationOptions
 
       // 游戏画面中的砖块集合
       blocksData = gameData.block.blocksData
@@ -1077,23 +1068,20 @@
       coinsData.value = gameData.coin.coinsData
     }
 
+    // 检测是否属于游戏关卡预览模式
+    const checkGameLevelPreviewMode = () => {
+      const routeQuery = getRouteQuery()
+      // 若路由参数中的 level 是 'preview'，就根据消息通道的通知消息来加载游戏
+      return routeQuery && Object.hasOwnProperty.call(routeQuery, 'level') && routeQuery.level === 'preview'
+    }
+
     // 加载游戏
     const loadGame = (gameData) => {
-      let _gameData = gameData
-      if (!_gameData) {
-        const routeQuery = getRouteQuery()
-        // 若路由参数中的 level 值不是 'preview'，则正常加载游戏，否则就根据消息通道的通知消息来加载游戏
-        if (routeQuery && Object.hasOwnProperty.call(routeQuery, 'level') && !routeQuery.level !== 'preview') {
-          _gameData = readLevelPreviewData()
-        }
-      }
-      if (_gameData) loadGameParams(_gameData)
+      if (gameData) loadGameParams(gameData)
 
       setTimeout(() => {
         initGame()
-
         startGameEngine()
-
         setTimeout(() => {
           playerSpeed[1] = 1
         }, 200)
@@ -1102,7 +1090,17 @@
 
     window.addEventListener('load', () => {
       console.log('------onload')
-      loadGame()
+      if (checkGameLevelPreviewMode()) {
+        // 由于 sessionStorage 仅当前会话有效的特性(关闭和离开都会自动清除)，若
+        const previewSessionData = readLevelPreviewData()
+        if (previewSessionData) loadGame(previewSessionData)
+      } else {
+        loadGame()
+      }
+    })
+
+    addEventListener('pagehide', (event) => {
+      alert(1)
     })
   </script>
 
@@ -1120,19 +1118,22 @@
       return void 0
     }
 
+    // 写入来着 BroadcastChannel 的消息 preview 预览标记
+
+
     const channel = new BroadcastChannel('mic-2d-dream')
     channel.addEventListener('message', (event) => {
       const { data: message } = event
       // 从广播中过滤出属于自己的信息
       if (message.from === 'sence-creator' && message.type === 'level-preview') {
-
-        alert(JSON.stringify(message))
-
-        console.log(message)
+        console.log('------channel')
 
         // 根据传递过来的数据，加载游戏
         loadGame(message.data)
-        setTimeout(() => { writeLevelPreviewData(message.data) }, 500)
+        setTimeout(() => {
+          writeLevelPreviewData(message.data)
+          // 设置标记
+        }, 500)
       }
     })
 

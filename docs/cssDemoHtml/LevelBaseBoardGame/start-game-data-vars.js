@@ -6,7 +6,6 @@ let PLAYER_Y_FREE_FALL_STEP_SPEED = 8 // 控制玩家下落速度的单位值
 let PLAYER_Y_JUMP_START_SPEED = 20 // 玩家跳跃的初速度值
 let PLAYER_BORTH_POSITION = [250, 0] // 玩家出生位置
 let COIN_COLLISION_OFFSET = 10 // 玩家与金币碰撞的边缘计算偏移量（为了体验更好，玩家需要进入金币div一定的范围内部才会让金币被碰撞而消失）
-let PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT = [5.5, 7] // 玩家雪碧图背景的 background-position 的初始值（实际在css中的单位时百分比%）
 
 // 玩家尺寸
 let playerSize = [54, 32]

@@ -1681,8 +1681,8 @@
     player: {
       ...settingPannelCommonKeysMap,
       // PLAYER_BORTH_POSITION: ['player-role-setting-row-borth-position-x','player-role-setting-row-borth-position-y']
-      X_START_SPEED: 'player-role-setting-row-run-speed',
-      Y_JUMP_START_SPEED: 'player-role-setting-row-jump-start-speed',
+      PLAYER_X_START_SPEED: 'player-role-setting-row-run-speed',
+      PLAYER_Y_JUMP_START_SPEED: 'player-role-setting-row-jump-start-speed',
       playerSpritesRunActionAnimationOptions: {
         start: ['player-sprites-setting-row-position-start-x', 'player-sprites-setting-row-position-start-y'], // 开始坐标
         end: ['player-sprites-setting-row-position-end-x', 'player-sprites-setting-row-position-end-y'], // 结束坐标
@@ -1898,11 +1898,10 @@
 
   // 玩家的默认参数
   const playerDefault = {
-    X_START_SPEED: 4, // 这里参数面板上的“跑步速度”
+    PLAYER_X_START_SPEED: 4, // 这里参数面板上的“跑步速度”
     Y_FREE_FALL_STEP_SPEED: 8,
-    Y_JUMP_START_SPEED: 20, // 这里参数面板上的“起跳速度”
+    PLAYER_Y_JUMP_START_SPEED: 20, // 这里参数面板上的“起跳速度”
     PLAYER_BORTH_POSITION: [50, 50],
-    PLAYER_SPRITES_BACKGROUND_POSITION_DEFALUT: [5.5, 7],
     playerSize: [54, 32],
     playerSpritesBackgrundImageUrl: toAbsURL('./imgs/cat-sprites.jpg'),
     playerSpritesRunActionAnimationOptions: {
@@ -2150,7 +2149,7 @@
   // 收集当前画布绘制的所有游戏数据
   const collectGameData = () => {
     const GAME_SENCE_BACKGROUND_IMAGE = toAbsURL('./imgs/game-bg.jpg')
-    const COIN_COLLISION_OFFSET = 10
+    const COIN_COLLISION_OFFSET = 10 // TODO:金币碰撞检测范围暂时不提供用户自定义
 
     // 排除非 game.html 页面所需的数据，当然这些 html canvas 之类的引用数据在 Channel 里也是不能传递的
     const rectData = canvasGraphicsPositions.value.map(g => {
@@ -2171,17 +2170,17 @@
     rectData.forEach((g, index) => {
       if (g.type === 'player') {
         player = {
-          ...playerDefault,
-          ...g
+          ...g,
+          playerSize: [...g.size],
+          PLAYER_BORTH_POSITION: [...g.position],
+          playerSpritesBackgrundImageUrl: g.backgroundImage
         }
       } else if (g.type === 'block') {
         blocksData.push({
-          ...blockDefault,
           ...g
         })
       } else if (g.type === 'coin') {
         coinsData.push({
-          ...coinDefault,
           ...g
         })
       }
@@ -2204,6 +2203,10 @@
         coinsData
       }
     }
+
+    console.log('gameSenceData = ',gameSenceData)
+
+    // alert(gameSenceData)
 
     return gameSenceData
   }
@@ -2883,8 +2886,8 @@
       return void 0
     }
     if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
-      const X_START_SPEED = Math.round(val)
-      updateSelectedRectData({ X_START_SPEED })
+      const PLAYER_X_START_SPEED = Math.round(val)
+      updateSelectedRectData({ PLAYER_X_START_SPEED })
     }
   }
 
@@ -2895,8 +2898,8 @@
       return void 0
     }
     if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
-      const Y_JUMP_START_SPEED = Math.round(val)
-      updateSelectedRectData({ Y_JUMP_START_SPEED })
+      const PLAYER_Y_JUMP_START_SPEED = Math.round(val)
+      updateSelectedRectData({ PLAYER_Y_JUMP_START_SPEED })
     }
   }
 
