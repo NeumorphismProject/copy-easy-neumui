@@ -27,7 +27,11 @@
     /* ---左侧 logo 区域--- */
 
     .tools-wrapper .logo {
-      border: 1px dashed red;
+      height: 50px;
+      border-radius: 8px;
+      border-bottom: 1px dashed rgb(255, 94, 0);
+      box-shadow: 0 2px 0px rgba(255, 217, 0);
+      /* border: 1px dashed red; */
       display: flex;
       flex-direction: row;
       gap: 4px;
@@ -581,7 +585,7 @@
               fill="#012777" p-id="26848"></path>
           </svg>
         </div>
-        <div class="logo-label">米可的二维梦境</div>
+        <div class="logo-label">迷你造梦人</div>
       </div>
       <div class="tools-area">
         <!-- player selection -->
@@ -1557,7 +1561,7 @@
     </div>
   </div>
 </body>
-<script src="./player-run-animation.js"></script>
+<script src="./player-roles/player-run-animation.js"></script>
 <!-- 全局变量 -->
 <script>
   // 把相对路径转为绝对路径
@@ -1594,7 +1598,7 @@
   let settingPannelTypeTitleDom = undefined
 
   // 玩家跑步动画控制器
-  let playerRunController = new PlayerRunAnimationController()
+  let playerController = new PlatformPlayer()
 
   // 参数面板悬浮窗体Dom
   let settingPannelDom = undefined
@@ -2671,7 +2675,7 @@
     console.log(settingPannelDoms)
 
     // 为玩家动画控制器设置对应的dom元素
-    playerRunController.setPlayerImgBoxDom(settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'])
+    playerController.setSpritesBox(settingPannelDoms['player-sprites-setting-row-animation-preivew-img-box'])
   }
 
   const onBlocksSelectionClick = (event) => {
@@ -3009,7 +3013,7 @@
 
     if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
       const { playerSpritesRunActionAnimationOptions: animationOptions } = canvasRectSelectedProxy.value
-      playerRunController.startRun(animationOptions)
+      playerController.startRun(animationOptions.playMs, animationOptions)
     }
   }
   // 停止玩家跑步运动
@@ -3017,13 +3021,13 @@
     if (canvasRectSelectedProxy.value && canvasRectSelectedProxy.value.type === 'player') {
       const { playerSpritesRunActionAnimationOptions: animationOptions } = canvasRectSelectedProxy.value
       const { start } = animationOptions
-      playerRunController.stopRun(start)
+      playerController.stopRun(start)
     }
   }
 
   // 动画的 启动/停止 按钮
   const onPlayerSpritesSettingAnimationClick = () => {
-    if (!playerRunController.checkRunning()) {
+    if (!playerController.checkPlaying()) {
       settingPannelDoms['player-sprites-setting-row-animation-preivew-button'].innerText = '【停止】动画'
       startPlayerRunActionAnimation()
     } else {
