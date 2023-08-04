@@ -394,6 +394,79 @@
       background-repeat: no-repeat;
     }
   </style>
+
+  <style>
+    .save-level-pannel {
+      position: fixed;
+      top: 0;
+      z-index: 999;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* 背景样式 */
+      background:
+        repeating-linear-gradient(-45deg,
+          transparent 0,
+          transparent 25%,
+          rgba(181, 181, 181, 0.2) 0,
+          rgba(181, 181, 181, 0.2) 50%),
+        repeating-linear-gradient(45deg,
+          transparent 0,
+          transparent 25%,
+          rgba(181, 181, 181, 0.2) 0,
+          rgba(181, 181, 181, 0.2) 50%),
+        repeating-linear-gradient(transparent 0,
+          transparent 25%,
+          rgba(181, 181, 181, 0.2) 0,
+          rgba(181, 181, 181, 0.2) 50%), rgba(255, 255, 255, 0.6);
+      background-blend-mode: multiply;
+      background-size: 10px 10px;
+    }
+
+    .save-level-pannel .dialog {
+      background-color: rgb(243, 208, 155);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .save-level-pannel .dialog .top {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .save-level-pannel .dialog .top .btn-close {
+      border: 1px dashed rgb(255, 170, 0);
+      border-radius: 100%;
+      box-shadow: 1px 1px 1px 1px rgb(136, 92, 4);
+      width: 16px;
+      height: 16px;
+    }
+
+    .save-level-pannel .dialog .top .btn-close::before {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 1px;
+      background-color: rgb(77, 75, 75);
+      transform: rotate(45deg);
+      position: relative;
+      top: -4px;
+      left: 2px;
+    }
+    .save-level-pannel .dialog .top .btn-close::after {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 1px;
+      background-color: rgb(77, 75, 75);
+      transform: rotate(-45deg);
+      position: relative;
+      top: -20px;
+      left: 2px;
+    }
+  </style>
 </head>
 
 <body>
@@ -1556,6 +1629,55 @@
             <div class="animation-img-wrapper">
               <div class="img-box" setting-unit="img" style="background-image: url('./imgs/coin.png');"></div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 关卡保存弹窗 -->
+  <div class="save-level-pannel">
+    <div class="dialog">
+      <div class="top">
+        <h3 class="title">游戏关卡</h3>
+        <div class="btn-close"></div>
+      </div>
+      <!-- 关卡保存信息 -->
+      <div class="save-wrapper">
+        <div class="row">
+          <label>关卡名称</label>
+          <input save-level-id="input-level-name" value="" />
+        </div>
+        <div class="passs-rule-group">
+          <h5>过关条件</h5>
+          <div class="selections">
+            <div class="row">
+              <input type="radio" save-level-id="input-pass-rule-selected" value="">
+              <label>分值模式(达到此分值则过关):</label>
+              <input save-level-id="input-pass-rule-score" value="" />
+            </div>
+          </div>
+        </div>
+        <div><button id="btn-save-level">保存</button></div>
+      </div>
+      <!-- 已保存的关卡列表 -->
+      <div class="level-data-wrapper">
+        <!-- 关卡数据卡片 -->
+        <div class="level-data-card">
+          <div class="level-data-index">序号<span>1</span></div>
+          <div class="level-data-img"><img width="50" height="50" src="./imgs/game-bg.jpg" alt="关卡背景图" /></div>
+          <div class="level-data-contents">
+            <label class="level-data-name">第一关</label>
+            <label class="level-data-pass-rule">过关条件：分值达到10</label>
+          </div>
+        </div>
+        <!-- 关卡数据卡片 -->
+        <div class="level-data-card">
+          <div class="level-data-index">序号<span>1</span></div>
+          <div class="level-data-img"><img width="50" height="50" src="./imgs/game-bg.jpg" alt="关卡背景图" /></div>
+          <div class="level-data-contents">
+            <label class="level-data-name">第一关</label>
+            <label class="level-data-pass-rule">过关条件：分值达到10</label>
           </div>
         </div>
       </div>
