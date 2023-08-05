@@ -524,6 +524,7 @@
       border: none;
       background-color: rgba(0, 0, 0, 0);
       border-bottom: 1px dashed rgba(0, 45, 245, 0.8);
+      font-size: 20px;
     }
 
     .level-pannel .dialog .form-wrapper .passs-rule-group>h5 {
@@ -547,7 +548,9 @@
       border: 1px dashed rgba(77, 75, 75, 0.5);
       padding: 16px 8px;
       border-top-right-radius: 8px;
-
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .level-pannel .dialog .form-wrapper .form-buttons {
@@ -576,14 +579,14 @@
       margin-top: 32px;
       padding: 8px 16px;
       border-radius: 8px;
-      box-shadow: 0px 0px 8px 2px rgba(77,75,75,0.8);
+      box-shadow: 0px 0px 8px 2px rgba(77, 75, 75, 0.8);
     }
 
     .level-pannel .dialog .level-data-wrapper>h3 {
       font-size: 18px;
       padding: 8px;
       border-radius: 8px;
-      box-shadow: 0px 0px 6px 1px rgba(77,75,75,0.5);
+      box-shadow: 0px 0px 6px 1px rgba(77, 75, 75, 0.5);
       color: rgb(2, 23, 119);
       letter-spacing: 8px;
     }
@@ -624,6 +627,12 @@
       height: 50px;
       overflow: hidden;
       box-shadow: 0px 2px 6px rgba(77, 75, 75, 0.8);
+    }
+
+    .level-pannel .dialog .level-data-wrapper .card-list .level-data-card .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .level-pannel .dialog .level-data-wrapper .card-list .level-data-card .buttons>button {
@@ -1452,7 +1461,7 @@
         <button id="btn-remove-rect" class="btn-delete" disabled onclick="onRemoveSelecteBlockClick()">移除物体</button>
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
         <div class="group">
-          <button>保存关卡</button>
+          <button onclick="onOpenSaveDataButtonClick()">保存关卡</button>
           <button>进入游戏</button>
         </div>
       </div>
@@ -1803,27 +1812,37 @@
     <div class="dialog">
       <div class="top">
         <h3 class="title">游戏关卡</h3>
-        <div class="btn-close"></div>
+        <div class="btn-close" onclick="onLevelPannelCloseClick(event)"></div>
       </div>
       <!-- 关卡保存信息 -->
       <div class="form-wrapper">
         <div class="row">
           <label class="label-box">关卡名称</label>
-          <input type="text" save-level-id="input-level-name" value="" />
+          <input type="text" id="input-level-name" value="" />
         </div>
         <div class="passs-rule-group">
           <h5>过关条件</h5>
           <div class="selections">
             <div class="row">
               <div class="label-box">
-                <input type="radio" save-level-id="input-pass-rule-selected" value="">
-                <label>得分<span>>=</span></label>
+                <input type="radio" id="input-pass-rule-score" save-level-pass-rule-id="input-pass-rule-selection"
+                  name="pass-rule" value="input-pass-rule-score" checked>
+                <label for="input-pass-rule-score">得分<span>>=</span></label>
               </div>
-              <input type="text" save-level-id="input-pass-rule-score" value="" />
+              <input type="text" id="input-pass-rule-score" value="10" />
+            </div>
+
+            <div class="row">
+              <div class="label-box">
+                <input type="radio" id="input-pass-rule-timeout" save-level-pass-rule-id="input-pass-rule-selection"
+                  name="pass-rule" value="input-pass-rule-timeout">
+                <label for="input-pass-rule-timeout">限时<span>(秒)</span></label>
+              </div>
+              <input type="text" id="input-pass-rule-timeout" value="60" />
             </div>
           </div>
         </div>
-        <div class="form-buttons"><button id="btn-save-level">保存</button></div>
+        <div class="form-buttons"><button id="btn-save-level" onclick="onLevelPannelSaveClick()">保存</button></div>
       </div>
       <!-- 已保存的关卡列表 -->
       <div class="level-data-wrapper">
@@ -1832,22 +1851,30 @@
           <!-- 关卡数据卡片 -->
           <div class="level-data-card">
             <div class="level-data-index">序号<span>1</span></div>
-            <div class="level-data-img"><img draggable="false" width="50" height="50" src="./imgs/game-bg.jpg" alt="关卡背景图" /></div>
+            <div class="level-data-img"><img draggable="false" width="50" height="50" src="./imgs/game-bg.jpg"
+                alt="关卡背景图" /></div>
             <div class="level-data-contents">
               <label class="level-data-name">第1关</label>
               <label class="level-data-pass-rule">过关条件：分值达到10</label>
             </div>
-            <div class="buttons"><button id="btn-read-level">读取</button></div>
+            <div class="buttons">
+              <button id="btn-read-level">读取</button>
+              <button id="btn-read-level">删除</button>
+            </div>
           </div>
           <!-- 关卡数据卡片 -->
           <div class="level-data-card">
             <div class="level-data-index">序号<span>2</span></div>
-            <div class="level-data-img"><img draggable="false" width="50" height="50" src="./imgs/game-bg.jpg" alt="关卡背景图" /></div>
+            <div class="level-data-img"><img draggable="false" width="50" height="50" src="./imgs/game-bg.jpg"
+                alt="关卡背景图" /></div>
             <div class="level-data-contents">
               <label class="level-data-name">第2关</label>
               <label class="level-data-pass-rule">过关条件：分值达到10</label>
             </div>
-            <div class="buttons"><button id="btn-read-level">读取</button></div>
+            <div class="buttons">
+              <button id="btn-read-level">读取</button>
+              <button id="btn-read-level">删除</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1876,6 +1903,7 @@
   const CANVAS_CURSOR_DEFALUT = 'auto' // 鼠标在 canvas 上的默认光标
   const CANVAS_CURSOR_NWSERESIZE = 'nwse-resize'
 
+  let levelPannelDom = undefined
   let toolsWrapper = undefined
   let gameSenceDom = undefined
   let canvasDom = undefined
@@ -1889,6 +1917,8 @@
   let btnSettingToolParamsUsetoDom = undefined
   let btnSettingToolResetDom = undefined
   let settingPannelTypeTitleDom = undefined
+
+  let inputLevelNameDom = undefined
 
   // 玩家跑步动画控制器
   let playerController = new PlatformPlayer()
@@ -2482,6 +2512,24 @@
 <!-- 通用函数 -->
 <script>
 
+  // 把 window.location.search 里这样的 '?level=preview&a=123' 字符串转成 json
+  function parseSearchToJson(search) {
+    const json = {}
+    const regex = /[?&](.*)=(.*)/g
+    let match
+
+    while (match = regex.exec(search)) {
+      json[match[1]] = match[2]
+    }
+
+    return Object.keys(json).length > 0 ? json : null
+  }
+
+  // 获取json格式的把 window.location.search
+  function getRouteQuery() {
+    return parseSearchToJson(window.location.search)
+  }
+
   // 检测是否为数值
   function checkNumberStr(val) {
     return val === 0 || (!!val && !isNaN(Number(val)))
@@ -2925,6 +2973,7 @@
 <script>
 
   const initDoms = () => {
+    levelPannelDom = document.querySelector('.level-pannel')
     toolsWrapper = document.querySelector('.tools-wrapper')
     toolsWrapperHeight = toolsWrapper.clientHeight
     blocksSelectionPannelDom = document.querySelector('.blocks-selection-pannel')
@@ -2935,6 +2984,7 @@
     btnSettingToolParamsUsetoDom = document.querySelector('.btn-setting-tool-params-useto')
     btnSettingToolResetDom = document.querySelector('#btn-setting-tool-reset')
     settingPannelTypeTitleDom = document.querySelector('.setting-pannel-type-title')
+    inputLevelNameDom = document.querySelector('#input-level-name')
 
     // 参数设置面板相关dom
     settingPannelDom = document.querySelector('.setting-pannel')
@@ -3450,9 +3500,162 @@
 
   // #endregion
 
+  // #region ------------- 保存关卡数据对话框 --------------
+
+  // 当前关卡数据记录
+  let storageLevelItem = null
+  // 所有关卡数据记录
+  let storageLevelsData = null
+
+  function createUuid() {
+    var s = []
+    var hexDigits = "0123456789abcdef"
+    for (var i = 0; i < 36; i++) {
+      s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1)
+    }
+    s[14] = "4" // bits 12-15 of the time_hi_and_version field to 0010
+    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1) // bits 6-7 of the clock_seq_hi_and_reserved to 01
+    s[8] = s[13] = s[18] = s[23] = "-"
+
+    var uuid = s.join("")
+    return uuid
+  }
+
+  const closeLevelPannel = () => {
+    levelPannelDom.style.display = 'none'
+  }
+
+  const openLevelPannel = () => {
+    // *** 处理默认数据
+    storageLevelsData = readLevelData()
+    console.log('storageLevelsData = ', storageLevelsData)
+    // -- 从路由获取关卡id
+    let levelid = ''
+    const queryData = getRouteQuery()
+    if (queryData && Object.hasOwnProperty.call(queryData, 'levelid') && queryData.levelid) {
+      levelid = queryData.levelid
+      console.log('levelid = ', levelid)
+
+      const findKey = Object.keys(storageLevelsData).find(k => k === levelid)
+      if (findKey) {
+        storageLevelItem = storageLevelsData[findKey]
+      }
+    }
+    console.log('storageLevelItem = ',storageLevelItem)
+
+    // -- 关卡名称
+    let levelIndex = !storageLevelItem ? null : storageLevelItem.index
+    if (levelIndex === 0) throw new Error('关卡记录数据有错误 Error：level inedex 出现了为 0 的情况，level index 必须从 1 开始，请及时维护')
+
+    if (!levelIndex) {
+      levelIndex = getStorageLevelDataMaxIndex(storageLevelsData) + 1
+      if (levelIndex === 0) throw new Error('关卡记录数据有错误 Error：level inedex 出现了为 0 的情况，level index 必须从 1 开始，请及时维护')
+    }
+    let levelName = inputLevelNameDom.value
+    if (!levelName) {
+      levelName = `第${levelIndex}关`
+    }
+    inputLevelNameDom.value = levelName
+
+    // -- 过关条件
+    if (storageLevelItem) {
+      // 先移除原来的选项
+      const passRuleDoms = document.querySelectorAll('[save-level-pass-rule-id="input-pass-rule-selection"]')
+      for (const radioDom of passRuleDoms) {
+        if (radioDom.checked) {
+          radioDom.removeAttribute('checked')
+          break
+        }
+      }
+      // 根据记录中的数据，设置勾选项
+      const passRuleCheckedRadioId = Object.keys(storageLevelItem.passRule)[0]
+      document.querySelector(`#${passRuleCheckedRadioId}`).setAttribute('checked', true)
+    }
+
+
+    // *** 显示对话框
+    levelPannelDom.style.display = ''
+  }
+
+  const onOpenSaveDataButtonClick = () => {
+    openLevelPannel()
+  }
+
+  const onLevelPannelCloseClick = () => {
+    closeLevelPannel()
+  }
+
+  const getStorageLevelDataMaxIndex = (levelsData) => {
+    let maxIndex = 0
+    if (!levelsData || Object.keys(levelsData).length < 1) return maxIndex
+
+    if (Object.keys(levelsData).length > 0) {
+      maxIndex = Object.values(levelsData).sort((a, b) => b.index - a.index)[0].index
+    }
+    return maxIndex
+  }
+
+  // 保存当前关卡数据
+  const LEVEL_DATA_KEY = 'MINI_DREAMER_GAME_LEVEL_DATA'
+  const writeLevelData = () => {
+    let levelsData = readLevelData()
+    let levelIndex = !storageLevelItem ? getStorageLevelDataMaxIndex(levelsData) + 1 : storageLevelItem.index
+
+    const levelName = document.querySelector('#input-level-name').value
+
+    // 过关条件处理
+    let passRuleKey = ''
+    let passRuleValue = ''
+    const passRuleDoms = document.querySelectorAll('[save-level-pass-rule-id="input-pass-rule-selection"]')
+    for (const radioDom of passRuleDoms) {
+      if (radioDom.checked) {
+        // 找到 radio 标签元素上的 value 值，也就能找到相对应的 input 元素，因为设计的相对应的 input 元素的 id 就是 radio 元素的 value 值
+        passRuleKey = radioDom.value
+        break
+      }
+    }
+    passRuleValue = document.querySelector(`#${passRuleKey}`).value
+
+    const id = !storageLevelItem ? createUuid() : storageLevelItem.id
+    let levelItem = {
+      // 关卡序号，决定关卡的先后
+      index: levelIndex,
+      // 识别数据的唯一id
+      id,
+      name: levelName,
+      passRule: {
+        [passRuleKey]: passRuleValue
+      },
+      // 创造数据
+      creatorData: {},
+      // 游戏数据
+      gameData: collectGameData()
+    }
+    levelsData[id] = levelItem
+
+    window.localStorage.setItem(LEVEL_DATA_KEY, JSON.stringify(levelsData))
+
+    // 记录到全局变量中
+    storageLevelItem = levelItem
+    storageLevelsData = levelsData
+  }
+
+  // 读取关卡数据
+  const readLevelData = () => {
+    const levelsData = window.localStorage.getItem(LEVEL_DATA_KEY) || '{}'
+    return JSON.parse(levelsData)
+  }
+
+  const onLevelPannelSaveClick = () => {
+    writeLevelData()
+  }
+
+  // #endregion -------------------------
+
   window.addEventListener('load', () => {
     console.log('--- load ---')
     initDoms()
+    openLevelPannel()
     loadCanvas()
     loadSettingPannelActions.global()
     loadSettingPannelGroupActions.global()
@@ -3474,12 +3677,12 @@
 <script>
 
   const channel = new BroadcastChannel('mic-2d-dream')
-  channel.addEventListener('message', (event) => {
-    const { data: message } = event
-    if (message.from === 'game') {
-      // alert(JSON.stringify(message))
-    }
-  })
+  // channel.addEventListener('message', (event) => {
+  //   const { data: message } = event
+  //   if (message.from === 'game') {
+  //     // alert(JSON.stringify(message))
+  //   }
+  // })
 
   const openGameLevelPage = () => {
     // 整理出当前画布上的所有游戏数据，然后传递给 game.html 页面
