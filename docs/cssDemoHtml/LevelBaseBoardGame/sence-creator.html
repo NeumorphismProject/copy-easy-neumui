@@ -2492,6 +2492,10 @@
       canvasRectsData.forEach(itemValue => {
         appendGraphicsInCanvas(itemValue)
       })
+
+      // 根据读取的记录设置背景图
+      settingPannelDoms['image-setting-row-image'].value = gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE
+      gameSenceDom.style.backgroundImage = `url("${gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE}")`
     }
   }
 
