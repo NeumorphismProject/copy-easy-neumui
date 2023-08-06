@@ -51,7 +51,7 @@
 
     .top-bar .group .player-score-wrapper {
       text-align: right;
-      color: rgb(255, 230, 0);
+      color: rgb(255, 153, 0);
       text-shadow: 2px 2px 2px rgb(207, 136, 5),
         2px 2px 2px rgb(6, 4, 133);
     }
@@ -67,6 +67,18 @@
       color: rgba(0, 140, 255, 0.8);
       text-shadow: 2px 2px 2px rgba(58, 63, 70, 0.2),
         2px 2px 2px rgba(6, 4, 133, 0.8);
+      position: relative;
+      bottom: 1px;
+    }
+
+    .top-bar .group .player-level-index-text {
+      font-size: 26px;
+      line-height: 32px;
+      color: rgba(0, 255, 64, 0.8);
+      text-shadow: 2px 2px 2px rgba(58, 63, 70, 0.2),
+        2px 2px 2px rgba(6, 4, 133, 0.8);
+      position: relative;
+      bottom: 1px;
     }
 
     .top-bar .group label {
@@ -363,6 +375,10 @@
         <label class="player-name">小小夕</label>
       </div>
       <div class="group">
+        <div class="img-row"><img src="./imgs/icon-pass-level.png" alt="玩家头像"><label>进度</label></div>
+        <label class="player-level-index-text">第1关</label>
+      </div>
+      <div class="group">
         <div class="img-row"><img src="./imgs/icon-cup.png" alt="得分奖杯"><label>得分</label></div>
         <div class="player-score-wrapper">
           <div class="player-score">0</div>
@@ -431,13 +447,13 @@
           }
           if (key === 'append') {
             const newValue = target[key] + value
-            playerSocreDom.innerHTML = `score: ${newValue}`
+            playerSocreDom.innerHTML = `${newValue}`
             target[key] = newValue
             return true
           }
           if (key === 'value') {
             const newValue = value
-            playerSocreDom.innerHTML = `score: ${newValue}`
+            playerSocreDom.innerHTML = `${newValue}`
             target[key] = newValue
             return true
           }
