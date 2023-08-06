@@ -3709,6 +3709,8 @@
             </div>
             <div class="buttons">
               <button id="level-card-btn-readlevel" onclick="onReadLevelDataCardClick('${k}')">读取</button>
+              <button id="level-card-btn-readlevel" onclick="onMoveLevelDataCardClick('${k}')">移动</button>
+              <button id="level-card-btn-readlevel" onclick="onCopyLevelDataCardClick('${k}')">复制</button>
               <button id="level-card-btn-removelevel" onclick="onRemoveLevelDataCardClick('${k}','cardlist')">删除</button>
             </div>
           </div>`
@@ -3893,8 +3895,10 @@
       }
 
       if (_reloadType === 'page') {
+        loadLevelsDataCardList()
         // 刷新页面
         goToNewSenceCreatorPage()
+        window.location.reload()
       } else if (_reloadType === 'cardlist') {
         // 刷新关卡记录卡片列表
         loadLevelsDataCardList()
@@ -3906,10 +3910,67 @@
     }
   }
 
+  // 为指定数据记录 重新定位关卡序号（即 重新排序）
+  const resortTargetLevelData = (levelDataId, resortIndex) => {
+    const levelsData = readLevelsData()
+    // levelItemRecord
+    if (levelDataId && levelsData && Object.keys(levelsData).length > 0) {
+      const findKey = Object.keys(levelsData).find(k => k === levelDataId)
+      if (findKey) {
+        levelsData[findKey].index = levelsData[findKey].index >= resortIndex ? (resortIndex - 0.1) : (resortIndex + 0.1) // 把需要重新排序的目标数据的 index 变成 比目标序号小/大0.1的小数，那么后续重拍整理数据的时候会自动整理序号的
+      } else {
+        throw new Error('重新定位关卡序号出错 Error：未匹配到相应的数据')
+      }
+    }
+    window.localStorage.setItem(LEVEL_DATA_KEY, JSON.stringify(levelsData))
+    loadLevelsDataCardList()
+  }
+
+  // 复制指定数据记录，并可以指定关卡序号
+  const copyTargetLevelData = (levelDataId, resortIndex) => {
+    const levelsData = readLevelsData()
+    // levelItemRecord
+    if (levelDataId && levelsData && Object.keys(levelsData).length > 0) {
+      const findKey = Object.keys(levelsData).find(k => k === levelDataId)
+      if (findKey) {
+        const copyLevelData = { ...levelsData[findKey] }
+        const newId = createUuid()
+        copyLevelData.id = newId
+        copyLevelData.index = resortIndex - 0.1 // 把需要重新排序的目标数据的 index 变成 比目标序号小/大0.1的小数，那么后续重拍整理数据的时候会自动整理序号的
+        // 复制出来的新数据，追加到记录数据中
+        levelsData[newId] = copyLevelData
+      } else {
+        throw new Error('重新定位关卡序号出错 Error：未匹配到相应的数据')
+      }
+    }
+    window.localStorage.setItem(LEVEL_DATA_KEY, JSON.stringify(levelsData))
+    loadLevelsDataCardList()
+  }
+
   const onReadLevelDataCardClick = (levelDataId) => {
     if (window.confirm('确定要读取这条记录吗？（记得先保存记录哦！）')) {
       const { origin, pathname } = window.location
       window.location.href = `${origin}${pathname}?levelid=${levelDataId}`
+    }
+  }
+
+  const onMoveLevelDataCardClick = (levelDataId) => {
+    // 把记录数据移动 到指定序号（若输入框内输入小于1的数，则默认是第一个）
+    const targetIndex = window.prompt('请问要把当前记录转换为第几关呢？输入相应的序号即可：')
+    if (checkNumberStr(targetIndex)) {
+      resortTargetLevelData(levelDataId, Number(targetIndex))
+    } else {
+      alert('只能输入数字哦！')
+    }
+  }
+
+  const onCopyLevelDataCardClick = (levelDataId) => {
+    // 把记录数据移动 到指定序号（若输入框内输入小于1的数，则默认是第一个）
+    const targetIndex = window.prompt('请问当前复制的记录要定为第几关呢？输入相应的序号即可：')
+    if (checkNumberStr(targetIndex)) {
+      copyTargetLevelData(levelDataId, Number(targetIndex))
+    } else {
+      alert('只能输入数字哦！')
     }
   }
 
