@@ -3278,6 +3278,7 @@
       // 无选中项，则默认为选中画布，则修改画布的背景图
       const backgroundImage = imgUrl
       gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE = backgroundImage
+      settingPannelDoms['image-setting-row-image'].value = backgroundImage
       gameSenceDom.style.backgroundImage = `url("${gameSenceData.global.GAME_SENCE_BACKGROUND_IMAGE}")`
     }
 
