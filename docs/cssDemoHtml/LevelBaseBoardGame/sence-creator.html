@@ -1462,7 +1462,7 @@
         <button id="btn-remove-rect" class="btn-delete" disabled onclick="onRemoveSelecteBlockClick()">移除物体</button>
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
         <div class="group">
-          <button onclick="onOpenSaveDataButtonClick()">保存关卡</button>
+          <button onclick="onOpenSaveDataButtonClick()">保存/读取</button>
           <button>进入游戏</button>
         </div>
       </div>
@@ -2442,8 +2442,62 @@
     }
   }
 
+  // TODO：把读取的游戏记录数据 转换成 绘制到 canvas 画布时需要使用的数据结构
+  const convertGameDataRecordToCanvasData = (gameSenceData) => {
+    const ctx = canvasContext
+    let canvasRectsData = []
+    if (gameSenceData && Object.keys(gameSenceData).length > 0) {
+      Object.keys(gameSenceData).forEach(k => {
+        let gItem = gameSenceData[k]
+        if (k === 'player') {
+          // 因为画布中必然会优先加载一个玩家图形，所以遇到玩家数据的话，需要对已存在的数据进行更新，而不是直接追加新的数据到数组中
+          let item = {
+            ...gItem,
+            ctx,
+            type: k,
+            size: gItem.playerSize,
+            position: gItem.PLAYER_BORTH_POSITION,
+            backgroundImage: gItem.playerSpritesBackgrundImageUrl
+          }
+          canvasRectsData.push(item)
+        } else if (k === 'block') {
+          gItem.blocksData.forEach(d => { canvasRectsData.push({ ...d, ctx, type: k }) })
+        } else if (k === 'coin') {
+          gItem.coinsData.forEach(d => { canvasRectsData.push({ ...d, ctx, type: k }) })
+        }
+      })
+    }
+
+    console.log('-- canvasRectsData = ', canvasRectsData)
+
+    return canvasRectsData
+  }
+
+  // 根据游戏数据 反向转换成 画布绘制所需的数据结构 (即下面的 collectGameData() 函数的反向转换)，这用于根据读取的记录数据绘制到 canvas 画布上
+  const loadCanvasRectDataByGameData = () => {
+    storageLevelsData = readLevelsData()
+    let findKey = null
+    // 验证记录 id 是否真实存在于记录中
+    if (storageLevelItem && Object.hasOwnProperty.call(storageLevelItem, 'id') && storageLevelItem.id && storageLevelsData && Object.keys(storageLevelsData).length > 0) {
+      findKey = Object.keys(storageLevelsData).find(k => k === storageLevelItem.id)
+    }
+
+    // 根据记录数据加载画布
+    if (findKey) {
+      gameSenceData = { ...storageLevelItem.gameData }
+      const canvasRectsData = convertGameDataRecordToCanvasData(storageLevelItem.gameData)
+      canvasContext.clearRect(0, 0, canvasDom.width, canvasDom.height)
+      canvasGraphicsPositions.value = []
+      // TODO: 加载画布数据
+      canvasRectsData.forEach(itemValue => {
+        appendGraphicsInCanvas(itemValue)
+      })
+    }
+  }
+
   // 收集当前画布绘制的所有游戏数据
   const collectGameData = () => {
+    console.log('--- before save canvasGraphicsPositions.value = ', canvasGraphicsPositions.value)
     const COIN_COLLISION_OFFSET = 10 // TODO:金币碰撞检测范围暂时不提供用户自定义
 
     // 排除非 game.html 页面所需的数据，当然这些 html canvas 之类的引用数据在 Channel 里也是不能传递的
@@ -2808,7 +2862,18 @@
 
   // 根据模式添加玩家图形到画布上
   const loadPlayerRectByMode = () => {
-    if (playerModeProxy.value === PlayerModeType.single) appendSinglePlayerToCanvas()
+    const LevelsData = readLevelsData()
+    let levelid = null
+    const queryData = getRouteQuery()
+    if (queryData && Object.hasOwnProperty.call(queryData, 'levelid') && queryData.levelid) {
+      const findKey = Object.keys(storageLevelsData).find(k => k === queryData.levelid)
+      if (findKey) {
+        levelid = queryData.levelid
+      }
+    }
+
+    // 若当前路由中的id是有效的，那么这里不会创建玩家，玩家会在读取记录数据后一起加载
+    if (!levelid && playerModeProxy.value === PlayerModeType.single) appendSinglePlayerToCanvas()
   }
 
   const removeSelectedBlockInCanvas = () => {
@@ -3643,7 +3708,7 @@
               <label class="level-data-pass-rule">过关条件：${passRuleDescs[Object.keys(item.passRule)[0]]}</label>
             </div>
             <div class="buttons">
-              <button id="level-card-btn-readlevel">读取</button>
+              <button id="level-card-btn-readlevel" onclick="onReadLevelDataCardClick('${k}')">读取</button>
               <button id="level-card-btn-removelevel" onclick="onRemoveLevelDataCardClick('${k}','cardlist')">删除</button>
             </div>
           </div>`
@@ -3784,9 +3849,7 @@
       passRule: {
         [passRuleKey]: passRuleValue
       },
-      // 创造数据
-      creatorData: {},
-      // 游戏数据
+      // 游戏数据 (这份数据，同样可以用于加载画布数据，反向转换即可)
       gameData: collectGameData()
     }
     levelsData[id] = levelItem
@@ -3843,6 +3906,13 @@
     }
   }
 
+  const onReadLevelDataCardClick = (levelDataId) => {
+    if (window.confirm('确定要读取这条记录吗？（记得先保存记录哦！）')) {
+      const { origin, pathname } = window.location
+      window.location.href = `${origin}${pathname}?levelid=${levelDataId}`
+    }
+  }
+
   const onRemoveLevelDataCardClick = (levelDataId, reloadType) => {
     if (window.confirm('确定要删除这条记录吗？')) removeLevelData(levelDataId, reloadType)
   }
@@ -3855,7 +3925,7 @@
       }
       if (window.confirm('你确定要删除这条记录吗？')) removeLevelData(storageLevelItem.id)
     } else if (type === 'create') {
-      if (window.confirm('是否离开当前页，前往创建新关卡？（请想想有没有要保存的记录哦！）')) goToNewSenceCreatorPage()
+      if (window.confirm('是否离开当前页，前往创建新关卡？（记得先保存记录哦！）')) goToNewSenceCreatorPage()
     } else if (type === 'save') {
       writeLevelData()
     }
@@ -3870,6 +3940,9 @@
     loadCanvas()
     loadSettingPannelActions.global()
     loadSettingPannelGroupActions.global()
+
+    // 根据读取的数据记录，加载画布数据
+    loadCanvasRectDataByGameData()
 
     // // 测试下消息通道通知
     // setTimeout(() => {
