@@ -556,6 +556,7 @@
     .level-pannel .dialog .form-wrapper .form-buttons {
       display: flex;
       justify-content: flex-end;
+      gap: 8px;
     }
 
     .level-pannel .dialog .form-wrapper .form-buttons>button {
@@ -1827,29 +1828,39 @@
               <div class="label-box">
                 <input type="radio" id="input-pass-rule-score" save-level-pass-rule-id="input-pass-rule-selection"
                   name="pass-rule" value="input-pass-rule-score" checked>
-                <label for="input-pass-rule-score">得分<span>>=</span></label>
+                <label save-level-pass-rule-id="input-pass-rule-selection-label"
+                  for="input-pass-rule-score">得分<span>达到</span></label>
               </div>
-              <input type="text" id="input-pass-rule-score" value="10" />
+              <input type="text" save-level-pass-rule-id="input-pass-rule-selection-value" id="input-pass-rule-score"
+                value="10" />
             </div>
 
             <div class="row">
               <div class="label-box">
                 <input type="radio" id="input-pass-rule-timeout" save-level-pass-rule-id="input-pass-rule-selection"
                   name="pass-rule" value="input-pass-rule-timeout">
-                <label for="input-pass-rule-timeout">限时<span>(秒)</span></label>
+                <label save-level-pass-rule-id="input-pass-rule-selection-label"
+                  for="input-pass-rule-timeout">限时<span>(秒)</span></label>
               </div>
-              <input type="text" id="input-pass-rule-timeout" value="60" />
+              <input type="text" save-level-pass-rule-id="input-pass-rule-selection-value" id="input-pass-rule-timeout"
+                value="60" />
             </div>
           </div>
         </div>
-        <div class="form-buttons"><button id="btn-save-level" onclick="onLevelPannelSaveClick()">保存</button></div>
+        <div class="form-buttons">
+          <button id="btn-save-level-create" onclick="onLevelPannelSaveClick('create')"
+            style="display: none;">创建</button>
+          <button id="btn-save-level-save" onclick="onLevelPannelSaveClick('save')">保存</button>
+          <button id="btn-save-level-remove" onclick="onLevelPannelSaveClick('remove')"
+            style="display: none;">删除</button>
+        </div>
       </div>
       <!-- 已保存的关卡列表 -->
       <div class="level-data-wrapper">
         <h3>关卡记录</h3>
         <div class="card-list">
           <!-- 关卡数据卡片 -->
-          <div class="level-data-card">
+          <!-- <div class="level-data-card">
             <div class="level-data-index">序号<span>1</span></div>
             <div class="level-data-img"><img draggable="false" width="50" height="50" src="./imgs/game-bg.jpg"
                 alt="关卡背景图" /></div>
@@ -1861,21 +1872,7 @@
               <button id="btn-read-level">读取</button>
               <button id="btn-read-level">删除</button>
             </div>
-          </div>
-          <!-- 关卡数据卡片 -->
-          <div class="level-data-card">
-            <div class="level-data-index">序号<span>2</span></div>
-            <div class="level-data-img"><img draggable="false" width="50" height="50" src="./imgs/game-bg.jpg"
-                alt="关卡背景图" /></div>
-            <div class="level-data-contents">
-              <label class="level-data-name">第2关</label>
-              <label class="level-data-pass-rule">过关条件：分值达到10</label>
-            </div>
-            <div class="buttons">
-              <button id="btn-read-level">读取</button>
-              <button id="btn-read-level">删除</button>
-            </div>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>
@@ -3521,13 +3518,149 @@
     return uuid
   }
 
+
+  // 前往空的创造页
+  function goToNewSenceCreatorPage() {
+    const { origin, pathname } = window.location
+    window.location.href = `${origin}${pathname}`
+  }
+
+  // 根据当前的关卡数据记录，加载保存相关的按钮
+  const loadSaveFormButtonsByLevelData = (levelItemRecord) => {
+    const btnCreateDom = document.querySelector('#btn-save-level-create')
+    const btnSaveDom = document.querySelector('#btn-save-level-save')
+    const btnRemoveDom = document.querySelector('#btn-save-level-remove')
+
+    const levelsData = readLevelsData()
+    let findRecordKey = null
+    if (levelItemRecord && Object.hasOwnProperty.call(levelItemRecord, 'id') && levelItemRecord.id && levelsData && Object.keys(levelsData).length > 0) {
+      // 判断 id 是否存在与真实记录中
+      findRecordKey = Object.keys(levelsData).find(k => k === levelItemRecord.id)
+    }
+
+    if (!findRecordKey) {
+      // 凡是当前记录 id 不存在或异常情况的，就只加载保存按钮
+      // 保存按钮
+      btnSaveDom.style.display = ''
+      btnSaveDom.innerText = '保存'
+
+      // 隐藏其他按钮
+      btnCreateDom.style.display = 'none'
+      btnRemoveDom.style.display = 'none'
+    } else {
+      // 保存按钮
+      btnSaveDom.style.display = ''
+      btnSaveDom.innerText = '更新'
+
+      // 隐藏其他按钮
+      btnCreateDom.style.display = ''
+      btnRemoveDom.style.display = ''
+    }
+
+  }
+
   const closeLevelPannel = () => {
     levelPannelDom.style.display = 'none'
   }
 
-  const openLevelPannel = () => {
+  // 为关卡记录列表重新编号，确保关卡顺序是按照 index 依次排序的
+  const resortLevelsData = () => {
+    storageLevelsData = readLevelsData()
+    if (!storageLevelsData || Object.keys(storageLevelsData).length < 1) return
+
+    const levelNameDom = document.querySelector('#input-level-name')
+
+    // 重排记录列表数据
+    const levelsData = {}
+    const valueList = Object.values(storageLevelsData).sort((a, b) => a.index - b.index)
+    valueList.forEach((v, index) => {
+      if (storageLevelItem && v.id === storageLevelItem.id) {
+        const resortIndex = index + 1
+        const resortName = /第[0123456789]+关/g.test(storageLevelItem.name) ? `第${resortIndex}关` : storageLevelItem.name
+        const newVal = { ...v, index: resortIndex, name: resortName }
+        levelsData[v.id] = newVal
+        storageLevelItem = { ...newVal }
+        levelNameDom.value = resortName
+      } else {
+        const resortIndex = index + 1
+        const resortName = /第[0123456789]+关/g.test(v.name) ? `第${resortIndex}关` : v.name
+        const newVal = { ...v, index: resortIndex, name: resortName }
+        levelsData[v.id] = newVal
+      }
+    })
+    console.log('resort levelsData = ', levelsData)
+    storageLevelsData = levelsData
+
+    window.localStorage.setItem(LEVEL_DATA_KEY, JSON.stringify(levelsData))
+  }
+
+  // 加载所有关卡记录列表
+  const loadLevelsDataCardList = () => {
+    // 为关卡记录列表重新编号
+    resortLevelsData()
+    // 读取最新的记录数据
+    storageLevelsData = readLevelsData()
+
+    const passRuleDoms = document.querySelectorAll('[save-level-pass-rule-id="input-pass-rule-selection"]')
+
+    const passRuleLabelDoms = document.querySelectorAll('[save-level-pass-rule-id="input-pass-rule-selection-label"]')
+    // passRuleInputValDoms 转为 map，方便查找
+    const passRuleLabelDomObj = {}
+    for (const ivDom of passRuleLabelDoms) {
+      passRuleLabelDomObj[ivDom.getAttribute('for')] = ivDom
+    }
+
+    // 规则值输入栏
+    const passRuleInputValDoms = document.querySelectorAll('[save-level-pass-rule-id="input-pass-rule-selection-value"]')
+    // passRuleInputValDoms 转为 map，方便查找
+    const passRuleInputValDomObj = {}
+    for (const ivDom of passRuleInputValDoms) {
+      passRuleInputValDomObj[ivDom.getAttribute('id')] = ivDom
+    }
+
+    let passRuleDescs = {}
+    for (const radioDom of passRuleDoms) {
+      const inputValId = radioDom.getAttribute('value')
+      const labelContent = passRuleLabelDomObj[inputValId].innerHTML.replace(/<span>(.*?)<\/span>/, '$1')
+      const inputContent = passRuleInputValDomObj[inputValId].value
+      passRuleDescs[inputValId] = `${labelContent} ${inputContent}`
+    }
+
+    console.log('passRuleDescs = ', passRuleDescs)
+
+
+    let cardHtmlStr = ''
+    if (Object.keys(storageLevelsData).length > 0) {
+      for (const k of Object.keys(storageLevelsData)) {
+        const item = storageLevelsData[k]
+        const imgUrl = item.gameData.global.GAME_SENCE_BACKGROUND_IMAGE
+        cardHtmlStr += `<div class="level-data-card">
+            <div class="level-data-index">序号<span>${item.index}</span></div>
+            <div class="level-data-img"><img draggable="false" width="50" height="50" src="${imgUrl}"
+                alt="关卡背景图" /></div>
+            <div class="level-data-contents">
+              <label class="level-data-name">${item.name}</label>
+              <label class="level-data-pass-rule">过关条件：${passRuleDescs[Object.keys(item.passRule)[0]]}</label>
+            </div>
+            <div class="buttons">
+              <button id="level-card-btn-readlevel">读取</button>
+              <button id="level-card-btn-removelevel" onclick="onRemoveLevelDataCardClick('${k}','cardlist')">删除</button>
+            </div>
+          </div>`
+      }
+    }
+
+    const levelCardListDom = document.querySelector('.level-pannel>.dialog>.level-data-wrapper>.card-list')
+    levelCardListDom.innerHTML = cardHtmlStr
+
+    // 根据数据加载保存关卡记录的相关按钮
+    loadSaveFormButtonsByLevelData(storageLevelItem)
+  }
+
+  // 加载关卡数据记录
+  const loadStorageLevelsData = () => {
     // *** 处理默认数据
-    storageLevelsData = readLevelData()
+    storageLevelsData = readLevelsData()
     console.log('storageLevelsData = ', storageLevelsData)
     // -- 从路由获取关卡id
     let levelid = ''
@@ -3541,7 +3674,7 @@
         storageLevelItem = storageLevelsData[findKey]
       }
     }
-    console.log('storageLevelItem = ',storageLevelItem)
+    console.log('storageLevelItem = ', storageLevelItem)
 
     // -- 关卡名称
     let levelIndex = !storageLevelItem ? null : storageLevelItem.index
@@ -3572,6 +3705,13 @@
       document.querySelector(`#${passRuleCheckedRadioId}`).setAttribute('checked', true)
     }
 
+    // -- 所有关卡记录列表
+    loadLevelsDataCardList()
+  }
+
+  const openLevelPannel = () => {
+    // *** 处理默认数据
+    loadStorageLevelsData()
 
     // *** 显示对话框
     levelPannelDom.style.display = ''
@@ -3595,10 +3735,28 @@
     return maxIndex
   }
 
+  // 给 url 追加 query 参数，但不会使得浏览器刷新页面
+  function appendUrlQuery(params) {
+    if (!params) return
+    // 给 url 追加 query 参数，但不会使得浏览器刷新页面
+    const urlParams = new URLSearchParams(window.location.search)
+    for (const k of Object.keys(params)) {
+      urlParams.set(k, params[k])
+    }
+    window.history.replaceState(null, '', '?' + urlParams.toString())
+  }
+
   // 保存当前关卡数据
   const LEVEL_DATA_KEY = 'MINI_DREAMER_GAME_LEVEL_DATA'
   const writeLevelData = () => {
-    let levelsData = readLevelData()
+    // 判断是否为新增数据
+    const isNew = !storageLevelItem
+    if (isNew) {
+      if (!window.confirm('你要新增这条记录吗？')) return
+    } else {
+      if (!window.confirm('你要更新(覆盖)这条记录吗？')) return
+    }
+    let levelsData = readLevelsData()
     let levelIndex = !storageLevelItem ? getStorageLevelDataMaxIndex(levelsData) + 1 : storageLevelItem.index
 
     const levelName = document.querySelector('#input-level-name').value
@@ -3633,21 +3791,74 @@
     }
     levelsData[id] = levelItem
 
+    // 存入数据
     window.localStorage.setItem(LEVEL_DATA_KEY, JSON.stringify(levelsData))
 
     // 记录到全局变量中
     storageLevelItem = levelItem
     storageLevelsData = levelsData
+
+    // 若是新增数据，则在url上加上 levelid
+    if (isNew) {
+      // 给 url 追加 query 参数，但不会使得浏览器刷新页面
+      appendUrlQuery({ levelid: id })
+    }
+
+    // -- 所有关卡记录列表
+    loadLevelsDataCardList()
   }
 
   // 读取关卡数据
-  const readLevelData = () => {
+  const readLevelsData = () => {
     const levelsData = window.localStorage.getItem(LEVEL_DATA_KEY) || '{}'
     return JSON.parse(levelsData)
   }
 
-  const onLevelPannelSaveClick = () => {
-    writeLevelData()
+  // 移除关卡数据
+  const removeLevelData = (id, reloadType = 'page') => {
+    let _reloadType = reloadType
+    const levelsData = readLevelsData()
+    const findKey = Object.keys(levelsData).find(k => k === id)
+    if (findKey) {
+      delete levelsData[findKey]
+      window.localStorage.setItem(LEVEL_DATA_KEY, JSON.stringify(levelsData))
+
+      // 若删除的数据正好是当前的记录，则仍然会重载页面
+      if (storageLevelItem && storageLevelItem.id === id) {
+        storageLevelItem = null
+        _reloadType = 'page'
+      }
+
+      if (_reloadType === 'page') {
+        // 刷新页面
+        goToNewSenceCreatorPage()
+      } else if (_reloadType === 'cardlist') {
+        // 刷新关卡记录卡片列表
+        loadLevelsDataCardList()
+      }
+
+    } else {
+      alert('删除错误 Error：删除数据不存在')
+      throw new Error('删除错误 Error：删除数据不存在; id = ' + id)
+    }
+  }
+
+  const onRemoveLevelDataCardClick = (levelDataId, reloadType) => {
+    if (window.confirm('确定要删除这条记录吗？')) removeLevelData(levelDataId, reloadType)
+  }
+
+  const onLevelPannelSaveClick = (type) => {
+    if (type === 'remove') {
+      if (!storageLevelItem) {
+        alert('删除的数据已不存在')
+        return
+      }
+      if (window.confirm('你确定要删除这条记录吗？')) removeLevelData(storageLevelItem.id)
+    } else if (type === 'create') {
+      if (window.confirm('是否离开当前页，前往创建新关卡？（请想想有没有要保存的记录哦！）')) goToNewSenceCreatorPage()
+    } else if (type === 'save') {
+      writeLevelData()
+    }
   }
 
   // #endregion -------------------------
