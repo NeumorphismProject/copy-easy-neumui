@@ -27,7 +27,7 @@
     .top-bar .group {
       border-radius: 8px;
       background-color: rgba(238, 224, 206, 0.9);
-      padding: 0 8px;
+      padding: 0 16px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -47,6 +47,7 @@
     .top-bar .group .img-row label {
       display: flex;
       align-items: flex-end;
+      letter-spacing: 2px;
     }
 
     .top-bar .group .player-score-wrapper {
@@ -63,22 +64,17 @@
 
     .top-bar .group .player-name {
       font-size: 26px;
-      line-height: 39px;
       color: rgba(0, 140, 255, 0.8);
       text-shadow: 2px 2px 2px rgba(58, 63, 70, 0.2),
         2px 2px 2px rgba(6, 4, 133, 0.8);
-      position: relative;
-      bottom: 1px;
     }
 
     .top-bar .group .player-level-index-text {
       font-size: 26px;
-      line-height: 32px;
       color: rgba(0, 255, 64, 0.8);
       text-shadow: 2px 2px 2px rgba(58, 63, 70, 0.2),
         2px 2px 2px rgba(6, 4, 133, 0.8);
-      position: relative;
-      bottom: 1px;
+      padding: 0 4px;
     }
 
     .top-bar .group label {
@@ -376,7 +372,7 @@
       </div>
       <div class="group">
         <div class="img-row"><img src="./imgs/icon-pass-level.png" alt="玩家头像"><label>进度</label></div>
-        <label class="player-level-index-text">第1关</label>
+        <label class="player-level-index-text"><span>第1关</span></label>
       </div>
       <div class="group">
         <div class="img-row"><img src="./imgs/icon-cup.png" alt="得分奖杯"><label>得分</label></div>
@@ -410,6 +406,10 @@
   <script>
     // 玩家跑步动画控制器
     let playerController = new PlatformPlayer()
+    // 当前关卡数据
+    let gameLevelItem = null
+    // 游戏过关条件之一的 最高分数 (后续游戏丰富起来后，过关条件多种多样，这只是其中之一)
+    let gameLevelMaxScore = null
 
     // 游戏关卡预览时存储数据的KEY
     const LEVEL_PREVIEW_DATA_KEY = 'level-preview'
@@ -437,7 +437,7 @@
     }
     let playerScoreProxy = new Proxy(playerScore, {
       get: function (target, key) {
-        return target[key]
+        return target.value
       },
       set: function (target, key, value) {
         const allowSetValues = ['value', 'append']
@@ -448,13 +448,15 @@
           if (key === 'append') {
             const newValue = target[key] + value
             playerSocreDom.innerHTML = `${newValue}`
-            target[key] = newValue
+            target.value += newValue
+            checkPlayerScoreForPass()
             return true
           }
           if (key === 'value') {
             const newValue = value
             playerSocreDom.innerHTML = `${newValue}`
-            target[key] = newValue
+            target.value = newValue
+            checkPlayerScoreForPass()
             return true
           }
           const allowSetHint = 'coinsDataProxy.' + allowSetValues.join('; ').split(' ').join('coinsDataProxy.')
@@ -464,6 +466,16 @@
         }
       }
     })
+
+    // 检测玩家得分是否满足过关条件
+    const checkPlayerScoreForPass = () => {
+      console.log(' playerScoreProxy.value = ',  playerScoreProxy.value)
+      if (gameLevelMaxScore !== null && playerScoreProxy.value >= gameLevelMaxScore) {
+        setTimeout(()=>{
+          goNextGameLevel()
+        }, 2000)
+      }
+    }
 
     // 玩家雪碧图背景的 background-position（实际在css中的单位时百分比%）
     let playerSpritesBackgrundPosition = {
@@ -614,7 +626,7 @@
     // 把 window.location.search 里这样的 '?level=preview&a=123' 字符串转成 json
     function parseSearchToJson(search) {
       const json = {}
-      const regex = /[?&](\w+)=(\w+)/g
+      const regex = /[?&]([\w-]*)=([\w-]*)/g
       let match
 
       while (match = regex.exec(search)) {
@@ -1445,13 +1457,50 @@
       }, 100)
     }
 
+    // 设置过关条件
+    const setPassRule = (passRule) => {
+      const passRuleKey = Object.keys(passRule)[0]
+      if (passRuleKey === 'input-pass-rule-score') {
+        gameLevelMaxScore = Number(passRule[passRuleKey])
+        console.log('gameLevelMaxScore = ', gameLevelMaxScore)
+      }
+    }
+
+    // 设置顶部的关卡文本
+    const setGameLevelText = () => {
+      let gameLevelText = /第[0123456789]+关/g.test(gameLevelItem.name) ? gameLevelItem.name : `第${gameLevelItem.index}关 - ${gameLevelItem.name}`
+      document.querySelector('.player-level-index-text>span').innerText = gameLevelText
+    }
+
     // 正式开始游戏，根据关卡逐一开始游戏
     const loadGameByLevel = () => {
       const routeQuery = getRouteQuery()
       if (!Object.hasOwnProperty.call(routeQuery, 'levelid')) {
-        const id = getLevelItem()
-        window.location.href = `${window.location.href}&levelid=${id}`
+        const playGameRecordData = readPlayGameRecord()
+        let levelDataId = null
+        if(!playGameRecordData) {
+          // 若游戏记录里没有相关数据，则默认读取第一关的关卡
+          levelDataId = getLevelItem().id
+        } else {
+          // 若存在游戏记录，则读取游戏记录中的关卡id
+          levelDataId=playGameRecordData.processLevelId
+        }
+        window.location.href = `${window.location.href}&levelid=${levelDataId}`
+        return
       }
+      const levelDataId = routeQuery.levelid
+      console.log(levelDataId)
+
+      const levelItem = getLevelItem(levelDataId)
+      if (!levelItem) {
+        alert('当前关卡ID无效，请及时维护!')
+        throw Error('当前关卡ID无效，请及时维护!')
+        return
+      }
+      gameLevelItem = levelItem
+      setPassRule(gameLevelItem.passRule)
+      setGameLevelText()
+      loadGame(levelItem.gameData)
     }
 
     window.addEventListener('load', () => {
@@ -1464,14 +1513,9 @@
       } else if (gameMode === 'game') {
         // 正式开始游戏，根据关卡依次开始
         loadGameByLevel()
-      }
-      else {
+      } else {
         loadGame()
       }
-    })
-
-    addEventListener('pagehide', (event) => {
-      alert(1)
     })
   </script>
 
@@ -1488,33 +1532,65 @@
       return `${origin}${pathname}`
     }
 
-    const writePlayGameRecord = () => {
+    const goNextLeveRoute = (id) => {
+      window.location.href = `${getFullOriginPath()}?level=game&levelid=${id}`
+    }
+
+    // 跳转到下一关
+    const goNextGameLevel = () => {
+      const nextLevelItem = getNextLevelItem(gameLevelItem.id)
+      if (!nextLevelItem) {
+        const curPassLevelData = { [gameLevelItem.id]: { maxScore: playerScoreProxy.value } }
+        writePlayGameRecord(curPassLevelData)
+        alert('恭喜通关啦！可以在创造页继续添加新的关卡后继续游玩哦~')
+        return
+      }
+      alert('恭喜过关！请进入下一关吧')
+      goNextLeveRoute(nextLevelItem.id)
+    }
+
+    // 写入关卡记录数据
+    const writePlayGameRecord = (curPassLevelData, processLevelId) => {
+      const oldPlayGameRecord = readPlayGameRecord()
       const playGameRecord = {
-        // 当前闯关进度(记录的是对应关卡的数据id)
-        // processLevelId: '',
+        ...oldPlayGameRecord,
+        // 当前正在进行的关卡id -- 闯关进度(记录的是对应关卡的数据id)
+        // processLevelId,
         // 玩家闯过的关卡数据会记录在这里，以关卡的数据id为key，比如记录玩家每一关的最高分
         // 'xxx(processLevelId)': { maxScore: 1}
+        ...curPassLevelData,
+      }
+      // 如果到达最后一关的话，这里就不存放下一关的id了
+      if (processLevelId) {
+        playGameRecord['processLevelId'] = processLevelId
       }
 
       window.localStorage.setItem(PLAY_GAME_RECORD_KEY, JSON.stringify(playGameRecord))
     }
 
+    // 读取关卡记录数据
     const readPlayGameRecord = () => {
-      const jsonStr = window.localStorage.getItem(PLAY_GAME_RECORD_KEY)
-      return JSON.parse(jsonStr) || null
+      const jsonStr = window.localStorage.getItem(PLAY_GAME_RECORD_KEY) || null
+      if (!jsonStr) return null
+      return JSON.parse(jsonStr)
     }
 
     // 读取关卡数据
     const readLevelsData = () => {
       const jsonStr = window.localStorage.getItem(LEVEL_DATA_KEY) || null
+      if (!jsonStr) return null
       return JSON.parse(jsonStr)
     }
 
     // 根据 id 获取对应的关卡数据
     const getLevelItem = (levelDataId) => {
       const levelsData = readLevelsData()
-      // 若不传id则返回第一关数据
-      if(!levelDataId) return levelsData[Object.keys(levelsData)[0]]
+      if (!levelsData) {
+        alert('读取关卡数据错误，没有任何关卡数据！请先前往建造页创造关卡')
+        throw Error('读取关卡数据错误，没有任何关卡数据！请先前往建造页创造关卡')
+      }
+      // 若不传id则返回第一关数据(由于 json 数据是以ASCII码值进行排序的，所以要想获取第一关的数据，需要我们通过index来查找相应的关卡数据)
+      if (!levelDataId) return Object.values(levelsData).sort((a, b) => a.index - b.index)[0]
 
       // 查找对应的关卡数据
       if (levelsData && Object.keys(levelsData).length > 0) {
@@ -1522,6 +1598,28 @@
         if (findKey) return levelsData[findKey]
       }
       return null
+    }
+
+    // 获取下一关的数据，若获取的是 null 则说明当前已达到最后一关
+    const getNextLevelItem = (curLevelDataId) => {
+      const levelsData = readLevelsData()
+      const curLevelItem = getLevelItem(curLevelDataId)
+      const sortLevelsData = Object.values(levelsData).sort((a, b) => a.index - b.index)
+      console.log('---sortLevelsData = ', sortLevelsData)
+      const maxIndex = sortLevelsData[sortLevelsData.length - 1].index
+      if (curLevelItem.index >= maxIndex) {
+        // 已达到最后一关
+        return null
+      }
+
+      // 查找下一关的数据
+      const nextLevelIndex = curLevelItem.index + 1
+      const nextLevelItem = Object.values(levelsData).find(item => item.index === nextLevelIndex)
+      if (!nextLevelItem) {
+        alert('读取关卡数据错误，没有匹配到下一关的关卡数据！请及时维护')
+        throw Error('读取关卡数据错误，没有匹配到下一关的关卡数据！请及时维护')
+      }
+      return nextLevelItem
     }
 
   </script>

@@ -631,8 +631,10 @@
     }
 
     .level-pannel .dialog .level-data-wrapper .card-list .level-data-card .buttons {
+      flex:1;
       display: flex;
       flex-direction: column;
+      align-items: flex-end;
       gap: 4px;
     }
 
@@ -1831,19 +1833,19 @@
                 <label save-level-pass-rule-id="input-pass-rule-selection-label"
                   for="input-pass-rule-score">得分<span>达到</span></label>
               </div>
-              <input type="text" save-level-pass-rule-id="input-pass-rule-selection-value" id="input-pass-rule-score"
+              <input type="text" save-level-pass-rule-id="input-pass-rule-selection-value" id="input-pass-rule-score-value"
                 value="10" />
             </div>
 
             <div class="row">
               <div class="label-box">
-                <input type="radio" id="input-pass-rule-timeout" save-level-pass-rule-id="input-pass-rule-selection"
+                <input disabled type="radio" id="input-pass-rule-timeout" save-level-pass-rule-id="input-pass-rule-selection"
                   name="pass-rule" value="input-pass-rule-timeout">
                 <label save-level-pass-rule-id="input-pass-rule-selection-label"
                   for="input-pass-rule-timeout">限时<span>(秒)</span></label>
               </div>
-              <input type="text" save-level-pass-rule-id="input-pass-rule-selection-value" id="input-pass-rule-timeout"
-                value="60" />
+              <input disabled type="text" save-level-pass-rule-id="input-pass-rule-selection-value" id="input-pass-rule-timeout-value"
+                value="60暂不支持" />
             </div>
           </div>
         </div>
@@ -2570,7 +2572,7 @@
   // 把 window.location.search 里这样的 '?level=preview&a=123' 字符串转成 json
   function parseSearchToJson(search) {
     const json = {}
-    const regex = /[?&](.*)=(.*)/g
+    const regex = /[?&]([\w-]*)=([\w-]*)/g
     let match
 
     while (match = regex.exec(search)) {
@@ -3691,9 +3693,11 @@
     let passRuleDescs = {}
     for (const radioDom of passRuleDoms) {
       const inputValId = radioDom.getAttribute('value')
+      console.log('----- inputValId = ', inputValId)
+      console.log('----- passRuleLabelDomObj = ', passRuleLabelDomObj)
+      console.log('----- passRuleInputValDomObj[inputValId] = ', passRuleInputValDomObj)
       const labelContent = passRuleLabelDomObj[inputValId].innerHTML.replace(/<span>(.*?)<\/span>/, '$1')
-      const inputContent = passRuleInputValDomObj[inputValId].value
-      passRuleDescs[inputValId] = `${labelContent} ${inputContent}`
+      passRuleDescs[inputValId] = labelContent
     }
 
     console.log('passRuleDescs = ', passRuleDescs)
@@ -3710,7 +3714,7 @@
                 alt="关卡背景图" /></div>
             <div class="level-data-contents">
               <label class="level-data-name">${item.name}</label>
-              <label class="level-data-pass-rule">过关条件：${passRuleDescs[Object.keys(item.passRule)[0]]}</label>
+              <label class="level-data-pass-rule">过关条件：${passRuleDescs[Object.keys(item.passRule)[0]]} ${Object.values(item.passRule)[0]}</label>
             </div>
             <div class="buttons">
               <button id="level-card-btn-readlevel" onclick="onReadLevelDataCardClick('${k}')">读取</button>
@@ -3775,6 +3779,8 @@
       // 根据记录中的数据，设置勾选项
       const passRuleCheckedRadioId = Object.keys(storageLevelItem.passRule)[0]
       document.querySelector(`#${passRuleCheckedRadioId}`).setAttribute('checked', true)
+      console.log('*** storageLevelItem = ', storageLevelItem)
+      document.querySelector(`#${passRuleCheckedRadioId}-value`).value = storageLevelItem.passRule[passRuleCheckedRadioId]
     }
 
     // -- 所有关卡记录列表
@@ -3848,7 +3854,7 @@
         break
       }
     }
-    passRuleValue = document.querySelector(`#${passRuleKey}`).value
+    passRuleValue = document.querySelector(`#${passRuleKey}-value`).value
 
     const id = !storageLevelItem ? createUuid() : storageLevelItem.id
     let levelItem = {
