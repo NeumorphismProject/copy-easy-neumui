@@ -96,28 +96,28 @@
 
     .top-bar .group .buttons {
       display: flex;
+      border-left: 1px dashed rgba(242, 155, 73, 0.463);
+      box-shadow: -2px 0px 4px rgba(242, 155, 73, 0.463);
+    }
+
+    .top-bar .group .buttons>button {
+      border: none;
+      border-radius: 0;
+      background-color: rgba(255, 255, 255, 0);
     }
 
     .top-bar .group .buttons .btn-restart {
       width: 50px;
-      border-right: none;
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
       color: rgb(231, 59, 16);
       text-shadow: 0px 0px 1px rgb(190, 178, 118);
     }
 
     .top-bar .group .buttons .btn-continue {
       width: 30px;
-      border-radius: 0;
-      border-radius: 0;
     }
 
     .top-bar .group .buttons .btn-pause {
       width: 30px;
-      border-left: none;
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
     }
 
     /* Logo */
@@ -392,7 +392,7 @@
         <div class="group">
           <div class="img-row"><img src="./imgs/icon-game.png" alt="游戏控制"><label>游戏控制</label></div>
           <div class="buttons">
-            <button class="btn-restart" onclick="reloadGame()">重新开始</button>
+            <button class="btn-restart" onclick="reloadGame()">重新<br />开始</button>
             <button class="btn-continue" onclick="startGameEngine()">继续</button>
             <button class="btn-pause" onclick="stopGameEngine()">暂停</button>
           </div>
@@ -1423,10 +1423,11 @@
     }
 
     // 检测是否属于游戏关卡预览模式
-    const checkGameLevelPreviewMode = () => {
+    const getGameLevelMode = () => {
       const routeQuery = getRouteQuery()
       // 若路由参数中的 level 是 'preview'，就根据消息通道的通知消息来加载游戏
-      return routeQuery && Object.hasOwnProperty.call(routeQuery, 'level') && routeQuery.level === 'preview'
+      if (routeQuery && Object.hasOwnProperty.call(routeQuery, 'level')) return routeQuery.level
+      return null
     }
 
     // 加载游戏
@@ -1444,13 +1445,27 @@
       }, 100)
     }
 
+    // 正式开始游戏，根据关卡逐一开始游戏
+    const loadGameByLevel = () => {
+      const routeQuery = getRouteQuery()
+      if (!Object.hasOwnProperty.call(routeQuery, 'levelid')) {
+        const id = getLevelItem()
+        window.location.href = `${window.location.href}&levelid=${id}`
+      }
+    }
+
     window.addEventListener('load', () => {
       console.log('------onload')
-      if (checkGameLevelPreviewMode()) {
+      const gameMode = getGameLevelMode()
+      if (gameMode === 'preview') {
         // 由于 sessionStorage 仅当前会话有效的特性(关闭和离开都会自动清除)，若
         const previewSessionData = readLevelPreviewData()
         if (previewSessionData) loadGame(previewSessionData)
-      } else {
+      } else if (gameMode === 'game') {
+        // 正式开始游戏，根据关卡依次开始
+        loadGameByLevel()
+      }
+      else {
         loadGame()
       }
     })
@@ -1460,8 +1475,74 @@
     })
   </script>
 
+  <!-- TODO：游戏闯关纪录保存/读取 -->
+  <script>
+    // 游戏关卡配置数据Key
+    const LEVEL_DATA_KEY = 'MINI_DREAMER_GAME_LEVEL_DATA'
+    // 游戏闯关记录Key
+    const PLAY_GAME_RECORD_KEY = 'MINI_DREAMER_PLAY_GAME_RECORD'
+
+    // 获取网站原始url等信息
+    function getFullOriginPath() {
+      const { origin, pathname } = window.location
+      return `${origin}${pathname}`
+    }
+
+    const writePlayGameRecord = () => {
+      const playGameRecord = {
+        // 当前闯关进度(记录的是对应关卡的数据id)
+        // processLevelId: '',
+        // 玩家闯过的关卡数据会记录在这里，以关卡的数据id为key，比如记录玩家每一关的最高分
+        // 'xxx(processLevelId)': { maxScore: 1}
+      }
+
+      window.localStorage.setItem(PLAY_GAME_RECORD_KEY, JSON.stringify(playGameRecord))
+    }
+
+    const readPlayGameRecord = () => {
+      const jsonStr = window.localStorage.getItem(PLAY_GAME_RECORD_KEY)
+      return JSON.parse(jsonStr) || null
+    }
+
+    // 读取关卡数据
+    const readLevelsData = () => {
+      const jsonStr = window.localStorage.getItem(LEVEL_DATA_KEY) || null
+      return JSON.parse(jsonStr)
+    }
+
+    // 根据 id 获取对应的关卡数据
+    const getLevelItem = (levelDataId) => {
+      const levelsData = readLevelsData()
+      // 若不传id则返回第一关数据
+      if(!levelDataId) return levelsData[Object.keys(levelsData)[0]]
+
+      // 查找对应的关卡数据
+      if (levelsData && Object.keys(levelsData).length > 0) {
+        const findKey = Object.keys(levelsData).find(k => k === levelDataId)
+        if (findKey) return levelsData[findKey]
+      }
+      return null
+    }
+
+  </script>
+
   <!-- 消息通道 -->
   <script>
+    // 消息通知
+    const messageChannelActions = {
+      'level-preview': () => {
+        // 根据传递过来的数据，加载游戏
+        loadGame(message.data)
+        setTimeout(() => {
+          writeLevelPreviewData(message.data)
+          // 设置标记
+        }, 500)
+      },
+      'play-game': () => {
+        // 不需要做任何事情，会根据路由参数加载游戏数据
+      }
+    }
+
     // 游戏关卡预览数据写入
     const writeLevelPreviewData = (previewData) => {
       sessionStorage.setItem(LEVEL_PREVIEW_DATA_KEY, JSON.stringify(previewData))
@@ -1481,16 +1562,7 @@
     channel.addEventListener('message', (event) => {
       const { data: message } = event
       // 从广播中过滤出属于自己的信息
-      if (message.from === 'sence-creator' && message.type === 'level-preview') {
-        console.log('------channel')
-
-        // 根据传递过来的数据，加载游戏
-        loadGame(message.data)
-        setTimeout(() => {
-          writeLevelPreviewData(message.data)
-          // 设置标记
-        }, 500)
-      }
+      if (message.from === 'sence-creator') messageChannelActions[message.type]
     })
 
   </script>

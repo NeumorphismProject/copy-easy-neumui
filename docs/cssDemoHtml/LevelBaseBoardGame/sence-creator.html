@@ -1463,7 +1463,7 @@
         <button onclick="onSettingSwitchClick()">显示/隐藏<br />参数面板</button>
         <div class="group">
           <button onclick="onOpenSaveDataButtonClick()">保存/读取</button>
-          <button>进入游戏</button>
+          <button onclick="onPlayGameClick()">进入游戏</button>
         </div>
       </div>
     </div>
@@ -3797,6 +3797,10 @@
     closeLevelPannel()
   }
 
+  const onPlayGameClick = () => {
+    playGameAllLevels()
+  }
+
   const getStorageLevelDataMaxIndex = (levelsData) => {
     let maxIndex = 0
     if (!levelsData || Object.keys(levelsData).length < 1) return maxIndex
@@ -4034,6 +4038,7 @@
   //   }
   // })
 
+  // 预览游戏
   const openGameLevelPage = () => {
     // 整理出当前画布上的所有游戏数据，然后传递给 game.html 页面
     const data = collectGameData()
@@ -4044,6 +4049,16 @@
       channel.postMessage({ from: 'sence-creator', type: 'level-preview', data })
     }
   }
+
+  // 正式开始游戏
+  const playGameAllLevels = () => {
+    // 直接跳转到游戏页，游戏页接受不了到相应指令后，会通过读取 localstorage 中的记录正式开始游戏
+    const popup = window.open('game.html?level=game')
+    popup.onload = () => {
+      channel.postMessage({ from: 'sence-creator', type: 'play-game', data })
+    }
+  }
+
 
 </script>
 

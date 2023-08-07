@@ -60,11 +60,11 @@ button:disabled {
 }
 
 button:hover {
-  background-color: rgba(247, 215, 109, 0.8);
+  background-color: rgba(247, 215, 109, 0.8) !important;
 }
 
 button:active {
-  background-color: rgba(141, 141, 141, 0.8);
+  background-color: rgba(229, 179, 103, 0.8) !important;
 }
 
 .btn-delete {
