@@ -469,9 +469,9 @@
 
     // 检测玩家得分是否满足过关条件
     const checkPlayerScoreForPass = () => {
-      console.log(' playerScoreProxy.value = ',  playerScoreProxy.value)
+      console.log(' playerScoreProxy.value = ', playerScoreProxy.value)
       if (gameLevelMaxScore !== null && playerScoreProxy.value >= gameLevelMaxScore) {
-        setTimeout(()=>{
+        setTimeout(() => {
           goNextGameLevel()
         }, 2000)
       }
@@ -626,15 +626,33 @@
     // 把 window.location.search 里这样的 '?level=preview&a=123' 字符串转成 json
     function parseSearchToJson(search) {
       const json = {}
-      const regex = /[?&]([\w-]*)=([\w-]*)/g
+      const regex = /[?&]([^=]*)=([^=^&]*)/g // 取反匹配
       let match
+      let lastMatchStr = null // 记录下最后一次不是 null 的匹配到的字符串，用于判断是否以遗漏的内容
+      let lastMatchIndex = null // 记录下最后一次不是 null 的匹配到的索引值，用于判断是否以遗漏的内容
+      let hasMatch = false
 
+      // 假设需要配的 search url 是这条：https://app.eventsframe.com/app/event/5592600260116480?abc=123&name=Ernest&e=
+      // 那么每次 regex.exec(search) 得到的 match 是这样的，直到匹配不到的，那么  regex.exec(search) 得到的则是 null
+      // ['?abc=123', 'abc', '123', index: 54, input: 'https://app.eventsframe.com/app/event/5592600260116480?abc=123&name=Ernest&e=', groups: undefined]
       while (match = regex.exec(search)) {
         json[match[1]] = match[2]
+        // 记录下最后一次不是 null 的匹配到的索引值(里的索引值是匹配到的字符串的第一个字符的索引，比如匹配的是'?abc=123'的话，那就是'?'这个字符的索引)
+        lastMatchStr = match[0]
+        lastMatchIndex = match.index
+        if (!hasMatch) hasMatch = true
       }
 
-      return Object.keys(json).length > 0 ? json : null
+      // 如果最后匹配到的字符串长度与原始字符串search的长度不同，则说明有遗漏的内容，则通过 slice 去匹配完整
+      let sliceIndex = null
+      let jsonKey = null
+      if (lastMatchStr && lastMatchIndex && (sliceIndex = (lastMatchStr.length + lastMatchIndex)) !== search.length && !!(jsonKey = search.slice(sliceIndex + 1))) {
+        json[search.slice(sliceIndex + 1)] = ''
+      }
+
+      return hasMatch ? json : null
     }
+
 
     // 获取json格式的把 window.location.search
     function getRouteQuery() {
@@ -1478,12 +1496,12 @@
       if (!Object.hasOwnProperty.call(routeQuery, 'levelid')) {
         const playGameRecordData = readPlayGameRecord()
         let levelDataId = null
-        if(!playGameRecordData) {
+        if (!playGameRecordData) {
           // 若游戏记录里没有相关数据，则默认读取第一关的关卡
           levelDataId = getLevelItem().id
         } else {
           // 若存在游戏记录，则读取游戏记录中的关卡id
-          levelDataId=playGameRecordData.processLevelId
+          levelDataId = playGameRecordData.processLevelId
         }
         window.location.href = `${window.location.href}&levelid=${levelDataId}`
         return

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <input id="search" />
+  <button onclick="handleSearch()">搜索</button>
+  <script>
+    const handleSearch = () => {
+      const search = document.querySelector('#search').value
+      console.log(search)
+      window.location.href = window.location.origin + window.location.pathname + '?q=' + search
+    }
+  </script>
+</body>
+</html>
