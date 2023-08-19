@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    .root {
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .root .img-box {
+      background-image: url('./imgs/default.webp');
+      background-repeat: no-repeat;
+      background-size: auto;
+      background-position: left;
+    }
+
+    .img {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="root"></div>
+  <script>
+    const LOADING_TAG = 'img-loading'
+    const rootDom = document.querySelector('.root')
+
+    function getRandomSize() {
+      return {
+        imgWidth: 200 + Math.round(Math.random() * 200),
+        imgHeight: 200 + Math.round(Math.random() * 200)
+      }
+    }
+
+    function createImg({ width, height }) {
+      const boxEl = document.createElement('div')
+      boxEl.className = 'img-box'
+      boxEl.style.width = `${width}px`
+      boxEl.style.height = `${height}px`
+      // boxEl.style.backgroundColor = 'red'
+
+      const imgEl = document.createElement('img')
+      imgEl.setAttribute(LOADING_TAG, 'true')
+      imgEl.onload = ()=>{
+        imgEl.removeAttribute(LOADING_TAG)
+      }
+      imgEl.src = `https://picsum.photos/${width}/${height}`
+      imgEl.style.width = `${width}px`
+      imgEl.style.height = `${height}px`
+
+      boxEl.appendChild(imgEl)
+      return boxEl
+    }
+
+    function appendImg(count = 10) {
+      const imgs = []
+      for (let i = 0; i < count; i += 1) {
+        const { imgWidth, imgHeight } = getRandomSize()
+        imgs.push(createImg({ width: imgWidth, height: imgHeight }))
+      }
+      rootDom.append(...imgs)
+    }
+
+    rootDom.addEventListener('scroll', (event) => {
+      const {clientHeight, scrollTop, scrollHeight} = event.target
+      if (clientHeight + scrollTop === scrollHeight) {
+        if(!document.querySelector(`[${LOADING_TAG}]`)) {
+          appendImg()
+        }else{
+          console.log('存在loading')
+
+        }
+        console.log('竖向滚动条已经滚动到底部')
+      }
+    })
+
+    window.addEventListener('load', () => {
+      appendImg()
+    })
+  </script>
+</body>
+
+</html>
