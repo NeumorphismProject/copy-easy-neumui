@@ -1,6 +1,11 @@
 # copyEasyNeumUI (woking on deving...)
 This is a components repo you can copy anyone you want.
 
+## Feat Project
+* My game web named "Dream Wander" is pub in public/ directory.
+* * We can vite the url to paly: "https://copy-easy-neumui.vercel.app/web"
+* * ["梦启游梦（Dream Wander）"](https://copy-easy-neumui.vercel.app/web)
+
 ## Getting Started
 
 ```bash
