@@ -26,13 +26,13 @@ const TopWrapper = styled.div({
 
 const HeaderBaseWrapper = styled.div({
   display: 'flex',
-})
+}) as any
 
 const HeaderWrapper = styled(HeaderBaseWrapper)({
   transition: 'all 0.5s ease-out',
   borderTop: '1px solid black',
   height: 'auto'
-})
+}) as any
 
 const HeaderBaseCell = styled.div({
   width: '50%',
@@ -42,7 +42,7 @@ const HeaderBaseCell = styled.div({
 
 const HeaderCell = styled(HeaderBaseCell)({
   padding: '8px'
-})
+}) as any
 
 const HeaderCellTitle = styled.h2({
   fontSize: '16px'
@@ -81,7 +81,7 @@ const MoveAreaWrapper = styled.div({
   height: '100%',
   // backgroundColor: 'blue',
   overflow: 'hidden'
-})
+}) as any
 
 // --------
 

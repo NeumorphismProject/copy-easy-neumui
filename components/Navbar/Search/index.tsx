@@ -28,7 +28,7 @@ const InputEx = styled.input({
   ':focus': {
     color: 'rgba(0,0,0,1)'
   },
-})
+}) as any
 
 const SearchIconWrapper = styled.div({
   cursor: 'pointer',

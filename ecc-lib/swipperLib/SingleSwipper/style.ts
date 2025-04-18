@@ -15,7 +15,7 @@ export const MoveAreaWrapper = styled.div({
   transitionProperty: 'left',
   transitionTimingFunction: 'linear',
   position: 'relative',
-})
+}) as any
 
 type MoveItemProps = WrapperProps
 export const MoveItem = styled('div')<MoveItemProps>(({areaHeight})=>({
@@ -39,7 +39,7 @@ export const IndicatorWrapper = styled.div({
   top: '-16px',
   display: 'flex',
   justifyContent: 'center'
-})
+}) as any
 
 interface StyledIndicatorProps {
   first: boolean

@@ -5,7 +5,7 @@ export const MoveAreaWrapper = styled.div({
   height: '100%',
   display: 'flex',
   position: 'relative',
-})
+}) as any
 
 export const MoveItem = styled.div({
   borderRight: '1px solid black',
@@ -13,4 +13,4 @@ export const MoveItem = styled.div({
   width: '100%',
   height: '100%',
   flexShrink: 0
-})
+}) as any

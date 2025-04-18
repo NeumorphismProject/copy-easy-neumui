@@ -5,8 +5,23 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/web/:path*', // 匹配 /vue-app/ 下的所有路径
+        source: '/web', // 匹配 /vue-app/ 下的所有路径
         destination: '/web/index.html', // 重定向到 Vue 的 index.html
+      },
+      // // 新增的重定向规则，处理 /static/index.[hash].css
+      // {
+      //   source: '/static/index.:hash([0-9a-f]{8,}).css',
+      //   destination: '/web/static/index.:hash.css',
+      // },
+      // 匹配 /static/[path]/[filename].[hash].[extension]
+      {
+        source: '/static/:path*/:filename.:hash([0-9a-f]{8,}).:extension*',
+        destination: '/web/static/:path*/:filename.:hash.:extension*',
+      },
+      // 通用规则，处理 /static/ 下其他文件（可选）
+      {
+        source: '/static/:path*',
+        destination: '/web/static/:path*',
       },
     ]
   },
