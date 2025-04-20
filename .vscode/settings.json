@@ -8,8 +8,8 @@
   "javascript.format.semicolons": "remove",
   "typescript.format.semicolons": "remove",
   "editor.codeActionsOnSave": {
-    "source.fixAll": true,
-    "source.organizeImports": true
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
   },
   "editor.formatOnSave": false,
   "editor.tabSize": 2,
