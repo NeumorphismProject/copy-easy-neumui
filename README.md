@@ -5,6 +5,7 @@ This is a components repo you can copy anyone you want.
 * My game web named "Dream Wander" is pub in public/ directory.
 * * We can vite the url to paly: "https://copy-easy-neumui.vercel.app/ckn"
 * * ["梦启游梦（Dream Wander）-- 摇奖机小游戏"](https://copy-easy-neumui.vercel.app/ckn)
+* * ["Ask ai Demo -- AI 聊天小案例"](https://copy-easy-neumui.vercel.app/askai/index.html)
 
 ## Getting Started
 
