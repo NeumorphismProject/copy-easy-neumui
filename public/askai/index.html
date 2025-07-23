@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ask Input Component</title>
+  <!-- lottie-web animation: https://airbnb.io/lottie/#/web?id=usage -->
+  <!-- https://lottiefiles.com/web-player -->
+  <script src="./libs/jquery-3.7.1.js" type="text/javascript"></script>
+  <!-- https://github.com/MarketingPipeline/Markdown-Tag -->
+  <script src="./libs/markdown-tag.js" type="text/javascript"></script>
+  <script src="./libs/lottie.min.js" type="text/javascript"></script>
+  <script src="./js/jquery.askinput.js" type="text/javascript"></script>
+  <script src="./js/jquery.api-post-ask.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="./css/askview.css" />
+  <link rel="stylesheet" href="./css/askarea.css">
+  <link rel="stylesheet" href="./css/askinput.css">
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      background-image: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+      ;
+      width: 100%;
+      height: 100%;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ask-pannel">
+    <!-- ask content area ------------------------------------- -->
+    <div id="ask-content" class="ask-list">
+      <!-- <div class="question-box">
+        <div id="r_1" class="question">user ask : hello</div>
+      </div>
+      <div class="answer-box">
+        <div class="avatar">
+          <svg t="1752214660773" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
+            p-id="13628" width="100%" height="100%">
+            <path
+              d="M341.333333 275.083947s82.35008-106.5984 130.198187-104.383147c47.85152 2.218667 34.341547 150.637227 21.701973 166.37952-12.63616 15.742293-64.785067 33.447253-64.785066 33.447253s39.796053 16.104107 39.796053 50.858667-35.375787 73.977173-77.800107 30.378667c-42.427733-43.598507-45.305173-86.736213-45.305173-86.736214M341.333333 275.083947S258.983253 168.485547 211.135147 170.7008c-47.85152 2.218667-34.341547 150.637227-21.701974 166.37952 12.63616 15.742293 64.785067 33.447253 64.785067 33.447253s-39.796053 16.104107-39.796053 50.858667 35.375787 73.977173 77.800106 30.378667c42.427733-43.598507 45.305173-86.736213 45.305174-86.736214"
+              fill="#26BBEC" p-id="13629"></path>
+            <path
+              d="M341.333333 238.933333m-13.653333 0a13.653333 13.653333 0 1 0 27.306667 0 13.653333 13.653333 0 1 0-27.306667 0Z"
+              fill="#26BBEC" p-id="13630"></path>
+            <path d="M327.68 314.026667a75.093333 13.653333 90 1 0 27.306667 0 75.093333 13.653333 90 1 0-27.306667 0Z"
+              fill="#26BBEC" p-id="13631"></path>
+            <path
+              d="M750.933333 493.53728s82.35008-106.5984 130.198187-104.383147c47.85152 2.218667 34.341547 150.637227 21.701973 166.37952-12.63616 15.742293-64.785067 33.447253-64.785066 33.447254s39.796053 16.104107 39.796053 50.858666-35.375787 73.977173-77.800107 30.378667c-42.427733-43.598507-45.305173-86.736213-45.305173-86.736213M750.933333 493.53728s-82.35008-106.5984-130.198186-104.383147c-47.85152 2.218667-34.341547 150.637227-21.701974 166.37952 12.63616 15.742293 64.785067 33.447253 64.785067 33.447254s-39.796053 16.104107-39.796053 50.858666 35.375787 73.977173 77.800106 30.378667c42.427733-43.598507 45.305173-86.736213 45.305174-86.736213"
+              fill="#ED5481" p-id="13632"></path>
+            <path
+              d="M750.933333 457.386667m-13.653333 0a13.653333 13.653333 0 1 0 27.306667 0 13.653333 13.653333 0 1 0-27.306667 0Z"
+              fill="#26BBEC" p-id="13633"></path>
+            <path d="M737.28 532.48a75.093333 13.653333 90 1 0 27.306667 0 75.093333 13.653333 90 1 0-27.306667 0Z"
+              fill="#26BBEC" p-id="13634"></path>
+            <path
+              d="M300.373333 684.683947s82.35008-106.5984 130.198187-104.383147c47.85152 2.218667 34.341547 150.637227 21.701973 166.37952-12.63616 15.742293-64.785067 33.447253-64.785066 33.447253s39.796053 16.104107 39.796053 50.858667-35.375787 73.977173-77.800107 30.378667c-42.427733-43.598507-45.305173-86.736213-45.305173-86.736214M300.373333 684.683947s-82.35008-106.5984-130.198186-104.383147c-47.85152 2.218667-34.341547 150.637227-21.701974 166.37952 12.63616 15.742293 64.785067 33.447253 64.785067 33.447253s-39.796053 16.104107-39.796053 50.858667 35.375787 73.977173 77.800106 30.378667c42.427733-43.598507 45.305173-86.736213 45.305174-86.736214"
+              fill="#FBAD4A" p-id="13635"></path>
+            <path
+              d="M300.373333 648.533333m-13.653333 0a13.653333 13.653333 0 1 0 27.306667 0 13.653333 13.653333 0 1 0-27.306667 0Z"
+              fill="#26BBEC" p-id="13636"></path>
+            <path d="M286.72 723.626667a75.093333 13.653333 90 1 0 27.306667 0 75.093333 13.653333 90 1 0-27.306667 0Z"
+              fill="#26BBEC" p-id="13637"></path>
+          </svg>
+        </div>
+        <div class="answer">
+          <md id="l_2"># Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```# Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            # Example```js var test = 'xxx'```
+            <span class="cursor"></span>
+          </md>
+          <div class="loading">
+            <div id="lottie" class="lottie"></div>
+            <div class="lottie-text">Thinking...</div>
+          </div>
+        </div>
+      </div> -->
+    </div>
+    <!-- ask editor area ------------------------------------- -->
+    <div class="editor-area">
+      <div id="ask-input" contenteditable="true" class="editor"></div>
+      <div class="editor-toolbar">
+        <div class="tools">
+          <div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+              class="stroke-[2] text-fg-secondary group-hover/attach-button:text-fg-primary transition-colors duration-100">
+              <path
+                d="M10 9V15C10 16.1046 10.8954 17 12 17V17C13.1046 17 14 16.1046 14 15V7C14 4.79086 12.2091 3 10 3V3C7.79086 3 6 4.79086 6 7V15C6 18.3137 8.68629 21 12 21V21C15.3137 21 18 18.3137 18 15V8"
+                stroke="currentColor"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- send button -->
+        <div id="editor-send-btn" class="send-btn" disabled="true">
+          <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+            class="stroke-[2] relative">
+            <path d="M5 11L12 4M12 4L19 11M12 4V21" stroke="currentColor"></path>
+          </svg>
+          <div class="square"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // const animation = bodymovin.loadAnimation({
+    //   container: document.getElementById('lottie'), // Required
+    //   path: './lottie-animation/thinking.json', // Required
+    //   renderer: 'svg', // 'svg/canvas/html', // Required
+    //   loop: true, // Optional
+    //   autoplay: true, // Optional
+    //   name: "", // Name for future reference. Optional.
+    // })
+
+    $(document).ready(function () {
+      const askInput = $('#ask-input').data('askInput');
+      const editorSendBtn = $('#editor-send-btn')
+      const askListDom = $('#ask-content')
+
+      function setAskListDomScrollToBottom() {
+        document.querySelector('#ask-content').scrollTo({
+          top: askListDom[0].scrollHeight,
+          behavior: 'smooth',
+        })
+        // askListDom.animate({
+        //   scrollTop: askListDom[0].scrollHeight
+        // }, {
+        //   duration: 300,
+        //   easing: 'swing'  // 缓动效果：swing 或 linear
+        // });
+      }
+
+      // setTimeout(() => { setAskListDomScrollToBottom() }, 3000)
+
+      // 'idle'=闲置； 'processing'=任务中；
+      const askStatusProxyTarget = { value: 'idle' }
+      const askStatusProxy = new Proxy(askStatusProxyTarget, {
+        get(target, property, receiver) {
+          return target.value
+        },
+        set(target, property, value, receiver) {
+          editorSendBtn.removeClass('processing-btn')
+          if (value === 'processing') {
+            editorSendBtn.addClass('processing-btn')
+          }
+          target.value = value
+        }
+      })
+
+      let autoScrollBottomSwitch = false
+      askListDom.on('scroll', function (event) {
+        console.log('scroll event = ', event)
+        if (askStatusProxy.value !== 'processing') {
+          return
+        }
+
+        // 仅流式请求进行中才有效
+        const { scrollHeight, scrollTop, clientHeight } = event.target
+        const distanceBottom = scrollHeight - scrollTop - clientHeight
+        console.log('--- distanceBottom = ', distanceBottom)
+
+        const entryDistace = 60
+        const leaveDistacne = 20
+        if (distanceBottom > leaveDistacne) {
+          // (高优先级) 离开有效区，关闭自动定位到底部
+          autoScrollBottomSwitch = false
+          return
+        }
+        if (distanceBottom < entryDistace) {
+          // 进入有效区，开启自动滚动定位到底部
+          autoScrollBottomSwitch = true
+        }
+      })
+
+
+      let askList = [
+        // {
+        //   unikey: 'r_1',
+        //   role: 'question',
+        //   content: ''
+        // },
+        // {
+        //   unikey: 'l_2',
+        //   role: 'answer',
+        //   status: 'loading', // 'loading' | 'printing' | 'done'
+        //   content: ''
+        // }
+      ]
+      const askListProxyTarget = { value: askList }
+      const askListProxy = new Proxy(askListProxyTarget, {
+        get(target, property, receiver) {
+          return target.value
+        },
+        set(target, property, value, receiver) {
+          const _htmlStr = value.map((d) => {
+            let domFormat = ''
+            if (d.role === 'question') {
+              domFormat = `
+              <div class="question-box">
+                <div id="${d.unikey}" class="question">${d.content}</div>
+              </div>
+              `
+            } else if (d.role === 'answer') {
+              if (d.status === 'loading') {
+                domFormat = `
+                <div class="answer-box">
+                  <div class="answer">
+                    <div id="loading_${d.unikey}" class="loading">
+                      <div id="lottie" class="lottie"></div>
+                      <div class="lottie-text">Thinking...</div>
+                    </div>
+                  </div>
+                </div>
+                `
+              } else {
+                domFormat = `
+                <div class="answer-box">
+                  <div class="avatar">
+                    <svg t="1752214660773" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="13628" width="100%" height="100%"><path d="M341.333333 275.083947s82.35008-106.5984 130.198187-104.383147c47.85152 2.218667 34.341547 150.637227 21.701973 166.37952-12.63616 15.742293-64.785067 33.447253-64.785066 33.447253s39.796053 16.104107 39.796053 50.858667-35.375787 73.977173-77.800107 30.378667c-42.427733-43.598507-45.305173-86.736213-45.305173-86.736214M341.333333 275.083947S258.983253 168.485547 211.135147 170.7008c-47.85152 2.218667-34.341547 150.637227-21.701974 166.37952 12.63616 15.742293 64.785067 33.447253 64.785067 33.447253s-39.796053 16.104107-39.796053 50.858667 35.375787 73.977173 77.800106 30.378667c42.427733-43.598507 45.305173-86.736213 45.305174-86.736214" fill="#26BBEC" p-id="13629"></path><path d="M341.333333 238.933333m-13.653333 0a13.653333 13.653333 0 1 0 27.306667 0 13.653333 13.653333 0 1 0-27.306667 0Z" fill="#26BBEC" p-id="13630"></path><path d="M327.68 314.026667a75.093333 13.653333 90 1 0 27.306667 0 75.093333 13.653333 90 1 0-27.306667 0Z" fill="#26BBEC" p-id="13631"></path><path d="M750.933333 493.53728s82.35008-106.5984 130.198187-104.383147c47.85152 2.218667 34.341547 150.637227 21.701973 166.37952-12.63616 15.742293-64.785067 33.447253-64.785066 33.447254s39.796053 16.104107 39.796053 50.858666-35.375787 73.977173-77.800107 30.378667c-42.427733-43.598507-45.305173-86.736213-45.305173-86.736213M750.933333 493.53728s-82.35008-106.5984-130.198186-104.383147c-47.85152 2.218667-34.341547 150.637227-21.701974 166.37952 12.63616 15.742293 64.785067 33.447253 64.785067 33.447254s-39.796053 16.104107-39.796053 50.858666 35.375787 73.977173 77.800106 30.378667c42.427733-43.598507 45.305173-86.736213 45.305174-86.736213" fill="#ED5481" p-id="13632"></path><path d="M750.933333 457.386667m-13.653333 0a13.653333 13.653333 0 1 0 27.306667 0 13.653333 13.653333 0 1 0-27.306667 0Z" fill="#26BBEC" p-id="13633"></path><path d="M737.28 532.48a75.093333 13.653333 90 1 0 27.306667 0 75.093333 13.653333 90 1 0-27.306667 0Z" fill="#26BBEC" p-id="13634"></path><path d="M300.373333 684.683947s82.35008-106.5984 130.198187-104.383147c47.85152 2.218667 34.341547 150.637227 21.701973 166.37952-12.63616 15.742293-64.785067 33.447253-64.785066 33.447253s39.796053 16.104107 39.796053 50.858667-35.375787 73.977173-77.800107 30.378667c-42.427733-43.598507-45.305173-86.736213-45.305173-86.736214M300.373333 684.683947s-82.35008-106.5984-130.198186-104.383147c-47.85152 2.218667-34.341547 150.637227-21.701974 166.37952 12.63616 15.742293 64.785067 33.447253 64.785067 33.447253s-39.796053 16.104107-39.796053 50.858667 35.375787 73.977173 77.800106 30.378667c42.427733-43.598507 45.305173-86.736213 45.305174-86.736214" fill="#FBAD4A" p-id="13635"></path><path d="M300.373333 648.533333m-13.653333 0a13.653333 13.653333 0 1 0 27.306667 0 13.653333 13.653333 0 1 0-27.306667 0Z" fill="#26BBEC" p-id="13636"></path><path d="M286.72 723.626667a75.093333 13.653333 90 1 0 27.306667 0 75.093333 13.653333 90 1 0-27.306667 0Z" fill="#26BBEC" p-id="13637"></path></svg>
+                  </div>
+                  <div class="answer">
+                    <github-md id="${d.unikey}">${d.content}${d.status !== 'done' ? '<span class="cursor"></span>' : ''}</github-md>
+                  </div>
+                </div>
+                `
+              }
+
+            }
+            return domFormat
+          }).filter((s) => !!s).join('')
+          // console.log('------ _htmlStr = ', _htmlStr)
+          askListDom.html(_htmlStr)
+
+          // -- loading animation
+          const animation = bodymovin.loadAnimation({
+            container: document.getElementById('lottie'), // Required
+            path: './lottie-animation/thinking.json', // Required
+            renderer: 'svg', // 'svg/canvas/html', // Required
+            loop: true, // Optional
+            autoplay: true, // Optional
+            name: "", // Name for future reference. Optional.
+          })
+
+          target.value = value
+        }
+      })
+
+      function updateSendBtnStatus(pInput) {
+        const _val = pInput === undefined ? $('#ask-input').html() : pInput
+        if (!_val) {
+          editorSendBtn.attr('disabled', 'true')
+        } else {
+          editorSendBtn.removeAttr('disabled')
+        }
+      }
+
+      function askDone(isAbort=false) {
+        const _list = askListProxy.value
+        _list[_list.length - 1] = {
+          ..._list[_list.length - 1],
+          status: 'done', // 'loading' | 'printing' | 'done'
+        }
+        if (isAbort && !_list[_list.length - 1].content) {
+          _list[_list.length - 1].content = '消息已中断！'
+        } else if (isAbort && !!_list[_list.length - 1].content) {
+          _list[_list.length - 1].content = _list[_list.length - 1].content + '消息被中断！'
+        }
+        askListProxy.value = _list
+        askStatusProxy.value = 'idle'
+        updateSendBtnStatus()
+      }
+
+      function sendAsk(value) {
+        autoScrollBottomSwitch = true;
+        askStatusProxy.value = 'processing';
+        const _list = askListProxy.value
+        _list.push({
+          unikey: 'r_' + _list.length + 1,
+          role: 'question',
+          content: value
+        },
+          {
+            unikey: 'l_' + _list.length + 1,
+            role: 'answer',
+            status: 'loading', // 'loading' | 'printing' | 'done'
+            content: ''
+          })
+        askListProxy.value = _list;
+
+        // -- api request
+        $.apiPostAsk({
+          content: value,
+          onMessage: function (message) {
+            console.log('ai response = ', message)
+            _list[_list.length - 1] = {
+              ..._list[_list.length - 1],
+              status: 'printing', // 'loading' | 'printing' | 'done'
+              content: message === undefined ? '接口请求异常，没收到消息，请重试！' : _list[_list.length - 1].content + message
+            }
+            // -- 
+            askListProxy.value = _list
+
+            if (autoScrollBottomSwitch) {
+              setAskListDomScrollToBottom();
+            }
+          },
+          onError: function (error) {
+
+          },
+          onDone: askDone
+        });
+      }
+
+      $('#ask-input').askInput({
+        placeholder: '想问什么、聊什么都可以哦~',
+        autoFocus: true,
+        initialValue: '',
+        onTextChange: updateSendBtnStatus,
+        onEnter: sendAsk,
+        onBackspace: function (value) {
+          console.log('Backspace pressed:', value);
+        }
+      });
+
+      // Example usage of public methods
+      // const askInput = $('#ask-input').data('askInput');
+      // askInput.focus();
+      // askInput.updateValue('New @content');
+      // console.log(askInput.getValue());
+
+      editorSendBtn.on('click', function () {
+        if (askStatusProxy.value === 'processing') {
+          $.apiPostAsk.abortRequest();
+          askDone(true);
+        } else { // askStatusProxy.value === idle
+          sendAsk($('#ask-input').html());
+          $('#ask-input').html('');
+        }
+      })
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,107 @@
+.ask-pannel {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100%;
+    max-width: 50rem;
+    padding: 0.2rem 0.3rem 1rem 0.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+/* 闪烁光标样式 */
+.cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: rgba(0, 0, 0, 0.5);
+    animation: blink 0.8s infinite;
+    vertical-align: middle;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.ask-list {
+    flex: 1;
+    border: 5px double rgba(0, 2, 112, 0.2);
+    /* border-bottom: none; */
+    border-radius: 1rem;
+    /* border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0; */
+    padding: 0.5rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.ask-list > .question-box {
+    max-width: 80%;
+    text-align: left;
+    margin-bottom: 1rem;
+    margin-left: auto;
+}
+
+.ask-list > .question-box > .question {
+    width: auto;
+    background-color: #fbfeff;
+    padding: 0.5rem 0.8rem;
+    border-radius: 0.5rem;
+    box-shadow: 1px 1px 5px 0px rgb(150, 150, 150);
+    display: inline-block;
+}
+
+.ask-list > .answer-box {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.ask-list > .answer-box > .avatar {
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0.2rem;
+    position: absolute;
+    transform: translate(-30%,-50%);
+    border-radius: 100%;
+    background-color: rgba(252, 225, 138, 0.302);
+    box-shadow: 1px 1px 5px 2px rgba(180, 149, 80, 0.3);
+}
+
+.ask-list > .answer-box > .avatar > svg {
+    transform: rotateZ(-10deg);
+}
+
+.ask-list > .answer-box > .answer {
+    width: auto;
+    background-color: #ffffffbb;
+    padding: 0.5rem 0.8rem;
+    border-radius: 0.5rem;
+    box-shadow: inset 1px 1px 1px 0px rgb(243, 231, 192);
+    display: inline-block;
+}
+
+.ask-list > .answer-box > .answer > .loading {
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+    position: relative;
+}
+.ask-list > .answer-box > .answer > .loading > .lottie {
+    width: 150px;
+    height: 150px;
+    transform: translate(-20%, -25%);
+}
+.ask-list > .answer-box > .answer > .loading > .lottie-text {
+    position: absolute;
+    bottom: 0px;
+    transform: translateX(5%);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: rgb(255, 100, 0);
+}

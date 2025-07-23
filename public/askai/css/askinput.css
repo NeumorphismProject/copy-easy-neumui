@@ -1,0 +1,42 @@
+.editor {
+  background-color: #ffffff;
+  /* border-width: 1px;
+    border-style: solid;
+    border-color: rgba(0,0,0,0.1);
+    border-radius: 12px; */
+  padding: 8px 0;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  color: black;
+  resize: none;
+  transition: all 0.1s ease;
+  height: 42px;
+  min-height: 42px;
+  max-height: 200px;
+  overflow-y: auto;
+  position: relative;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.editor:hover,
+.editor:focus {
+  box-shadow: none;
+}
+
+.high-light {
+  background-color: #e6f3ff;
+  color: #0052cc;
+  padding: 2px 4px;
+  border-radius: 4px;
+  display: inline;
+}
+
+.editor:empty::before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
+  position: absolute;
+}
+
